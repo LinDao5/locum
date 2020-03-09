@@ -1,0 +1,516 @@
+<?php
+    date_default_timezone_set('Europe/London');
+    use Zend\Db\Sql\Sql;    
+    use Gc\view\Helper\Config as ConfigModule;
+    use Gc\User\JobAction\Model as ActionModel;
+    use Gc\User\Job\Model as JobModel;
+    use Gc\Core\Config as CoreConfig;
+    use Gc\User\JobReminder\ReminderModel as ReminderModel;
+    use Gc\User\JobReminder\OnDayModel as OnDayModel;
+    use GcFrontend\Controller\JobmailController as MailController;
+    use GcFrontend\Controller\ManageBlockDateController as ManageBlockDateController;
+    use GcFrontend\Controller\DbController as DbController;
+    use GcFrontend\Controller\EndecryptController as Endecrypt;
+    use GcFrontend\Controller\FunctionsController as FunctionController;
+    $manageBlockDateController = new ManageBlockDateController();
+    $mailController = new MailController();
+    $actionModel    = new ActionModel();
+    $jobModel   = new JobModel();   
+    $jobReminder    = new ReminderModel(); 
+    $onDayReminder  = new OnDayModel(); 
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $endecrypt = new Endecrypt();
+    $functionController= new FunctionController();
+
+
+    $actual_link = $_SERVER[REQUEST_URI];
+    $_SESSION['action_url'] = $actual_link;
+
+
+    /* Job Id */
+    $cjid = '';
+    if (isset($_GET['j']) && $_GET['j'] != '') { 
+        $cjid = $endecrypt->decryptIt($_GET['j']);
+    }else{
+        $this->redirect()->toUrl('/404');
+    }
+
+    /* Job type */
+    $jType = '';
+    if (isset($_GET['jtype']) && $_GET['jtype'] != '') {
+        $jType = $endecrypt->decryptIt($_GET['jtype']);
+    }else{
+        $this->redirect()->toUrl('/404');
+    }
+
+    /* User type */
+    $uType = '';
+    if (isset($_GET['utype']) && $_GET['utype'] != '') {
+        $uType = $endecrypt->decryptIt($_GET['utype']);
+    }else{
+        $this->redirect()->toUrl('/404');
+    }
+    if ($uType == 'p') {
+
+        /* User Id */
+        $puid = '';
+        if (isset($_GET['u']) && $_GET['u'] != '') {
+            $get_puid = $endecrypt->decryptIt($_GET['u']);
+            /* Check if invitetion send to current private user or not*/
+            $sqlPrivateUser = "SELECT puid from  private_user_job_action WHERE puid='$get_puid' AND j_id = '$cjid'";    
+            $invitePrivateUser = $adapter->query($sqlPrivateUser, $adapter::QUERY_MODE_EXECUTE);
+            $privateUser = $invitePrivateUser->toArray();
+            if (!empty($privateUser)) {
+                $puid = $privateUser[0]['puid'];
+            }else{
+                $this->redirect()->toUrl('/404');
+            }
+        }else{
+            $this->redirect()->toUrl('/404');
+        }
+    }
+    
+
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+        $uid = $_SESSION['user_id'];    
+
+        //  Check if user already booked for current date
+        $sqlJobData = "SELECT job_date from job_post WHERE job_id = '$cjid'";   
+        $jobDataArray = $adapter->query($sqlJobData, $adapter::QUERY_MODE_EXECUTE);
+        $currentJobData = $jobDataArray->toArray();
+        $jobStartDate = $currentJobData[0]['job_date'];
+        $count_book_date=$functionController->getBookDate($uid,$jobStartDate,$adapter);
+
+        /* Check if invitetion send to current login user or not*/
+        $sqlUser = "SELECT uid from job_invited_user WHERE uid='$uid' AND jid = '$cjid'";   
+        $inviteUser = $adapter->query($sqlUser, $adapter::QUERY_MODE_EXECUTE);
+        $user = $inviteUser->toArray();
+
+        /* Check if current user already accept this job or not */
+        $sqlFreeze = "SELECT f_id,action,f_notification from job_action WHERE f_id='$uid' AND job_id = '$cjid'";    
+        $acceptUsers = $adapter->query($sqlFreeze, $adapter::QUERY_MODE_EXECUTE);
+        $acceptUser = $acceptUsers->toArray();
+        /*echo "<pre>";
+        print_r($acceptUser);
+        echo "</pre>";*/ 
+
+        if (!empty($user) && $uid == $user[0]['uid'] && $count_book_date == 0 ) {
+            /*if (!isset($_SESSION['redirect_job'])) {
+                $_SESSION['redirect_job'] = 1;
+                ?>
+                <script type="text/javascript">
+                    window.location="/accept-job?j=<?php echo $endecrypt->encryptIt($cjid) ?>&utype=<?php echo $endecrypt->encryptIt($uType) ?>&jtype=<?php echo $endecrypt->encryptIt($jType) ?>&u=<?php echo $endecrypt->encryptIt($uid) ?>";
+                </script>       
+                <?php
+            }*/
+
+            /*Update the applied count */
+            $sqlActionCheck = "SELECT action from job_action WHERE f_id='$uid' AND job_id = '$cjid'";   
+            $actionCheck = $adapter->query($sqlActionCheck, $adapter::QUERY_MODE_EXECUTE);
+            $jobActionCheck = $actionCheck->current();
+            if ($jobActionCheck['action'] != 3 || $jobActionCheck['action'] != 4 ) {
+                //$actionModel->updateJobaction($cjid,$uid,2,0);
+            }
+
+            /* Check the job status */
+            $sqlJobStatus = "SELECT job_status from job_post WHERE job_id = '$cjid'";   
+            $jobStatusArray = $adapter->query($sqlJobStatus, $adapter::QUERY_MODE_EXECUTE);
+            $jobStatus = $jobStatusArray->toArray();
+            $currentJobStatus = $jobStatus[0]['job_status'];
+
+            switch ($currentJobStatus) {
+                case 1:             
+                    if (!empty($acceptUser)) {
+                        if ($acceptUser[0]['action'] == 0 || $acceptUser[0]['action'] == 1 ) {
+                            /* 
+                            *  Check the timeline of current job if current time is 30 
+                            *  min less than timeline time then user can not accept it
+                            */
+                            date_default_timezone_set('Europe/London');
+                            $currentDate = date("d/m/Y");                   
+                            $currentHr = date("H");
+                            $currentMin = date("i");
+                            $sqlTimeline = "SELECT job_id,job_date_new,job_timeline_hrs from job_post_timeline WHERE job_id = '$cjid' AND (job_timeline_status = '3' OR job_timeline_status = '1')";    
+                            $timeLineJobs = $adapter->query($sqlTimeline, $adapter::QUERY_MODE_EXECUTE);
+                            $timeLineJob = $timeLineJobs->toArray();
+                            //$currentHRMin = strtotime(date('d-m-Y H.i',strtotime("+30 minutes")));
+                            $currentHRMin = strtotime(date('d-m-Y H.i'));
+                            
+                            if (!empty($timeLineJob)) {
+
+                                $myDate = $timeLineJob[0]['job_date_new'];
+                                $myDateNew = explode('/', $myDate); 
+                                $job_timeline_hrs = isset($timeLineJob[0]['job_timeline_hrs']) ? $timeLineJob[0]['job_timeline_hrs'] : '10';
+                                //$d = mktime($job_timeline_hrs, 0, 0, $myDateNew[1], $myDateNew[0], $myDateNew[2]);
+                                $d = mktime(11, 30, 0, $myDateNew[1], $myDateNew[0], $myDateNew[2]);
+                                $newJobDate = strtotime(date('d-m-Y H.i', $d));
+
+                                /* Check current jo is Build type Or First come first serve */
+                                /*$sqlJobType = "SELECT job_type from job_post WHERE job_id = '$cjid'"; 
+                                $jobTypeArray = $adapter->query($sqlJobType, $adapter::QUERY_MODE_EXECUTE);
+                                $currentJobType = $jobTypeArray->toArray();
+                                if (!empty($currentJobType)) {
+                                    $jobType = $currentJobType[0]['job_type'];
+                                }else{
+                                    $jobType = 0;
+                                }*/
+                                
+                                //conditions for 11.30am accept
+                                /*echo "$newJobDate > $currentHRMin";
+                                echo "<br/>";
+                                echo date('d-m-Y h:i', $newJobDate).'===='.date('d-m-Y h:i',$currentHRMin);
+                                die();*/
+                                if ($newJobDate > strtotime(date('d-m-Y h:i')) ) {
+
+                                    if ($jType == 1) {
+                                        $jobModel->jobStatusUpdate($cjid,4);
+                                        /* Upadate job action status*/
+                                        $sqlJobData = "SELECT job_date,e_id from job_post WHERE job_id = '$cjid'";  
+                                        $jobDataArray = $adapter->query($sqlJobData, $adapter::QUERY_MODE_EXECUTE);
+                                        $currentJobData = $jobDataArray->toArray();
+                                        $jobStartDate = $currentJobData[0]['job_date'];
+                                        $jobEmpId = $currentJobData[0]['e_id'];
+                                        $jobReminderDate = $jobReminder->dateJobReminder($jobStartDate);
+                                        $jobModel->jobStatusUpdate($cjid,4);
+                                        $actionModel->updateJobaction($cjid,$uid,3,0);
+                                        $jobReminder->insertJobReminder($cjid,$jobEmpId,$uid,$jobStartDate,$jobReminderDate);
+                                        $onDayReminder->insertJobOnDayReminder($cjid,$jobEmpId,$uid,$jobStartDate,$jobReminderDate);
+                                        $mailController->sendAcceptMailToUser($uid,$cjid,$adapter); 
+                                        /* Block Date entry */
+                                        //$manageBlockDateController->updateBlockDate($uid,$jobStartDate,$adapter);
+
+                                        //$this->flashMessenger()->addSuccessMessage('Job accepted successfully.');
+                                        $note = '<div class="notification success">Job accepted successfully.</div>';
+                                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    }elseif($jType == 2) {  
+                                        $actionModel->updateJobaction($cjid,$uid,2,0);
+                                        $mailController->sendApplyMailToUser($uid,$cjid,$adapter);
+                                        $note = '<div class="notification success">Job Applied successfully.</div>';
+                                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                                        //$this->flashMessenger()->addSuccessMessage('Job Applied successfully.');
+                                    }
+                                }else{
+                                    //$this->flashMessenger()->addErrorMessage('Job is closed by employer.');
+                                    $jobModel->jobStatusUpdate($cjid,2);
+                                    $note = '<div class="notification error">Job is closed by employer.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                }
+                                    
+                            }else{
+                                $sqlJobCheck = "SELECT job_date,job_start_time from job_post WHERE job_id = '$cjid' AND job_date > '$currentDate' ";    
+                                $isJobCheck = $adapter->query($sqlJobCheck, $adapter::QUERY_MODE_EXECUTE);
+                                $JobCheck = $isJobCheck->toArray();
+                                //print_r($JobCheck);
+                                if (!empty($JobCheck)) {
+                                    if ($jType == 1) {
+                                        $jobModel->jobStatusUpdate($cjid,4);
+                                        /* Upadate job action status*/
+                                        $sqlJobData = "SELECT job_date,e_id from job_post WHERE job_id = '$cjid'";  
+                                        $jobDataArray = $adapter->query($sqlJobData, $adapter::QUERY_MODE_EXECUTE);
+                                        $currentJobData = $jobDataArray->toArray();
+                                        $jobStartDate = $currentJobData[0]['job_date'];
+                                        $jobEmpId = $currentJobData[0]['e_id'];
+                                        $jobReminderDate = $jobReminder->dateJobReminder($jobStartDate);
+                                        $jobModel->jobStatusUpdate($cjid,4);
+                                        $actionModel->updateJobaction($cjid,$uid,3,0);
+                                        $jobReminder->insertJobReminder($cjid,$jobEmpId,$uid,$jobStartDate,$jobReminderDate);
+                                        $onDayReminder->insertJobOnDayReminder($cjid,$jobEmpId,$uid,$jobStartDate,$jobReminderDate);
+                                        $mailController->sendAcceptMailToUser($uid,$cjid,$adapter); 
+                                        /* Block Date entry */
+                                        //$manageBlockDateController->updateBlockDate($uid,$jobStartDate,$adapter);
+
+                                        //$this->flashMessenger()->addSuccessMessage('Job accepted successfully.');
+                                        $note = '<div class="notification success">Job accepted successfully.</div>';
+                                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    }elseif($jType == 2) {  
+                                        $actionModel->updateJobaction($cjid,$uid,2,0);
+                                        $mailController->sendApplyMailToUser($uid,$cjid,$adapter);
+                                        $note = '<div class="notification success">Job Applied successfully.</div>';
+                                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                                        //$this->flashMessenger()->addSuccessMessage('Job Applied successfully.');
+                                    }
+                                }else{
+                                    $note = '<div class="notification error">Job is closed by employer.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                }
+                            }
+                        }else{
+                            switch ($acceptUser[0]['action']) {
+                                /*case 1:
+                                    $this->flashMessenger()->addErrorMessage('This Job is Freeze Please check after 15 min.');
+                                    break;*/
+                                case 2:
+                                    //$this->flashMessenger()->addErrorMessage('You have already apply for this job.');
+                                    $note = '<div class="notification error">You have already apply for this job.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                                case 3:
+                                    //$this->flashMessenger()->addErrorMessage('You have already accept  this job.');
+                                    $note = '<div class="notification error">You have already accepted this job.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                                case 4:
+                                    //$this->flashMessenger()->addErrorMessage('This job is done.');
+                                    $note = '<div class="notification error">This job is done.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                                
+                                default:
+                                    //$this->flashMessenger()->addErrorMessage('Invalid action.');
+                                    $note = '<div class="notification error">Invalid action.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                            }
+                            
+                        }               
+                    }
+                    break;
+                case 2:
+                    //$this->flashMessenger()->addErrorMessage('Sorry - this job is no longer available');
+                    $note = '<div class="notification error">Job is closed.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                    break;
+                case 3:
+                    //$this->flashMessenger()->addErrorMessage('Job is Disable');
+                    $note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                    break;
+                case 4:                 
+                    if (!empty($acceptUser) && $acceptUser[0]['action'] == 3 ) {
+                        $f_note ='You have already accepted this job.';
+                        $this->flashMessenger()->addErrorMessage($f_note);
+                    }else{
+                        //$this->flashMessenger()->addErrorMessage('Sorry - this job is no longer available.');
+                        $note = '<div class="notification error">Sorry - this job is no longer available.</div>';
+                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                    }
+                    break;
+                case 6:         
+                    /* Upadate job action status*/
+                    $sqlJobData = "SELECT job_date,e_id from job_post WHERE job_id = '$cjid'";  
+                    $jobDataArray = $adapter->query($sqlJobData, $adapter::QUERY_MODE_EXECUTE);
+                    $currentJobData = $jobDataArray->toArray();
+                    $jobStartDate = $currentJobData[0]['job_date'];
+                    $jobEmpId = $currentJobData[0]['e_id'];
+
+                    if ($uid == $acceptUser[0]['f_id'] && $acceptUser[0]['action'] == 1 && $acceptUser[0]['f_notification'] == 1) {
+                        $jobReminderDate = $jobReminder->dateJobReminder($jobStartDate);
+                        $jobModel->jobStatusUpdate($cjid,4);
+                        $actionModel->updateJobaction($cjid,$uid,3,0);
+                        $jobReminder->insertJobReminder($cjid,$jobEmpId,$uid,$jobStartDate,$jobReminderDate);
+                        $onDayReminder->insertJobOnDayReminder($cjid,$jobEmpId,$uid,$jobStartDate,$jobReminderDate);
+                        $mailController->sendAcceptMailToUser($uid,$cjid,$adapter); 
+                        //$this->flashMessenger()->addSuccessMessage('Job accepted successfully.');
+                        $note = '<div class="notification success">Job accepted successfully.</div>';
+                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+
+                    }else{
+                        //$this->flashMessenger()->addErrorMessage('This Job is Freeze Please check after 15 min.');
+                        $note = '<div class="notification error">Thank you for your interest however this job is curently held by another locum - If it goes live again we shall notify you.</div>';
+                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                    }   
+                    break;
+                case 7:
+                    //$this->flashMessenger()->addErrorMessage('Employer no longer needs a locum for this day and hence has removed the posting.');
+                    $note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                    break;  
+                case 8:
+                    //$this->flashMessenger()->addErrorMessage('Employer no longer needs a locum for this day and hence has removed the posting.');
+                    $note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                    break;              
+                default:
+                    //$this->flashMessenger()->addErrorMessage('This is not a valid job.');
+                    $note = '<div class="notification error">This is not a valid job.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";  
+                    break;
+            }
+        }else{
+            //$this->flashMessenger()->addErrorMessage('You are already booked for this day.');
+            //$note = '<div class="notification error">You are not able to accept this job.</div>';
+			$note = '<div class="notification error">Sorry - this job is no longer available.</div>';
+            echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+        }
+        
+    }elseif($puid) {        
+        /* Check the job status */
+        $sqlJobStatus = "SELECT job_status from job_post WHERE job_id = '$cjid'";   
+        $jobStatusArray = $adapter->query($sqlJobStatus, $adapter::QUERY_MODE_EXECUTE);
+        $jobStatus = $jobStatusArray->toArray();
+        $currentJobStatus = $jobStatus[0]['job_status'];
+
+        
+        /* Check if current user already accept this job or not */
+        $sqlAccept = "SELECT status from private_user_job_action WHERE puid='$puid' AND j_id = '$cjid'";    
+        $acceptUsers = $adapter->query($sqlAccept, $adapter::QUERY_MODE_EXECUTE);
+        $acceptUser = $acceptUsers->toArray();
+
+        switch ($currentJobStatus) {
+            case 1:
+                if (!empty($acceptUser)) {
+                    if ($acceptUser[0]['status'] == 1) {
+                        /* 
+                        *  Check the timeline of current job if current time is 30 
+                        *  min less than timeline time then user can not accept it
+                        */
+                        date_default_timezone_set('Europe/London');
+                        $currentDate = date("d/m/Y");                   
+                        $currentHr = date("H");
+                        $currentMin = date("i");
+                        $sqlTimeline = "SELECT job_id,job_date_new,job_timeline_hrs from job_post_timeline WHERE job_id = '$cjid' AND (job_timeline_status = '3' OR job_timeline_status = '1')";    
+                            $timeLineJobs = $adapter->query($sqlTimeline, $adapter::QUERY_MODE_EXECUTE);
+                            $timeLineJob = $timeLineJobs->toArray();                    
+                            $currentHRMin = date('d-m-Y H.i',strtotime("+30 minutes"));
+                        if (!empty($timeLineJob)) {
+                            $myDate = $timeLineJob[0]['job_date_new'];
+                            $myDateNew = explode('/', $myDate);
+                            
+                            $job_timeline_hrs = isset($timeLineJob[0]['job_timeline_hrs']) ? $timeLineJob[0]['job_timeline_hrs'] : '10';
+                            $d = mktime($job_timeline_hrs, 0, 0, $myDateNew[1], $myDateNew[0], $myDateNew[2]);                          
+
+                            $newJobDate = date('d-m-Y H.i', $d);
+
+                            /* Check current jo is Build type Or First come first serve */
+                            /*$sqlJobType = "SELECT job_type from job_post WHERE job_id = '$cjid'"; 
+                            $jobTypeArray = $adapter->query($sqlJobType, $adapter::QUERY_MODE_EXECUTE);
+                            $currentJobType = $jobTypeArray->toArray();
+                            if (!empty($currentJobType)) {
+                                $jobType = $currentJobType[0]['job_type'];
+                            }else{
+                                $jobType = 0;
+                            }*/
+                            if (strtotime($newJobDate) > strtotime($currentHRMin) ) {
+                                if ($jType == 1) {
+                                    $jobModel->jobStatusUpdate($cjid,4);
+                                    /* Upadate Private job action status*/
+                                    $sqlUPJAction = "UPDATE  private_user_job_action SET status = '3' WHERE puid='$puid' AND j_id = '$cjid'";
+                                    $executeUPJAction = $adapter->query($sqlUPJAction, $adapter::QUERY_MODE_EXECUTE);
+                                    /* Call mail function */
+                                    $mailController->sendAcceptMailToPrivateUser($puid,$cjid,$adapter); 
+
+                                    //$this->flashMessenger()->addSuccessMessage('Job accepted successfully.');
+                                    $note = '<div class="notification success">Job accepted successfully.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+
+                                }elseif($jType == 2) {
+                                    $sqlUPJAction = "UPDATE  private_user_job_action SET status = '2' WHERE puid='$puid' AND j_id = '$cjid'";
+                                    $executeUPJAction = $adapter->query($sqlUPJAction, $adapter::QUERY_MODE_EXECUTE);
+                                    /* Call mail function */
+                                    $mailController->sendApplyMailToPrivateUser($puid,$cjid,$adapter);
+                                    $note = '<div class="notification success">Job Applied successfully.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    //$this->flashMessenger()->addSuccessMessage('Job Applied successfully.');
+                                }
+                            }else{
+                                $sqlJobCheck = "SELECT job_date,job_start_time from job_post WHERE job_id = '$cjid' AND STR_TO_DATE(job_date, '%d/%m/%Y') > STR_TO_DATE('$currentDate', '%d/%m/%Y') ";  
+                                $isJobCheck = $adapter->query($sqlJobCheck, $adapter::QUERY_MODE_EXECUTE);
+                                $JobCheck = $isJobCheck->toArray();
+                                //print_r($JobCheck);
+                                if (!empty($JobCheck)) {
+                                    if ($jType == 1) {
+                                        $jobModel->jobStatusUpdate($cjid,4);
+                                        /* Upadate Private job action status*/
+                                        $sqlUPJAction = "UPDATE  private_user_job_action SET status = '3' WHERE puid='$puid' AND j_id = '$cjid'";
+                                        $executeUPJAction = $adapter->query($sqlUPJAction, $adapter::QUERY_MODE_EXECUTE);
+                                        /* Call mail function */
+                                        $mailController->sendAcceptMailToPrivateUser($puid,$cjid,$adapter); 
+
+                                        //$this->flashMessenger()->addSuccessMessage('Job accepted successfully.');
+                                        $note = '<div class="notification success">Job accepted successfully.</div>';
+                                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+
+                                    }elseif($jType == 2) {
+                                        $sqlUPJAction = "UPDATE  private_user_job_action SET status = '2' WHERE puid='$puid' AND j_id = '$cjid'";
+                                        $executeUPJAction = $adapter->query($sqlUPJAction, $adapter::QUERY_MODE_EXECUTE);
+                                        /* Call mail function */
+                                        $mailController->sendApplyMailToPrivateUser($puid,$cjid,$adapter);
+                                        $note = '<div class="notification success">Job Applied successfully.</div>';
+                                        echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                        //$this->flashMessenger()->addSuccessMessage('Job Applied successfully.');
+                                    }
+                                }else{
+                                    $note = '<div class="notification error">Sorry - this job is no longer available</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                }
+                            } 
+                        }else{
+                            //$this->flashMessenger()->addErrorMessage('Sorry - this job is no longer available.');
+                            $note = '<div class="notification error">Sorry - this job is no longer available.</div>';
+                            echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                        }
+                    }else{
+                            switch ($acceptUser[0]['status']) {
+                                case 2:
+                                    //$this->flashMessenger()->addErrorMessage('You have already apply for this job.');
+                                    $note = '<div class="notification error">You have already apply for this job.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                                case 3:
+                                    //$this->flashMessenger()->addErrorMessage('You have already accept  this job.');
+                                    $note = '<div class="notification error">You have already accepted this job.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                                case 4:
+                                    //$this->flashMessenger()->addErrorMessage('This job is done.');
+                                    $note = '<div class="notification error">This job is done.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                                
+                                default:
+                                    //$this->flashMessenger()->addErrorMessage('Invalid action.');
+                                    $note = '<div class="notification error">Invalid action.</div>';
+                                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                                    break;
+                            }
+                            
+                        }   
+                }
+                break;
+            case 2:
+                //$this->flashMessenger()->addErrorMessage('Sorry - this job is no longer available');
+                $note = '<div class="notification error">Sorry - this job is no longer available.</div>';
+                echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                break;
+            case 3:
+                //$this->flashMessenger()->addErrorMessage('Job is Disable');
+                $note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+                echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                break;
+            case 4:
+                if (!empty($acceptUser) && $acceptUser[0]['status'] == 2 ) {
+                    /*$f_note ='You have already accept this job.';
+                    $this->flashMessenger()->addErrorMessage($f_note);*/
+                    $note = '<div class="notification error">You have already accepted this job.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                }else{
+                    //$note = '<div class="notification error">Job is already accepted.</div>';
+                    $note = '<div class="notification error">Sorry - this job is no longer available.</div>';
+                    echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                    
+                    //$this->flashMessenger()->addErrorMessage('Job is already accept by another locum.'); 
+                }
+                break;
+            case 6:         
+                //$this->flashMessenger()->addErrorMessage('Job is already FREEZE by another locum.');
+                $note = '<div class="notification error">Job is already FREEZE by another locum.</div>';
+                echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                break;
+            case 7:
+                //$this->flashMessenger()->addErrorMessage('Job is Deleted.');
+                $note = '<div class="notification error">Job is Deleted.</div>';
+                echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                break;              
+            default:
+                //$this->flashMessenger()->addErrorMessage('This is not a valid job.');
+                $note = '<div class="notification error">This is not a valid job.</div>';
+                echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+                break;
+        }
+        
+    }else{
+        $this->redirect()->toUrl('/login-form');
+        return true;
+    }
+    

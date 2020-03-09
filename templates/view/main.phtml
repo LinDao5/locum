@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title><?php echo $this->escapeHtml($this->pageTitle); ?></title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="description" content="<?php echo $this->escapeHtml($this->metaDescription); ?>" />
+        <meta name="keywords" content="<?php echo $this->escapeHtml($this->metaKeywords); ?>" />
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/css/style.css'); ?>" rel="stylesheet" type="text/css">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/css/bootstrap.min.css'); ?>" rel="stylesheet" type="text/css">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/css/font-awesome.min.css'); ?>" rel="stylesheet" type="text/css">
+         <!-- jQuery -->
+    	<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.js'); ?>"></script>
+    	<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-1.10.2.min.js'); ?>"></script>
+        <!-- Bootstrap Core JavaScript -->
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/js/bootstrap.min.js'); ?>"></script>
+        <script src="<?php echo $this->cdn('/backend/js/vendor/jquery.browser.js'); ?>"></script>
+    </head>
+    <body>
+    <header id="header">
+	<div class="container">
+   		<div class="row">
+      		<nav class="navbar navbar-default">
+            	<!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="<?php echo $this->serverUrl();?>"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img').'/logo.png';?>" title="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" alt="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>"></a>
+                </div>            
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="top-main-nav pull-right">     
+                    <div class="uploadinfo pull-right">
+                        <ul>
+                            <?php if(isset($_SESSION['user_id'])&& $_SESSION['user_id']!=''){?>
+                             <li><a href="<?php echo $this->serverUrl();?>/user-profile" title="User Profile" alt="User Profile"><i class="fa fa-user"></i></a></li>
+                             <li><a href="<?php echo $this->serverUrl();?>/user-edit" title="Edit Profile" alt="Edit Profile"><i class="fa fa-pencil"></i></a></li>
+                             <li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="glyphicon glyphicon-off"></i></a></li>
+                            <?php }else{?>
+							<li><a href="javascript:void(0);" title="Log In" alt="Log In" data-toggle="modal" data-target="#login-form-model"><i class="fa fa-lock"></i></a></li>
+                            <li><a href="<?php echo $this->serverUrl();?>/register" title="Register" alt="Register"><i class="fa fa-user-plus"></i></a></li>
+                            <div id="login-form-model" class="modal fade" role="dialog">
+							<div class="modal-dialog">
+							    <!-- Modal content-->
+							    <div class="modal-content">
+									<div class="modal-header no-border-bottom">
+										<button type="button" class="close" data-dismiss="modal" onclick="close_dive('profession_question');">&times;</button>
+										<h4 class="modal-title">Login Form</h4>
+									</div>
+								    <div class="modal-body">
+									    <form id="one-page-form" action="/login-form" method="post" class="login-from" class="login-form-pop">
+		                                 <?php if(!empty($return['error_message'])): ?>
+		                                        <div class="notification error"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+		                                    <?php endif; ?>
+		                                    <fieldset class="has-warning">
+		                                        <span class="block input-glyphicon input-glyphicon-right">
+		                                            <input name="login" type="text" class="form-control margin-bottom" placeholder="<?php echo $this->escapeHtml($this->translate('Login')); ?>" autofocus required />
+		                                        </span>
+		                                        <span class="block input-glyphicon input-glyphicon-right">
+		                                            <input name="password" type="password" class="form-control margin-bottom" placeholder="<?php echo $this->escapeHtml($this->translate('Password')); ?>" required />
+		                                        </span>
+		                    
+		                                        <div class="clearfix buttons">
+		                                            <button class="pull-left btn btn-small btn-warning">
+		                                                <i class="glyphicon glyphicon-log-in"></i>
+		                                                <?php echo $this->escapeHtml($this->translate('Log In')); ?>
+		                                            </button>
+		                                            <a href="<?php echo $this->serverUrl();?>/forgot-password" class="pull-right">Forgot Password?</a>
+		                                        </div>
+		                                    </fieldset>
+		                                </form>
+								        
+								    </div>
+							      
+							    </div>
+							  </div>						  
+						</div>
+                            <?php }?>
+                        </ul>
+                    </div>
+                    
+                    <div class="collapse navbar-collapse pull-right" id="bs-example-navbar-collapse-1">
+                        <?php echo $this->partial('header'); ?>
+                    </div><!-- /.navbar-collapse -->
+                </div>
+            </nav>
+        </div>
+    </div>
+    </header>
+    <?php echo $this->content; ?>
+
+    <?php echo $this->partial('footer'); ?>
+<!-- date picker -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script>
+	  $(function() {
+		$( "#datepicker" ).datepicker({
+			
+			changeMonth: true,
+            changeYear: true,
+            showButtonPanel: true,
+            dateFormat: "yy-mm-dd",
+			yearRange: '1950:2000', // specifying a hard coded year range
+            onClose: function(dateText, inst) { 
+                var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
+                var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
+                $(this).datepicker('setDate', new Date(year, month, 1));
+            }
+		});
+	  });
+   </script>
+    <!--  date picker end -->
+    
+    <script type="text/javascript">
+        $("#package-section").hide();
+        /*$('#user_type').on('change', function() {
+            if( this.value == '3'){
+                $("#package-section").show(1000);
+            }else{
+                $("#package-section").hide(1000);
+            }
+        });*/
+		$("#normal-submit").hide();
+		$("#branze-benifits").hide();
+		$("#silver-benifits").hide();
+		$("#gold-benifits").hide();
+		$("#step2").hide();
+		$("#step3").hide();
+		$("#step4").hide();
+		$('#personal_info').on('click', function() {
+		   var user_type=$("#user_type").val();
+		   var profession_type=$("#profession_type").val();
+		   //alert(user_type);
+		   if(user_type==''){
+		   		$("#user_error").html("Please select role.");
+				$("#profession_error").html("");
+				$("#user_type").focus();
+				
+				$('#user_type').change(function() {
+					var user_type=$('#user_type').val();
+		            var role_pack=$("#role_pack").val();
+					var no_role_pack=$("#no_role_pack").val();
+					if(user_type==""){
+					    $("#user_error").html("Please select user type.");
+						$("#user_type").focus();
+						return false;
+					}else{
+					    $("#user_error").html("");
+						if(user_type==no_role_pack){ //alert('Inside'+user_type);
+							$("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png");
+						}else{ //alert('Paypal Process..');
+						
+							$("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+						}
+					}
+				    		
+				});
+				
+		   }else if(profession_type==''){
+		    	$("#user_error").html("");
+		    	$("#profession_error").html("Please select your profession.");
+				$("#profession_type").focus();
+				$('#profession_type').change(function(){
+					var profession_type=$('#profession_type').val();
+					if(profession_type==""){
+					    $("#profession_error").html("Please select your profession.");
+						$("#profession_type").focus();
+						return false;
+					}else{
+					    $("#profession_error").html("");
+					}
+				});
+		   }else{
+			    /// code to change submit button
+				var user_type=$('#user_type').val();
+		        var role_pack=$("#role_pack").val();
+				var no_role_pack=$("#no_role_pack").val();
+				if(user_type==no_role_pack){ //alert('Inside'+user_type);
+					$("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png");
+				}else{ //alert('Paypal Process..');
+					
+					$("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+				}
+		   		$("#step1").hide();
+		   		$("#step2").show();
+				
+		   }
+        });
+		
+		$('#back_personal').on('click', function() {
+		   $("#step2").hide();
+		   $("#step1").show();
+        });
+		$('#package_info').on('click', function() {
+		   $("#step1").hide();
+		   
+			   var email_val=$("#email").val();
+			   var fname_val=$("#fname").val();
+			   var lname_val=$("#lname").val();
+			   var uname_val=$("#login").val();
+			   var upass_val=$("#upassword").val();
+			   var company_val=$("#company").val();
+			   var address_val=$("#address").val();
+			   var city_val=$("#city").val();
+			   var zip_val=$("#zip").val();
+			   var telphone_val=$("#telephone").val();
+			   var mobile_val=$("#mobile").val();
+			   var dob_val=$("#datepicker").val();
+			   var gender_val=$("#gender").val();
+			   var profile_pic_val=$("#profile_pic").val();
+			   if(email_val==''){
+			   		$('#email_error').html('Please enter email address.');
+					$("#email").focus();
+					$('#email').on('keyup', function() {
+						var regex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+						var email_val=$('#email').val();
+						if(!regex.test(email_val)) {
+						 $('#email_error').html('Please enter valid email address.');
+						 $("#email").focus();
+        	             return false;
+						}else{
+						 	$('#email_error').html('');
+						 }
+					});
+			   }
+			   else if(fname_val==''){
+			   		$('#email_error').html('');
+					$('#fname_error').html('Please enter your first name.');
+					$("#fname").focus();
+					$('#fname').on('keyup', function() {
+					    var fmatch=/^[A-Za-z]+$/;
+						var f_len = $('#fname').val().length;
+						var fname = $('#fname').val();
+						if(f_len<3 || !fmatch.test(fname)){ 
+						 	$('#fname_error').html('Please enter your first name with letters minimum 3.');
+							$("#fname").focus();
+        	                return false;
+						 }else{
+						 	$('#fname_error').html('');
+						 }
+					});
+			   }
+			   else if(lname_val==''){
+			        $('#fname_error').html('');
+			        $('#lname_error').html('Please enter your last name.');
+					$("#lname").focus();
+			   		$('#lname').on('keyup', function() {
+						var lmatch=/^[A-Za-z]+$/;
+					    var l_len = $('#lname').val().length;
+						var lname = $('#lname').val();
+						if(l_len<3 || !lmatch.test(lname)){
+						 	$('#lname_error').html('Please enter your last name with letters minimum 3.');
+							$("#lname").focus();
+        	                return false;
+						 }else{
+						 	$('#lname_error').html('');
+						 }
+						 
+					});
+			   }
+			   else if(uname_val==''){
+			        $('#lname_error').html('');
+			   		$('#login_error').html('Please enter username.');
+					$("#login").focus();
+					$('#login').on('keyup', function() {
+						var logmatch=/^[A-Za-z]+$/;
+					    var log_len = $('#login').val().length;
+						var login = $('#login').val();
+						if(log_len<6 || !logmatch.test(login)){
+						 	$('#login_error').html('Please enter username with letters minimum 6.');
+							$("#login").focus();
+        	                return false;
+						 }else{
+						 	$('#login_error').html('');
+						 }
+					});
+			   }
+			   else if(upass_val==''){
+			        $('#login_error').html('');
+			   		$('#upassword_error').html('Please enter password.');
+					$("#upassword").focus();
+					$('#upassword').on('keyup', function() {
+						var pass_val=$('#upassword').val();
+						var p_len = pass_val.length;
+						if(p_len<6) {
+						  $('#upassword_error').html('Please enter proper password with at least six characters.');
+						  $("#upassword").focus();
+        	                return false;
+					    
+						}else{
+						 	$('#upassword_error').html('');
+						 }
+					});
+			   }
+			   else if(company_val==''){
+			        $('#upassword_error').html('');
+			   		$('#company_error').html('Please enter company name.');
+					$("#company").focus();
+			   		$('#company').on('keyup', function() {
+					   var com_len = $('#company').val().length;
+					   if(com_len<6){
+					       $('#company_error').html('Please enter company name with minimum 6 characters.');
+						   $("#company").focus();
+        	               return false;
+					   }else{
+							$('#company_error').html('');
+					   }
+					});
+			   }
+			   else if(address_val==''){
+			        $('#company_error').html('');
+			   		$('#address_error').html('Please enter address.');
+					$("#address").focus();
+					$('#address').on('keyup', function() {
+					    var add_len = $('#address').val().length;
+						if(add_len<6){
+							$('#address_error').html('Please enter address full address.');
+							$("#address").focus();
+        	                return false;
+						}else{
+							$('#address_error').html('');
+						}
+					});
+			   }
+			   else if(city_val==''){
+			   		$('#address_error').html('');
+					$('#city_error').html('Please enter city name.');
+					$("#city").focus();
+					$('#city').on('keyup', function() {
+						var city_len = $('#city').val().length;
+						if(city_len<6){
+							$('#city_error').html('Please enter city name.');
+							$("#city").focus();
+        	                return false;
+						}else{
+							$('#city_error').html('');
+						}
+					});
+			   }
+			   else if(zip_val==''){
+			        $('#city_error').html('');
+			   		$('#zip_error').html('Please enter post code/zip code.');
+					$("#zip").focus();
+					$('#zip').on('keyup', function() {
+						var zip = $('#zip').val();
+						var reg = /^[0-9]+$/;
+						if ((zip.length)< 5 || (zip.length)>5 ){
+							$('#zip_error').html('Please enter post code/zip code should only be 5 digits.');
+							$("#zip").focus();
+        	                return false;
+						}
+						else if (!reg.test(zip)){
+							$('#zip_error').html('Please enter post code/zip code should be numbers only.');
+							$("#zip").focus();
+        	                return false;
+						}else{
+							$('#zip_error').html('');
+						}
+					});
+			   }
+			   else if(telphone_val==''){
+			        $('#zip_error').html('');
+			  		$('#telephone_error').html('Please enter telephone number.');
+					$("#telephone").focus();
+					$('#telephone').on('keyup', function() {
+						var telephone = $('#telephone').val();
+						var reg = /^[0-9]+$/;
+						if ((telephone.length)< 10){
+							$('#telephone_error').html('Please enter telephone number should only be 10 digits.');
+							$("#telephone").focus();
+        	                return false;
+						}
+						else if ( !reg.test(telephone)){
+							$('#telephone_error').html('Please enter telephone should be numbers only.');
+							$("#telephone").focus();
+        	                return false;
+						}else{
+							$('#telephone_error').html('');
+						}
+					});
+			   }
+			   else if(mobile_val==''){
+			        $('#telephone_error').html('');
+			        $('#mobile_error').html('Please enter mmobile number.');
+					$("#mobile").focus();
+					$('#mobile').on('keyup', function() {
+						var mobile = $('#mobile').val();
+						var reg = /^[0-9]+$/;
+						if ((mobile.length)< 10){
+							$('#mobile_error').html('Please enter mobile number should only be 10 digits.');
+							$("#mobile").focus();
+        	                return false;
+						}
+						else if ( !reg.test(mobile)){
+							$('#mobile_error').html('Please enter mobile should be numbers only.');
+							$("#mobile").focus();
+        	                return false;
+						}else{
+							$('#mobile_error').html('');
+						}
+					});
+			   }
+			   else if(dob_val==''){
+			        $('#mobile_error').html('');
+			   		$('#dob_error').html('Please enter date of birth.');
+					$("#datepicker").focus();
+		/*$('#datepicker').on('keyup', function() {
+						var dob=$('#datepicker').val();
+						var year = new Date();
+						var curr_year=year.getFullYear();
+						var array = new Array();
+						var current_ye=dob.split('-'); 
+						var curr_ye_eight=parseInt(current_ye[0])-18;
+						if(!dob.match(/^\d{4}-\d{1,2}-\d{1,2}$/) || current_ye[0]==curr_year){
+							$('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+							if(current_ye[0]==curr_year){
+                               $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+							}
+							("#datepicker").focus();
+        	                return false;
+						}if(dob.match(/^\d{4}-\d{1,2}-\d{1,2}$/) && (current_ye[0]==curr_year || current_ye[0]==curr_ye_eight )){
+                              $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+							  $("#datepicker").focus();
+						}
+						else{
+							$('#dob_error').html('');
+						}
+		});*/
+			   
+			   }
+			   else if(gender_val==''){
+			   		$('#dob_error').html('');
+					$('#gender_error').html('Please select gender.');
+					$("#gender").focus();
+					$('#gender').on('change', function() {
+					    var gender = $('#mobile').val();
+						if(gender1=''){
+						    $('#gender_error').html('Please select gender.');
+							$("#gender").focus();
+							return false;
+						}else{
+							$('#gender_error').html('');
+						}
+					});
+			   }
+			  /*else if(profile_pic_val==''){
+			        $('#gender_error').html('');
+			        $('#upload_error').html('Please select profile picture.');
+					$("#profile_pic").focus();
+					$('#profile_pic').on('keyup', function() {
+					 var avatar = $("#profile_pic").val();
+                    var extension = avatar.split('.').pop().toUpperCase();
+
+					if(avatar.length < 1) {
+						avatarok = 0;
+					}
+					else if (extension!="PNG" && extension!="JPG" && extension!="GIF" && extension!="JPEG"){
+						avatarok = 0;
+						alert("invalid extension "+extension);
+						$('#upload_error').html("invalid extension "+extension);
+					}	
+                    $('#upload_error').html('');
+					 var user_type=$('#user_type').val();
+		             var role_pack=$("#role_pack").val();
+					 var no_role_pack=$("#no_role_pack").val();
+					 var profile_pic_val=$("#profile_pic").val();
+					 if(profile_pic_val!='' && user_type==no_role_pack){
+						document.forms["register"].submit();
+					 }
+				  });
+			   }*/
+			   else{
+				  // check for role
+                     var user_type=$('#user_type').val();
+		             var role_pack=$("#role_pack").val();
+					 var no_role_pack=$("#no_role_pack").val();
+					 var profile_pic_val=$("#profile_pic").val();
+					 if(profile_pic_val!='' && user_type==no_role_pack){ 
+						document.forms["register"].submit();
+					 }else{
+						 $("#step1").hide();
+						 $("#step2").hide();
+						 $("#step3").show();
+					 }
+
+			     
+			   }
+		
+		   
+        });
+		
+		$('#save_info').on('click', function() {
+		   
+        });
+		
+		$('#back_paypal').on('click', function() {
+		   $("#step1").hide();
+		   $("#step2").show();
+		   $("#step4").hide();
+		   $("#step3").hide();
+        });
+		$('#paypal_direct').on('click', function() {
+		   var pack_val=$('#package_val').val(); 
+		   var user_type=$('#user_type').val();
+		   var role_pack=$("#role_pack").val(); // role should be same as user type for adding package
+		   $("#step1").hide();
+		   $("#step2").hide();
+		   $("#step4").hide();
+		   if(pack_val=='' && user_type==role_pack){
+		   		$("#package_error").html("Please select package.");
+		   }else if($('input[name=paypal_method]:checked').length<=0){
+		   		$("#package_error").html("Please select payment method.");
+		   }
+		   else{
+		   		$("#step1").hide();
+		   		$("#step2").hide();
+		  		$("#step3").hide();
+		   		$("#step4").show();
+		   }
+        });
+		
+		$('#pack-bronze').on('click', function() {
+		   var b_val=$("#bronze").val();
+		   var bronze_id=$("#bronze_id").val();
+		   $("#bronze-benifits").show();
+		   $("#gold-benifits").hide();
+		   $("#silver-benifits").show();
+		   $("#package_val").val("Bronze");
+		   $("#package-final").val(b_val);
+		   $("#package_id").val(bronze_id);
+		   $("#package_error").html("");
+        });
+		$('#pack-silver').on('click', function() {
+		   var s_val=$("#silver").val();
+		   var silver_id=$("#silver_id").val();
+		   $("#silver-benifits").show();
+		   $("#bronze-benifits").hide();
+		   $("#gold-benifits").hide();
+		   $("#package_val").val("Silver");
+		   $("#package-final").val(s_val);
+		   $("#package_id").val(silver_id);
+		   $("#package_error").html("");
+        });
+		$('#pack-gold').on('click', function() {
+		   var g_val=$("#gold").val();
+		   var gold_id=$("#gold_id").val();
+		   $("#gold-benifits").show();
+		   $("#bronze-benifits").hide();
+		   $("#silver-benifits").hide();
+		   $("#package_val").val("Gold");
+		   $("#package-final").val(g_val);
+		   $("#package_id").val(gold_id);
+		   $("#package_error").html("");
+		   
+        });
+		/***on keyup***/
+		$('#user_type').change(function() {
+			if(user_type==""){
+				$("#user_error").html("Please select user type.");
+				$("#user_type").focus();
+				return false;
+				$('#user_type').change(function() {
+					var user_type=$('#user_type').val();
+		            var role_pack=$("#role_pack").val();
+					var no_role_pack=$("#no_role_pack").val();
+		            var email_exists=$("email_exists").val();
+					 if(email_exists==1){
+						 $("#email_error").html("Email already exists.");
+					 }else if(profile_pic_val!='' && user_type==no_role_pack){ 
+						document.forms["register"].submit();
+					 }else{
+					    $("#user_error").html("");
+						if(user_type==no_role_pack){
+							$("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png");
+						}else{ //alert('Paypal Process..');
+							
+							$("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+							
+						}
+					}
+				    		
+				});
+				
+				
+			}else{
+				$("#user_error").html("");
+			}
+				
+		});
+		$('#profession_type').change(function(){
+			if(profession_type==""){
+				$("#profession_error").html("Please select your profession.");
+				$("#profession_type").focus();
+				return false;
+			}else{
+				$("#profession_error").html("");
+			}
+		});
+		$('#email').on('keyup', function() {
+			var regex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+			var email_val=$('#email').val();
+			if(!regex.test(email_val)) {
+			 $('#email_error').html('Please enter valid email address.');
+			 $("#email").focus();
+			 return false;
+			}else{
+				$.ajax({
+					'url'   :'/ajax-request',
+					'type'  :'POST',
+					'data'  :{'email_check':'check','email':email_val},
+					'success':function(result){ alert(result);
+						console.log(result);
+						if(result=="1"){ 
+						   $('#email_error').html('Email already exists.');
+						   $("#email_exists").val(1);
+						}else{
+						   $('#email_error').html('');
+						}
+					}
+				});
+			 }
+		});
+		$('#fname').on('keyup', function() {
+			var fmatch=/^[A-Za-z]+$/;
+			var f_len = $('#fname').val().length;
+			var fname = $('#fname').val();
+			if(f_len<3 || !fmatch.test(fname)){ 
+				$('#fname_error').html('Please enter your first name with letters minimum 3.');
+				$("#fname").focus();
+				return false;
+			 }else{
+				$('#fname_error').html('');
+			 }
+		});
+		$('#lname').on('keyup', function() {
+			var lmatch=/^[A-Za-z]+$/;
+			var l_len = $('#lname').val().length;
+			var lname = $('#lname').val();
+			if(l_len<3 || !lmatch.test(lname)){
+				$('#lname_error').html('Please enter your last name with letters minimum 3.');
+				$("#lname").focus();
+				return false;
+			 }else{
+				$('#lname_error').html('');
+			 }
+			 
+		});
+		$('#login').on('keyup', function() {
+			var logmatch=/^[A-Za-z]+$/;
+			var log_len = $('#login').val().length;
+			var login = $('#login').val();
+			if(log_len<6 || !logmatch.test(login)){
+				$('#login_error').html('Please enter username with letters minimum 6.');
+				$("#login").focus();
+				return false;
+			 }else{
+				$('#login_error').html('');
+			 }
+		});
+		$('#upassword').on('keyup', function() {
+			var pass_val=$('#upassword').val();
+			var p_len = pass_val.length;
+			if(p_len<6) {
+			  $('#upassword_error').html('Please enter proper password with at least six characters.');
+			  $("#upassword").focus();
+				return false;
+			
+			}else{
+				$('#upassword_error').html('');
+			 }
+		});
+		$('#company').on('keyup', function() {
+		   var com_len = $('#company').val().length;
+		   if(com_len<6){
+			   $('#company_error').html('Please enter company name with minimum 6 characters.');
+			   $("#company").focus();
+			   return false;
+		   }else{
+				$('#company_error').html('');
+		   }
+		});
+		$('#address').on('keyup', function() {
+			var add_len = $('#address').val().length;
+			if(add_len<6){
+				$('#address_error').html('Please enter address full address.');
+				$("#address").focus();
+				return false;
+			}else{
+				$('#address_error').html('');
+			}
+		});
+		$('#city').on('keyup', function() {
+			var city_len = $('#city').val().length;
+			if(city_len<6){
+				$('#city_error').html('Please enter city name.');
+				$("#city").focus();
+				return false;
+			}else{
+				$('#city_error').html('');
+			}
+		});	
+		$('#zip').on('keyup', function() {
+			var zip = $('#zip').val();
+			var reg = /^[0-9]+$/;
+			if ((zip.length)< 5 || (zip.length)>5 ){
+				$('#zip_error').html('Please enter post code/zip code should only be 5 digits.');
+				$("#zip").focus();
+				return false;
+			}
+			else if (!reg.test(zip)){
+				$('#zip_error').html('Please enter post code/zip code should be numbers only.');
+				$("#zip").focus();
+				return false;
+			}else{
+				$('#zip_error').html('');
+			}
+		});
+		$('#telephone').on('keyup', function() {
+			var telephone = $('#telephone').val();
+			var reg = /^[0-9]+$/;
+			if ((telephone.length)< 10){
+				$('#telephone_error').html('Please enter telephone number should only be 10 digits.');
+				$("#telephone").focus();
+				return false;
+			}
+			else if ( !reg.test(telephone)){
+				$('#telephone_error').html('Please enter telephone should be numbers only.');
+				$("#telephone").focus();
+				return false;
+			}else{
+				$('#telephone_error').html('');
+			}
+		});
+		$('#mobile').on('keyup', function() {
+			var mobile = $('#mobile').val();
+			var reg = /^[0-9]+$/;
+			if ((mobile.length)< 10){
+				$('#mobile_error').html('Please enter mobile number should only be 10 digits.');
+				$("#mobile").focus();
+				return false;
+			}
+			else if ( !reg.test(mobile)){
+				$('#mobile_error').html('Please enter mobile should be numbers only.');
+				$("#mobile").focus();
+				return false;
+			}else{
+				$('#mobile_error').html('');
+			}
+		});
+		$('#datepicker').on('keyup', function() {
+			var dob=$('#datepicker').val();
+			var year = new Date();
+			var curr_year=year.getFullYear();
+			var array = new Array();
+			var current_ye=dob.split('-'); 
+			var curr_ye_eight=parseInt(current_ye[0])-18;
+			if(!dob.match(/^\d{4}-\d{1,2}-\d{1,2}$/) || current_ye[0]==curr_year){
+				$('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+				if(current_ye[0]==curr_year){
+				   $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+				}
+				$("#datepicker").focus();
+				return false;
+			}if(dob.match(/^\d{4}-\d{1,2}-\d{1,2}$/) && (current_ye[0]==curr_year || current_ye[0]==curr_ye_eight )){
+				  $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+				  $("#datepicker").focus();
+			}
+			else{
+				$('#dob_error').html('');
+			}
+		});
+		$('#gender').on('change', function() {
+			var gender = $('#mobile').val();
+			if(gender1=''){
+				$('#gender_error').html('Please select gender.');
+				$("#gender").focus();
+				return false;
+			}else{
+				$('#gender_error').html('');
+			}
+		});
+		$('#profile_pic').on('keyup', function() {
+			var avatar = $("#profile_pic").val();
+			var extension = avatar.split('.').pop().toUpperCase();
+
+			if(avatar.length < 1) {
+				avatarok = 0;
+			}
+			else if (extension!="PNG" && extension!="JPG" && extension!="GIF" && extension!="JPEG"){
+				avatarok = 0;
+				alert("invalid extension "+extension);
+				$('#upload_error').html("invalid extension "+extension);
+			}	
+			$('#upload_error').html('');
+			 var user_type=$('#user_type').val();
+			 var role_pack=$("#role_pack").val();
+			 var no_role_pack=$("#no_role_pack").val();
+			 var profile_pic_val=$("#profile_pic").val();
+			 if(profile_pic_val!='' && user_type==no_role_pack){
+				document.forms["register"].submit();
+			 }
+		  });
+		/******On Keyup end******/
+		
+		/*$('#cpassword').on('keyup', function() {
+		    var cpass_val=$('#cpassword').val();
+		    var upass_val=$('#upassword').val();
+            if(cpass_val!=upass_val) {
+		     $('#cpassword_error').html('Confirm password does not match with current password value.')
+		    }
+        });*/
+		$('.ans_type').on('click', function() {
+	      alert('insdie');
+        });
+	function logout_user(obj)
+	{ 
+		var str=obj.value; //alert(obj);
+	   if(str!=""){
+	   $.ajax({
+					'url'   :'/ajax-request',
+					'type'  :'POST',
+					'data'  :{'user_id':str, 'log_out':'1'},
+					'success':function(result){ //alert(result);
+						console.log(result);
+						if(result=="1"){ 
+						    window.location.href = "<?php echo $this->serverUrl();?>";
+						}
+					}
+				});
+	   }
+	}
+    </script>
+    <script type="text/javascript">
+    	/*$( "form.login-form-pop" ).submit(function( event ) {
+    		var loginData = $('form.login-form-pop').serialize();
+    		$.ajax({
+				'url'   :'/login-form',
+				'type'  :'POST',
+				'data'  : loginData,
+				'success':function(result){ 
+					alert(result);
+					
+				}
+			});
+    	});*/
+    </script>
+    </body>
+</html>

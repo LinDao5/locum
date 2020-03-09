@@ -1,0 +1,652 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+$paginatorEmpDen = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questionsEmpDen));
+$paginatorEmpDen->setItemCountPerPage(10);
+$paginatorEmpDen->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorEmpOpt = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questionsEmpOpt));
+$paginatorEmpOpt->setItemCountPerPage(10);
+$paginatorEmpOpt->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorEmpPha = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questionsEmpPha));
+$paginatorEmpPha->setItemCountPerPage(10);
+$paginatorEmpPha->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+
+$paginatorFreDen = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questionsFreDen));
+$paginatorFreDen->setItemCountPerPage(10);
+$paginatorFreDen->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorFreOpt = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questionsFreOpt));
+$paginatorFreOpt->setItemCountPerPage(10);
+$paginatorFreOpt->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorFrePha = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questionsFrePha));
+$paginatorFrePha->setItemCountPerPage(10);
+$paginatorFrePha->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+
+
+?>
+<?php
+    $qus = 'fre';
+    if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+       $qus = 'emp';
+    }
+    $cat = 'den';
+    if (isset($_GET['c'])) {
+        if ($_GET['c'] == 'opc') {
+            $cat = 'opc';
+        }elseif($_GET['c'] == 'pha'){
+            $cat = 'pha';
+        }
+       
+    }
+?>
+<div class="question">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($qus == 'fre') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=fre">Freelancer</a></li>
+            <li class="<?php if ($qus == 'emp') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=emp">Employer</a></li>
+        </ul>
+    </div>
+    
+    <?php if ($qus == 'emp') {?>
+        <div id="fre-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <li class="<?php if ($cat == 'den') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=emp&c=den">Dentist</a></li>
+                    <li class="<?php if ($cat == 'opc') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=emp&c=opc">Opticians</a></li>
+                    <li class="<?php if ($cat == 'pha') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=emp&c=pha">Pharmacist</a></li>
+                </ul>
+            </div>
+            <?php 
+            switch ($cat) {
+                case 'opc':
+            ?>
+                <table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <!-- <col width="10%">
+                        <col width="10%"> -->
+                        <col width="50%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="1%">
+                        <col width="1%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+                            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <?php
+                        foreach ($paginatorEmpOpt as $question): ?>
+                            <tr>
+                                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                                <td><?php echo $this->escapeHtml($question->getEquestion()); ?></td>
+                                <td><?php 
+                                        switch ($question->getTypeKey()) {
+                                            case '1':
+                                                    echo "Text Field";
+                                                break;
+                                            case '2':
+                                                    echo "Select Option";
+                                                break;
+                                            case '3':
+                                                    echo "Multi Select Option";
+                                                break;
+                                            default:
+                                                    echo "-";
+                                                break;
+                                        }
+                                    ?>
+                                </td>
+                                <?php 
+                                    $allOption = unserialize($question->getTypeValue());
+                                ?>
+                                <td>
+                                    <?php
+                                        if(!empty($allOption)){
+                                            $i = 1;
+                                            foreach ($allOption as $key => $value) {
+                                                if (!empty($value)) {
+                                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                                }else{
+                                                    echo "<em>Null</em>";
+                                                }
+                                                
+                                            }   
+                                        }else{
+                                            echo "Null";
+                                        }
+                                        
+                                    ?>
+                                </td>
+                                <td><?php echo $this->escapeHtml($question->getSortOrder()); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php echo $this->paginationControl($paginatorEmpOpt, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question?q=emp&c=opc'));?>
+                </div>
+            <?php
+                break;
+                case 'pha':
+            ?>
+                <table class="table clickable table-striped table-hover">
+                   <colgroup>
+                        <!-- <col width="10%">
+                        <col width="10%"> -->
+                        <col width="50%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="1%">
+                        <col width="1%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+                            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <?php
+                        foreach ($paginatorEmpPha as $question): ?>
+                            <tr>
+                                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                                <td><?php echo $this->escapeHtml($question->getEquestion()); ?></td>
+                                <td><?php 
+                                        switch ($question->getTypeKey()) {
+                                            case '1':
+                                                    echo "Text Field";
+                                                break;
+                                            case '2':
+                                                    echo "Select Option";
+                                                break;
+                                            case '3':
+                                                    echo "Multi Select Option";
+                                                break;
+                                            default:
+                                                    echo "-";
+                                                break;
+                                        }
+                                    ?>
+                                </td>
+                                <?php 
+                                    $allOption = unserialize($question->getTypeValue());
+                                ?>
+                                <td>
+                                    <?php
+                                        if(!empty($allOption)){
+                                            $i = 1;
+                                            foreach ($allOption as $key => $value) {
+                                                if (!empty($value)) {
+                                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                                }else{
+                                                    echo "<em>Null</em>";
+                                                }
+                                                
+                                            }   
+                                        }else{
+                                            echo "Null";
+                                        }
+                                        
+                                    ?>
+                                </td>
+                                <td><?php echo $this->escapeHtml($question->getSortOrder()); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                    </a>
+                                </td>
+
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php echo $this->paginationControl($paginatorEmpPha, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question?q=emp&c=pha'));?>
+                </div>
+            <?php
+                break;
+                default:
+            ?>
+                <table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <!-- <col width="10%">
+                        <col width="10%"> -->
+                        <col width="50%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="1%">
+                        <col width="1%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+                            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <?php
+                        foreach ($paginatorEmpDen as $question): ?>
+                            <tr>
+                                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                                <td><?php echo $this->escapeHtml($question->getEquestion()); ?></td>
+                                <td><?php 
+                                        switch ($question->getTypeKey()) {
+                                            case '1':
+                                                    echo "Text Field";
+                                                break;
+                                            case '2':
+                                                    echo "Select Option";
+                                                break;
+                                            case '3':
+                                                    echo "Multi Select Option";
+                                                break;
+                                            default:
+                                                    echo "-";
+                                                break;
+                                        }
+                                    ?>
+                                </td>
+                                <?php 
+                                    $allOption = unserialize($question->getTypeValue());
+                                ?>
+                                <td>
+                                    <?php
+                                        if(!empty($allOption)){
+                                            $i = 1;
+                                            foreach ($allOption as $key => $value) {
+                                                if (!empty($value)) {
+                                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                                }else{
+                                                    echo "<em>Null</em>";
+                                                }
+                                                
+                                            }   
+                                        }else{
+                                            echo "Null";
+                                        }
+                                        
+                                    ?>
+                                </td>
+                                <td><?php echo $this->escapeHtml($question->getSortOrder()); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php echo $this->paginationControl($paginatorEmpDen, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question?q=emp&c=den'));?>
+                </div>
+            <?php 
+                break;
+            } ?>
+            
+        </div>
+    <?php }elseif($qus == 'fre'){ ?>
+        <div id="emp-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <li class="<?php if ($cat == 'den') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=fre&c=den">Dentist</a></li>
+                    <li class="<?php if ($cat == 'opc') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=fre&c=opc">Opticians</a></li>
+                    <li class="<?php if ($cat == 'pha') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/question?q=fre&c=pha">Pharmacist</a></li>
+                </ul>
+            </div>
+            <?php 
+            switch ($cat) {
+                case 'opc':
+            ?>
+                <table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <!-- <col width="10%">
+                        <col width="10%"> -->
+                        <col width="50%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="1%">
+                        <col width="1%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+                            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <?php
+                        foreach ($paginatorFreOpt as $question): ?>
+                            <tr>
+                                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                                <td><?php echo $this->escapeHtml($question->getFquestion()); ?></td>
+                                <td><?php 
+                                        switch ($question->getTypeKey()) {
+                                            case '1':
+                                                    echo "Text Field";
+                                                break;
+                                            case '2':
+                                                    echo "Select Option";
+                                                break;
+                                            case '3':
+                                                    echo "Multi Select Option";
+                                                break;
+                                            default:
+                                                    echo "-";
+                                                break;
+                                        }
+                                    ?>
+                                </td>
+                                <?php 
+                                    $allOption = unserialize($question->getTypeValue());
+                                ?>
+                                <td>
+                                    <?php
+                                        if(!empty($allOption)){
+                                            $i = 1;
+                                            foreach ($allOption as $key => $value) {
+                                                if (!empty($value)) {
+                                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                                }else{
+                                                    echo "<em>Null</em>";
+                                                }
+                                                
+                                            }   
+                                        }else{
+                                            echo "Null";
+                                        }
+                                        
+                                    ?>
+                                </td>
+                                <td><?php echo $this->escapeHtml($question->getSortOrder()); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php echo $this->paginationControl($paginatorFreOpt, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question?q=fre&c=opc'));?>
+                </div>
+            <?php
+                break;
+                case 'pha':
+            ?>
+                <table class="table clickable table-striped table-hover">
+                   <colgroup>
+                        <!-- <col width="10%">
+                        <col width="10%"> -->
+                        <col width="50%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="1%">
+                        <col width="1%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+                            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <?php
+                        foreach ($paginatorFrePha as $question): ?>
+                            <tr>
+                                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                                <td><?php echo $this->escapeHtml($question->getFquestion()); ?></td>
+                                <td><?php 
+                                        switch ($question->getTypeKey()) {
+                                            case '1':
+                                                    echo "Text Field";
+                                                break;
+                                            case '2':
+                                                    echo "Select Option";
+                                                break;
+                                            case '3':
+                                                    echo "Multi Select Option";
+                                                break;
+                                            default:
+                                                    echo "-";
+                                                break;
+                                        }
+                                    ?>
+                                </td>
+                                <?php 
+                                    $allOption = unserialize($question->getTypeValue());
+                                ?>
+                                <td>
+                                    <?php
+                                        if(!empty($allOption)){
+                                            $i = 1;
+                                            foreach ($allOption as $key => $value) {
+                                                if (!empty($value)) {
+                                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                                }else{
+                                                    echo "<em>Null</em>";
+                                                }
+                                                
+                                            }   
+                                        }else{
+                                            echo "Null";
+                                        }
+                                        
+                                    ?>
+                                </td>
+                                <td><?php echo $this->escapeHtml($question->getSortOrder()); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php echo $this->paginationControl($paginatorFrePha, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question?q=fre&c=pha'));?>
+                </div>
+            <?php
+                break;
+                default:
+            ?>
+                <table class="table clickable table-striped table-hover">
+                   <colgroup>
+                        <!-- <col width="10%">
+                        <col width="10%"> -->
+                        <col width="50%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="1%">
+                        <col width="1%">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+                            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       <?php
+                        foreach ($paginatorFreDen as $question): ?>
+                            <tr>
+                                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                                <td><?php echo $this->escapeHtml($question->getFquestion()); ?></td>
+                                <td><?php 
+                                        switch ($question->getTypeKey()) {
+                                            case '1':
+                                                    echo "Text Field";
+                                                break;
+                                            case '2':
+                                                    echo "Select Option";
+                                                break;
+                                            case '3':
+                                                    echo "Multi Select Option";
+                                                break;
+                                            default:
+                                                    echo "-";
+                                                break;
+                                        }
+                                    ?>
+                                </td>
+                                <?php 
+                                    $allOption = unserialize($question->getTypeValue());
+                                ?>
+                                <td>
+                                    <?php
+                                        if(!empty($allOption)){
+                                            $i = 1;
+                                            foreach ($allOption as $key => $value) {
+                                                if (!empty($value)) {
+                                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                                }else{
+                                                    echo "<em>Null</em>";
+                                                }
+                                                
+                                            }   
+                                        }else{
+                                            echo "Null";
+                                        }
+                                        
+                                    ?>
+                                </td>
+                                <td><?php echo $this->escapeHtml($question->getSortOrder()); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php echo $this->paginationControl($paginatorFreDen, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question?q=fre&c=den'));?>
+                </div>
+            <?php 
+                break;
+            } ?>
+        </div>
+    <?php } ?>
+<script type="text/javascript">
+    
+    Gc.initTableList();
+</script>

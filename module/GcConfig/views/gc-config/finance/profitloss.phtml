@@ -1,0 +1,225 @@
+<style>
+    td{
+        padding: 10px;
+        font-size: 14px;
+    }
+</style>
+<?php
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$currency = $this->config()->get('site_currency'); ?>
+
+
+                        
+<div class="page-content">
+<div class="col-md-1 col-sm-1"></div>
+    <div class="col-md-10 col-sm-10 finproloss">
+        <form id="profitlossform" method="post">
+                                                                                        
+        <table width="50%" border="1" cellspacing="0" cellpadding="0" id="table_wrapper" align="center">
+        <tr>
+            <td colspan="2" align="center" class="col-md-12"><h3 class="mar0">PROFIT AND LOSS</h3></td>
+        </tr>
+                
+        <tr><td colspan="2" class="pad0">
+            
+            <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+            <tbody>
+            <tr>
+                <td class="col-md-4" align="center">Year: <?php echo $year ; ?></td>
+                <td class="col-md-4" align="center">User No. <?php echo $userData->getId() ; ?></td>
+                <td class="col-md-4" align="center"><?php echo $userData->getLogin() // echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?></td> 
+                <!--<td class="col-md-3" align="center"><?php // echo $userData->getEmail() ; ?></td>-->
+            </tbody>
+            </table>
+            
+        </tr>
+                    
+        <?php if($revenue1 == ''){ ?>
+            <tr>
+                <td colspan="2" align="center" class="col-md-12">Data Not Available</td>
+            </tr>
+        <?php }else { ?>
+        
+        
+        
+        
+
+        
+            <tr>
+                <td class="col-md-6">Revenue</td>
+                <td class="col-md-6"><?php  $revenue = $revenue1;
+                    echo $currency.$financeHelper->setPriceFormate($revenue);  ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Cost of Sales</td>
+                <td class="col-md-6"><?php $cos = $cos1;  echo $currency.$financeHelper->setPriceFormate($cos);?></td>
+            </tr> 
+            <tr>
+                <td class="col-md-6">Gross Profit</td>
+                <td class="col-md-6"><?php $gross = $revenue - $cos ; echo $currency.$financeHelper->setPriceFormate($gross); ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">GP %</td>
+                <td class="col-md-6"><?php $grossper = $gross/$revenue ;  echo $currency.$financeHelper->setPriceFormate($grossper); ?>%</td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Administrative expenses</td>
+                <td class="col-md-6"><?php $othercost = $othercost1;  echo $currency.$financeHelper->setPriceFormate($othercost); ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Profit from operations</td>
+                <td class="col-md-6"><?php $pfo = $gross-$othercost ;  echo $currency.$financeHelper->setPriceFormate($pfo);  ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">OP %</td>
+                <td class="col-md-6"><?php $op = $pfo/$revenue ; echo $currency.$financeHelper->setPriceFormate($op); ?>%</td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Interest income</td>
+                <td class="col-md-6" id="inin">
+                   <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                        <input id="interestincome" name="interestincome" type="number" value="<?php echo @$interest_income ? $interest_income : '' ?>" placeholder="Interest Income" class="form-control" required>
+                   </div>
+                </td>
+            </tr>
+            <tr>
+               <td class="col-md-6">Profit before taxs</td>
+                <td class="col-md-6" id="pbt">N/A
+                </td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Income tax</td>
+                <td class="col-md-6"><?php  echo $currency.$financeHelper->setPriceFormate(htmlentities($totaltax));?>  </td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Profit after tax</td>
+                <td class="col-md-6" id="pat">N/A</td>
+            </tr>
+            
+            
+            <tr><td colspan="2">&nbsp;</td></tr>
+            <tr><td colspan="2"  bgcolor="#E7E7E7"><b><u>Tax to date calculation <?php echo $taxclaculation_help_of ; ?></u></b></td></tr>
+                    <?php echo $taxclaculation_help ; ?>
+            
+            
+            
+        <?php } ?>
+    </table>
+            <div class="form-group">
+                <input type="hidden" value="<?php echo $revenue1; ?>" name="revenue"/>
+                <input type="hidden" value="<?php echo $totaltax; ?>" name="totaltax"/>
+                <input type="hidden" value="<?php echo $year; ?>" name="year"/>
+                <input type="hidden" value="<?php echo $userData->getId() ; ?>" name="fre_id"/>
+                <input type="hidden" value="<?php echo $cos1; ?>" name="cos"/>
+                <input type="hidden" value="<?php echo $othercost1; ?>" name="othercost"/>
+                <input type="hidden" value="<?php echo $taxclaculation_help; ?>" name="taxcalculationhelp"/>
+                
+                <div class="col-md-12 mart15 marb15 text-right pad0">
+                        <?php if($post1 == 1) { ?>
+<button type="button" class="btn btn-info" onclick="fnExcelReport('Profitandloss <?php echo $year;?> <?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?> <?php echo date('d-m-y');?>');">Export To xls </button>
+                            <!--<button type="button"  id="cmd" class="btn btn-info">generate PDF</button>-->
+                        <?php }else { ?>
+                            <button type="submit" onclick=" return confirm('Are You Sure ?')" class="btn btn-info "><?php echo @$interest_income ? 'Update' : 'Save' ; ?>  & Continue</button>
+                        <?php } ?>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-1 col-sm-1"></div>
+</div>
+
+    <script>
+        $( document ).ready(function() {
+        
+            var curr = '<?php echo $currency ; ?>';        
+            <?php if(isset($interest_income)){ ?> gaeval1();  <?php } ?>
+            <?php if($post1 == 1){ ?> aftersave(); <?php } ?>
+            $("#interestincome").keyup(function(){  gaeval1();   });
+
+            function gaeval1(){
+                var totaltax =  '<?php echo $totaltax ;?>';
+                var pfo =  '<?php echo $pfo ;?>';
+                var inin =  $("#interestincome").val();
+                if(inin == ''){
+                    $("#pbt,#pat").html('N/A');
+                }else{
+                    var income = parseFloat(pfo) + parseFloat(inin);
+                    var pat = parseFloat(income) + parseFloat(totaltax);
+                    $("#pbt").html(curr+parseFloat(income).toFixed(2));
+                    $("#pat").html(curr+parseFloat(pat).toFixed(2));
+                }
+            }
+            function aftersave(){
+                var inin =  $("#interestincome").val();
+                $("#inin").html(curr+inin);
+                $("#interestincome").remove();
+            }
+        });
+        
+               
+    function fnExcelReport(filename = 'Profitandloss')
+    {
+        var tab_text="<table border='2px'><tr bgcolor='#87AFC6'>";
+        var textRange; var j=0;
+        tab = document.getElementById('table_wrapper'); // id of table
+
+        for(j = 0 ; j < tab.rows.length ; j++)
+        {
+            tab_text=tab_text+tab.rows[j].innerHTML+"</tr>";
+            //tab_text=tab_text+"</tr>";
+        }
+
+        tab_text=tab_text+"</table>";
+        tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, "");//remove if u want links in your table
+        tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+        tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // reomves input params
+
+        var ua = window.navigator.userAgent;
+        var msie = ua.indexOf("MSIE ");
+
+        if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+        {
+            txtArea1.document.open("txt/html","replace");
+            txtArea1.document.write(tab_text);
+            txtArea1.document.close();
+            txtArea1.focus();
+            link=txtArea1.document.execCommand("SaveAs",true,"Say Thanks to Sumit.xls");
+        }
+        else{
+            //other browser not tested on IE 11
+            var isChrome = !!window.chrome && !!window.chrome.webstore;
+            if(isChrome == true){
+                var link = document.createElement('a');
+                link.download = filename+".xls";
+                link.href = 'data:application/vnd.ms-excel,' + encodeURIComponent(tab_text);
+                link.click();
+            }else{
+                link = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+               // sa = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+            }
+            return (link);
+           // return (sa);
+
+        }
+
+
+    }
+        
+
+    </script>
+<style>
+.mar0 { margin:0;}
+.pad0 { padding:0;}
+.mart15 { margin-top:15px;}
+.marb15 { margin-bottom:15px;}
+.finproloss table { width:100% !important;}
+/*.finproloss table:first-child {
+	border: 1px solid;
+	border-bottom:0;
+}
+.finproloss table:first-child tr:first-child{
+  border-bottom: 1px solid;
+}
+*/</style>

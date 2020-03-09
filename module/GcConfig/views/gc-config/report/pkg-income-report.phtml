@@ -1,0 +1,194 @@
+<?php
+/**
+ * Design and develop by SURAJ WASNIK at FUDUGO.
+ * PHP Version >=5.3
+ *
+ * @category    Fudugo
+ * @package     Config
+ * @subpackage  Design
+ * @author      SURAJ WASNIK <suraj.wasnik0126@gmail.com>
+ * @link        http://www.fudugo.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+
+$pkg_year = $pkg_month = '';
+if (isset($_GET['pkg_year'])) {
+    $pkg_year = $_GET['pkg_year'];
+}
+if (isset($_GET['pkg_month'])) {
+    $pkg_month = $_GET['pkg_month'];
+}
+use Gc\User\PackageRateReport;
+$packageRateReport = new PackageRateReport();
+if ($pkg_month == '' && $pkg_year != '') {
+    $start_date = $pkg_year.'-01-01';
+    $end_date   = $pkg_year.'-12-31';
+    $package_rate_report = $packageRateReport->getPackageRates($start_date,$end_date);
+}elseif($pkg_month != '' && $pkg_year == ''){
+    $start_date = date('Y-m-01', strtotime($pkg_month));
+    $end_date   = date('Y-m-t', strtotime($pkg_month));
+    $package_rate_report = $packageRateReport->getPackageRates($start_date,$end_date);
+}elseif($pkg_month != '' && $pkg_year != ''){
+    $start_date = date('Y-m-01', strtotime($pkg_month.'-'.$pkg_year));
+    $end_date   = date('Y-m-t', strtotime($pkg_month.'-'.$pkg_year));
+    $package_rate_report = $packageRateReport->getPackageRates($start_date,$end_date);
+}else{
+    $package_rate_report = $packageRateReport->getPackageRates();
+}
+
+
+?>
+
+<form id="filter" action="" method="GET">
+    <div class="row">
+        <div class="col-md-3">
+            <select name="pkg_year" id="year_option">
+                <option value="">--Select Year--</option>
+                <?php 
+                    for ($i=2015; $i <= date('Y'); $i++) { 
+                        if ($pkg_year == $i) {
+                            echo "<option value='".$i."' Selected>".$i."</option>";
+                        }else{
+                            echo "<option value='".$i."'>".$i."</option>";
+                        }
+                        
+                    }
+                    /*for ($i=2015; $i <= date('Y'); $i++) { 
+                        echo "<option value='".$i."'>".$i."</option>";
+                    }*/
+                ?>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="pkg_month" id="month_option">
+                <option value="">--Select Month--</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+            </select>
+            <input type="hidden" id="current_year" value="<?php echo date('Y'); ?>">
+        </div>        
+        <div class="col-md-1">
+            <input type="hidden"  name="type" value="pkg_income">
+            <input id="user_record" type="submit" value="export" style="  margin-top: 0px; float:right;  border: 1px solid #ccc;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px">
+        </div>
+    </div>
+</form>
+<?php 
+    
+    if (isset($_GET['pkg_year']) && isset($_GET['pkg_month']) && !isset($_GET['downloaded'])) {
+        echo '<iframe src="'.$this->serverUrl().'/report?pkg_month='.$_GET['pkg_month'].'&pkg_year='.$_GET['pkg_year'].'&type=pkg_income&downloaded=1" style="display:none;"></iframe> ';
+    }
+?>
+<hr/>
+
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="10%">
+        <col width="20%">
+        <col width="20%">
+        <col width="20%">
+        <col width="20%">
+        <col width="10%"> 
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('Package')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Rate')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Number of users')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Total users')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Income expected')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('See detailed')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php 
+            $toatalIncome = 0;
+            if (!empty($package_rate_report)) :
+            foreach ($package_rate_report as $package_key => $value): 
+                $toatalIncome += $value['total_rate'];
+                $count_details = count($value['details']);
+                $i = 1;
+        ?>
+            <?php foreach ($value['details'] as $key => $detail) {?>
+                <tr>                    
+                    <?php if($i == 1){ ?>
+                        <td rowspan="<?php echo $count_details; ?>"><?php echo $this->escapeHtml($value['name']); ?></td>
+                    <?PHP } ?> 
+                
+                    <td style="text-align:center"><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml(number_format($detail['rate'],2)); ?></td>  
+                    <td style="text-align:center"><?php echo $this->escapeHtml($detail['no_records']); ?></td>                    
+                    <?php if($i == 1){ ?>
+                        <td rowspan="<?php echo $count_details; ?>"><?php echo $this->escapeHtml($value['count']); ?></td>
+                    <?PHP } ?> 
+                
+                    <?php if($i == 1){ ?>
+                        <td style="text-align:center" rowspan="<?php echo $count_details; ?>"><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml(number_format($value['total_rate'],2)); ?></td>
+                    <?php } ?> 
+                    <?php if($i == 1){ ?>
+                        <td rowspan="<?php echo $count_details; ?>">
+                            <a href="/admin/config/report/package-report?pkg=<?php echo $package_key; ?>" ><span class="glyphicon glyphicon-eye-open" style="margin: 0 auto;    display: block; color:#00a9e0;    font-size: 14px;"></span></a>
+                        </td>
+                    <?php $i++; } ?> 
+                </tr>
+            <?php  } ?>
+        <?php  endforeach; else: ?>
+            <tr><td colspan="5" style="text-align:center;">No record found.</td></tr>
+        <?php endif; ?>
+    </tbody>
+</table>
+<div class="row">
+    <div class="col-md-12">
+        <p class="total-income">Total Income:  <span><?php echo $this->config()->get('site_currency') ?><?php echo number_format($toatalIncome,2); ?></span></p>
+    </div>
+</div>
+
+</div>
+        
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+    var month = "<?php echo $pkg_month; ?>";
+    $("#month_option").val(month);
+</script>
+<style type="text/css">
+    select {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+    form#filter {
+        background: #f0f0f0;
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid;
+    }
+    .title-report{
+        margin: 0;
+        padding: 10px;
+        margin-bottom: 5px;
+        background: #ccc;
+        border-bottom: 1px solid;
+    }
+    p.total-income {
+        font-size: 18px;
+        text-align: center;
+        padding: 10px;
+        background: #ccc;
+    }
+    td, th {
+        vertical-align: middle !important;
+        text-align: center;
+    }
+</style>
+

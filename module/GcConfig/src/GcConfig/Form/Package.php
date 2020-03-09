@@ -1,0 +1,135 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc_Application
+ * @package    GcConfig
+ * @subpackage Form
+ * @author     Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.got-cms.com
+ */
+
+namespace GcConfig\Form;
+
+use Gc\Form\AbstractForm;
+use Gc\User\Packageresource\Collection as PackageResourceCollection;
+use Gc\User\Role\Collection as RoleCollection;
+use Zend\Form\Element;
+use Zend\InputFilter\Factory as InputFilterFactory;
+
+/**
+ * package form
+ *
+ * @category   Gc_Application
+ * @package    GcConfig
+ * @subpackage Form
+ */
+class Package extends AbstractForm
+{
+    /**
+     * Initialize package form
+     *
+     * @return void
+     */
+    public function init()
+    {
+        $inputFilterFactory = new InputFilterFactory();
+        $inputFilter        = $inputFilterFactory->createInputFilter(
+            array(
+                'name' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),
+                'price' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'description' => array(
+                    'required' => false,                    
+                ), 
+                'user_acl_package_resources_id' => array(
+                    'required' => false,
+                ),              
+            )
+        );
+
+        $this->setInputFilter($inputFilter);
+
+        $name = new Element\Text('name');
+        $name->setLabel('Package Name')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'name');
+        $this->add($name);
+
+        $price = new Element\Text('price');
+        $price->setLabel('Price')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'optional control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'price');
+        $this->add($price);
+
+        $description = new Element\Text('description');
+        $description->setLabel('Description')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'optional control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'description');
+        $this->add($description);
+
+
+        $package_resources = new Element\MultiCheckbox('user_acl_package_resources_id');
+        $package_resources->setLabel('Resources')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            );
+        $roleCollection = new PackageResourceCollection();
+        $rolesList      = $roleCollection->getPackageResources();
+        $selectOptions  = array();
+        foreach ($rolesList as $roleModel) {
+            $selectOptions[$roleModel->getId()] = $roleModel->getResourceValue();
+        }
+
+        /*print_r($selectOptions);
+        exit();*/
+        $package_resources->setValueOptions($selectOptions)
+            ->setAttribute('class', 'form-control');
+       
+        $this->add($package_resources);
+    }
+
+    
+}

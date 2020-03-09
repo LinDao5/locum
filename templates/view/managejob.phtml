@@ -1,0 +1,592 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3){
+		$uid = $_SESSION['user_id']; 
+	}else{ 
+		$actual_link = $_SERVER[REQUEST_URI];
+		$_SESSION['action_url'] = $actual_link;
+		echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+	}
+
+    $helper = new Zend\View\Helper\ServerUrl();
+	$url = $helper->__invoke(true);
+	$str = explode('?',$url);
+	if(isset($_GET['e']) && $_GET['e']!=''){
+		$job_id =$_GET['e']; 
+	} 
+	//print_r($str);
+	use GcFrontend\Controller\DbController as DbController;
+	use Gc\User\Role\Model;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	//use GcFrontend\Controller\FunctionsController as FunctionController;
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	$sql = new Sql($adapter);
+	$update = $sql->update();
+	$select = $sql->select();
+	$resultset_count="";
+	$result_time_dispaly="";
+	if(isset($job_id)){
+		$post_title="Edit Job"; 
+		$sqlString_data="select * from job_post where job_id='$job_id' AND e_id='$uid'";	
+        $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+        $resultset = $results_get->current();  //print_r($resultset);
+
+		if(empty($resultset)){
+			echo "<script type='text/javascript'>alert('You are not valid employer to edit this job.');window.location='".$this->serverUrl()."/user-profile'</script>";
+		}
+
+		// category table
+		$professionalTable = new Model2();
+		$row2              = $professionalTable->fetchRow($professionalTable->select(array('id' => (int) $resultset['cat_id'])));
+		//select query for timelne table
+		$result_time_dispaly=""; $arr_hrs=""; $resultset_count="";
+		$sqlString_time="select * from job_post_timeline where job_id='$job_id' and job_timeline_status!=2";	
+        $results_time = $adapter->query($sqlString_time, $adapter::QUERY_MODE_EXECUTE);
+		$resultset_count = $results_time->count();  
+	    $resultset_time = $results_time->toArray(); 
+		if($resultset_count>1){
+			$li=0;
+			$result_time_dispaly.='<input type="hidden" name="set_timeline2" value="1"><div class="col-md-12" id="timeline_box">
+            <div class="col-sm-4 col-md-4">Timeline Date</div>
+            <div class="col-sm-8 col-md-8 list_block">';  
+            
+			foreach($resultset_time as $result){				
+				if($li==0 && $result['job_timeline_status']=='1'){ $disabled="";}else{$disabled="";}
+				if($li != 0){
+					$result_time_dispaly.='<div class="add_block">
+	                    <div class="col-sm-4 col-md-4 no-padding-left"><input type="text" name="job_date_new[]" class="form-control margin-bottom datepicker" value="'.$result['job_date_new'].'" required '.$disabled.'> </div>
+	                    <div class="col-sm-4 col-md-3 no-padding-left"><input type="text" name="job_rate_new[]" class="form-control margin-bottom"  value="'.$result['job_rate_new'].'" required '.$disabled.'> </div>
+	                    <div class="col-sm-3 col-md-3 no-padding-left">
+	                    <select name="job_timeline_hrs[]" class="form-control margin-bottom" required '.$disabled.'>
+	                        <option value="">Hours</option>
+							 <option value="1" '.(($result['job_timeline_hrs']==01 || $result['job_timeline_hrs']==1)? "selected":"").'>01</option>
+							 <option value="2" '.(($result['job_timeline_hrs']==02 || $result['job_timeline_hrs']==2)? "selected":"").'>02</option>
+							 <option value="3" '.(($result['job_timeline_hrs']==03 || $result['job_timeline_hrs']==3)? "selected":"").'>03</option>
+							 <option value="4" '.(($result['job_timeline_hrs']==04 || $result['job_timeline_hrs']==4)? "selected":"").'>04</option>
+							 <option value="5" '.(($result['job_timeline_hrs']==05 || $result['job_timeline_hrs']==5)? "selected":"").'>05</option>
+							 <option value="6" '.(($result['job_timeline_hrs']==06 || $result['job_timeline_hrs']==6)? "selected":"").'>06</option>
+							 <option value="7" '.(($result['job_timeline_hrs']==07 || $result['job_timeline_hrs']==7)? "selected":"").'>07</option>
+							 <option value="8" '.(($result['job_timeline_hrs']==08 || $result['job_timeline_hrs']==8)? "selected":"").'>08</option>
+							 <option value="9" '.(($result['job_timeline_hrs']==09 || $result['job_timeline_hrs']==9)? "selected":"").'>09</option>
+							 <option value="10" '.(($result['job_timeline_hrs']==10)? "selected":"").'>10</option>
+							 <option value="11" '.(($result['job_timeline_hrs']==11)? "selected":"").'>11</option>
+							 <option value="12" '.(($result['job_timeline_hrs']==12)? "selected":"").'>12</option>
+							 <option value="13" '.(($result['job_timeline_hrs']==13)? "selected":"").'>13</option>
+							 <option value="14" '.(($result['job_timeline_hrs']==14)? "selected":"").'>14</option>
+							 <option value="15" '.(($result['job_timeline_hrs']==15)? "selected":"").'>15</option>
+							 <option value="16" '.(($result['job_timeline_hrs']==16)? "selected":"").'>16</option>
+							 <option value="17" '.(($result['job_timeline_hrs']==17)? "selected":"").'>17</option>
+							 <option value="18" '.(($result['job_timeline_hrs']==18)? "selected":"").'>18</option>
+							 <option value="19" '.(($result['job_timeline_hrs']==19)? "selected":"").'>19</option>
+							 <option value="20" '.(($result['job_timeline_hrs']==20)? "selected":"").'>20</option>
+							 <option value="21" '.(($result['job_timeline_hrs']==21)? "selected":"").'>21</option>
+							 <option value="22" '.(($result['job_timeline_hrs']==22)? "selected":"").'>22</option>
+							 <option value="23" '.(($result['job_timeline_hrs']==23)? "selected":"").'>23</option>
+							 <option value="24" '.(($result['job_timeline_hrs']==24)? "selected":"").'>24</option>
+	                    </select>
+	                    </div>
+	                    <span class="removeclass small2"><i class="fa fa-times" aria-hidden="true"></i></span>
+	                </div>';
+				}				
+				$li++;
+			}
+			$result_time_dispaly.='</div></div>';
+		}
+	}else{
+		$post_title="Post Job";
+	}
+	$returnArray_pro=""; $selected="";
+	$select->from('user_acl_professional');
+	$statement = $sql->prepareStatementForSqlObject($select);
+	$results2 = $statement->execute();
+	$data_pro=$results2->getResource()->fetchAll();
+	foreach ($data_pro as $result) {
+		if(isset($resultset['cat_id'])&& $resultset['cat_id']!=''){
+			$selected=($result['id']==$resultset['cat_id'] ? 'selected' : '');
+		}
+		$returnArray_pro .="<option value='".$result['id']."' ".$selected.">". $result['name']."</option>";
+	}
+	//get Start time of job
+	$functionController = new GcFrontend\Controller\FunctionsController();
+	$jobStartTime = $functionController->jobStartTime($uid,$adapter);
+
+	
+
+	//get store list
+	$sqlString_st="select * from employer_store_list where emp_id='$uid' AND status = 0";	
+    $results_st = $adapter->query($sqlString_st, $adapter::QUERY_MODE_EXECUTE);
+    $resultset_st = $results_st->toArray();  //print_r($resultset_st);
+	$count_st = $results_st->count();
+	$st_list="";
+	$checked2="";
+	if($count_st>0){
+		$st_list.='<div class="col-md-12 st-heading"><h2>Please select store to post job</h2></div>';
+		
+		foreach($resultset_st as $res){
+			if(isset($resultset)){
+				$checked2=($resultset['store_id']==$res['emp_st_id'])? 'checked':'';
+			}
+			if($count_st==1){
+				$checked2='checked';
+				$single_row='<div class="col-md-12 st_'.$res['emp_st_id'].'" style="display:none;"><div class="col-md-4 margin-bottom">Store Name</div><div class="col-md-8"><input type="text" name="store_name"  value="'.ucfirst($res['emp_store_name']).'" class="form-control margin-bottom" readonly></div></div>
+			<div style="visibility: hidden; position: absolute;">
+				<div class="col-md-12 st_'.$res['emp_st_id'].'"><div class="col-md-4">Job location</div><div class="col-md-8"><input type="text" name="job_address"  value="'.ucfirst($res['emp_store_address']).'" class="form-control margin-bottom" readonly></div></div>
+				<div class="col-md-12 st_'.$res['emp_st_id'].'"><div class="col-md-4">Job Region</div><div class="col-md-8"><input type="text" name="job_region"  value="'.ucfirst($res['emp_store_region']).'" class="form-control margin-bottom" readonly></div></div>
+				<div class="col-md-12 st_'.$res['emp_st_id'].'" ><div class="col-md-4">Post Code</div><div class="col-md-8"><input type="text" name="job_zip"  value="'.$res['emp_store_zip'].'" class="form-control margin-bottom" readonly></div></div>
+			</div>';
+			?>
+            
+			<?php
+			}
+			$st_list.='<div class="col-md-12" ><div class="col-xs-2 col-sm-1 col-md-1"><input type="radio" id="'.$res['emp_st_id'].'" name="store_id" value="'.$res['emp_st_id'].'" '.$checked2.'></div><div class="col-xs-10 col-sm-11 col-md-11 color-white">'.ucfirst($res['emp_store_name']).'</div></div>
+			<div class="col-md-12 st_'.$res['emp_st_id'].'" style="display:none;"><div class="col-md-4 margin-bottom">Store Name</div><div class="col-md-8"><input type="text" name="store_name"  value="'.ucfirst($res['emp_store_name']).'" class="form-control margin-bottom" readonly></div></div>
+			<div style="visibility: hidden; position: absolute;">
+				<div class="col-md-12 st_'.$res['emp_st_id'].'" style="display:none;"><div class="col-md-4">Job location</div><div class="col-md-8"><input type="text" name="job_address"  value="'.ucfirst($res['emp_store_address']).'" class="form-control margin-bottom" readonly></div></div>
+				<div class="col-md-12 st_'.$res['emp_st_id'].'" style="display:none;"><div class="col-md-4">Job Region</div><div class="col-md-8"><input type="text" name="job_region"  value="'.ucfirst($res['emp_store_region']).'" class="form-control margin-bottom" readonly></div></div>
+				<div class="col-md-12 st_'.$res['emp_st_id'].'" style="display:none;"><div class="col-md-4">Post Code</div><div class="col-md-8"><input type="text" name="job_zip"  value="'.$res['emp_store_zip'].'" class="form-control margin-bottom" readonly></div></div>
+			</div>';
+		}
+		$st_list.='<div class="col-md-12"><a href="javascript:void(0);" class="btn_continue" onclick="copy_div();">Continue</a></div>';
+	}else{
+		$st_list.='<div class="col-md-12"><p style=" color: #fff; text-align:center">No Store Record found Please add Store to post job. <a href="/manage-store" style=" color: #ffb200;">Click here</a></p></div>';
+	}
+?>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-ui.multidatespicker.js'); ?>"></script>
+<script src="<?php echo $this->cdn('/frontend/ckeditor/ckeditor.js');?>"></script>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+					<li><a href="/managejob"><?php echo $post_title;?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="fa fa-suitcase" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3><?php echo $post_title;?></h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content post-job">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section>
+            <?php echo $this->partial('flash-messages'); ?>
+            <?php
+                $return = $this->script('managejob');
+                $number_1 = mt_rand(1, 9);
+                $number_2 = mt_rand(1, 9);
+                $answer = substr(sha1($number_1+$number_2),5,10);
+			?>
+            </section>
+            <div class="col-sm-9 col-md-8 col-lg-7 post-job-content">
+                <div class="job-content">
+                <form id="mamagejob" action="<?php echo $this->escapeHtml($this->document('managejob')->getUrl()); ?><?php echo ($job_id != '') ? '?e='.$job_id : ''; ?>" method="post">
+                    <?php if(!empty($return['error_message'])): ?>
+                    <div class="notification error"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                    <?php endif; ?>
+                    <input type="hidden" name="e_id" value="<?php echo $uid;?>">
+                    <?php if(isset($job_id)){?>
+                    <input type="hidden" name="job_id" value="<?php echo $job_id;?>">
+                    <?php }?>
+                    <input type="hidden" name="cat_id" value="<?php echo $_SESSION['user_profession_id'];?>">
+					<div class="col-md-12 margin-bottom margin-top">
+					</div>
+                    <div id="step1" <?php if($count_st==1){echo 'style="display:none;"';}?>>
+						<?php echo $st_list;?>
+                    </div>
+                    <div class="mar-mins" id="step2" <?php if($count_st==1){echo 'style="display:block;"';}else{?>style="display:none;"<?php }?>>
+                    <div class="col-md-12">
+                        <div class="col-md-4">Job reference </div>
+                        <div class="col-md-8"><input type="text" name="job_title" class="form-control margin-bottom" value="<?php echo $this->escapeHtml(!empty($resultset['job_title']) ? $resultset['job_title'] : ''); ?>" placeholder="Enter job title for your reference" required></div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="col-md-4">Date required</div>
+                        <?php 
+                        	if(isset($_GET['doj']) && $_GET['doj'] != ''){
+                        		$j_date = $_GET['doj'];
+                        		$job_of_date = date("d/m/Y", strtotime($j_date));
+                        	}else{
+                        		$job_of_date = '';
+                        	}
+                        ?>
+                        <div class="col-md-8">                        	
+                        	<input type="text" name="job_date" class="form-control margin-bottom datepicker" value="<?php echo $this->escapeHtml(!empty($resultset['job_date'] && $resultset['job_status'] == 1) ? $resultset['job_date'] : ''); ?><?php echo $this->escapeHtml(!empty($job_of_date) ? $job_of_date : ''); ?>"  placeholder="Enter date" required>
+                        	<input type="hidden" name="job_start_time" class="in_hrs form-control margin-bottom" value="<?php echo $jobStartTime; ?>">
+                        </div>
+                    </div>
+					<!-- <div class="col-md-12">
+                        <div class="col-md-4">Job start time</div>
+                        <div class="col-md-8">
+							<select name="job_start_time" class="in_hrs form-control margin-bottom" required>
+								<option value="">Select Start time</option>
+								<?php $hrs=""; for($j=1;$j<=24;$j++){ if($j<10){$hrs='0'.$j;}else{ $hrs=$j;}?>
+									<option value="<?php echo $hrs;?>" <?php echo (($resultset['job_start_time']==$hrs)? "selected" : "");?>><?php echo $hrs;?></option>
+								<?php }?>
+							</select>
+					  	</div>
+                    </div> -->
+                    <div class="col-md-12">
+                        <div class="col-md-4">Rate offered</div>
+                        <div class="col-md-8"><input type="text" name="job_rate" class="form-control margin-bottom numbersOnly" value="<?php echo $this->escapeHtml(!empty($resultset['job_rate']) ? $resultset['job_rate'] : ''); ?>" placeholder="Enter job rate" required min="1"></div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-8 timeline-div">
+                          <div class="timeline-box"><input type="checkbox" name="set_timeline" value="1" <?php if($resultset_count>1){ echo "checked ";}?> class="form-control margin-bottom" id="open_timeline"></div>
+                          <div class="timeline-text">If you wish to increase the rate if a locum is not booked, please click here.</div>
+                          <div class="" id="show_add" style="display:none;"><a href="javascript:void(0);" class="color-white" id="add_timeline"><i class="fa fa-plus" aria-hidden="true" title="Add Timeline"></i></a></div>
+                        </div>
+                    </div>
+                    <?php if($result_time_dispaly=="") {?>
+                    <?php //if(1) {?>
+                    <div class="col-md-12" id="timeline_box" style="display:none;">
+                        <div class="col-md-4">Timeline date</div>
+                        <div class="col-md-8 list_block">
+                            <div class="add_block" <?php if($resultset_count>1){ echo 'style="display:none;"';}else{?>style="display:block;"<?php }?>>
+                                <div class="col-md-4 no-padding-left"><input type="text" name="job_date_new[]" class="in_date form-control margin-bottom datepicker" placeholder="Enter date"> </div>
+                                <div class="col-md-4 no-padding-left"><input type="text" name="job_rate_new[]" class="in_rate form-control margin-bottom" placeholder="Price"> </div>
+                                <div class="col-md-4 no-padding-left no-padding-right">
+                                <select name="job_timeline_hrs[]" class="in_hrs form-control margin-bottom">
+                                    <option value="">Hours</option>
+                                   <?php for($i=1;$i<=24;$i++){?>
+                                    <option value="<?php echo $i;?>"><?php echo $i;?></option>
+                                   <?php }?>
+                                </select>
+                                </div>
+
+                            </div>
+                        </div> 
+                    </div>
+                    <?php }else{?>
+	                     <!-- for edit data -->
+	                     <?php echo $result_time_dispaly;?>
+	                     <!-- for edit data -->
+	                <?php } ?>
+                    <div class="col-md-12" id="timeline_box_new"></div>
+                    <div class="col-md-12" style="display:none">
+                        <div class="col-md-4">Job type</div>
+                        <div class="col-md-8">
+                              <select id="job_type" name="job_type" class="form-control margin-bottom" required>
+                                 <!-- <option value="">Select</option> -->
+                                 <option value="1" <?php echo ((!empty($resultset['job_type']) && $resultset['job_type']=='1') ? 'selected' : ''); ?>>First come first serve</option>
+                                 <!--<option value="2" <?php echo ((!empty($resultset['job_type']) && $resultset['job_type']=='2') ? 'selected' : ''); ?>>Build list</option>-->
+                              </select>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="col-md-4">Job description</div>
+                        <div class="col-md-8">
+                        <textarea name="job_post_desc" class="form-control margin-bottom"  placeholder="Enter any special instructions ie: half day / different timings"><?php echo $this->escapeHtml(!empty($resultset['job_post_desc']) ? $resultset['job_post_desc'] : ''); ?></textarea>
+                        <?php /*?>
+                        <textarea name="job_post_desc" id="editor1" class="form-control margin-bottom" required placeholder="Enter any special instructions ie: If half day / any specific instructions"><?php echo $this->escapeHtml(!empty($resultset['job_post_desc']) ? $resultset['job_post_desc'] : ''); ?></textarea>
+                        
+                       <script>
+							// Replace the <textarea id="editor1"> with a CKEditor
+							// instance, using default configuration.
+							CKEDITOR.replace( 'editor1',{
+							toolbar: [
+								
+								'/',	// Line break - next group will be placed in new line.
+								{ name: 'colors' },
+								{ name: 'links', items: [ 'Link', 'Unlink', 'Anchor' ] },
+								{ name: 'styles', items: [ 'Styles', 'Format' ] },
+								{ name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ], items: [ 'Bold', 'Italic', 'Strike', '-', 'TextColor','RemoveFormat' ] }
+							]
+						} );
+						</script>
+                        <?php */?>
+                        
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="col-md-12" style="display:none;">
+                        <div class="col-md-4">Job category</div>
+                        <div class="col-md-8">
+                           <select id="category" name="cat_id22" class="form-control margin-bottom">
+                              <option value="">Select category</option>
+                              <?php echo $returnArray_pro;?>
+                           </select>
+                        </div>
+                    </div>
+                    <div class="show_list"><?php if($count_st==1){ echo $single_row;}?></div>
+                    <?php if($count_st!=1){ //echo "style='display:none;'";?>
+                    <div class="col-md-12 st_list_show">
+                    <div style="visibility: hidden; position: absolute;">
+	                    <div class="col-md-4">Job location</div>
+	                        <div class="col-md-8"><input type="text" name="job_address"  value="<?php echo $this->escapeHtml(!empty($resultset['job_address']) ? $resultset['job_address'] : ''); ?>"  placeholder="Enter job location" class="form-control margin-bottom" ></div>
+	                    </div>
+	                    <div class="col-md-12 st_list_show" <?php if($count_st==1){ echo "style='display:none;'";}?>>
+	                        <div class="col-md-4">Job region</div>
+	                        <div class="col-md-8"><input type="text" name="job_region"  value="<?php echo $this->escapeHtml(!empty($resultset['job_region']) ? $resultset['job_region'] : ''); ?>"  placeholder="Enter job region" class="form-control margin-bottom" ></div>
+	                    </div>
+	                    <div class="col-md-12 st_list_show" <?php if($count_st==1){ echo "style='display:none;'";}?>>
+	                        <div class="col-md-4">Post code</div>
+	                        <div class="col-md-8"><input type="text" name="job_zip"  value="<?php echo $this->escapeHtml(!empty($resultset['job_zip']) ? $resultset['job_zip'] : ''); ?>"  placeholder="Enter job post code" class="form-control margin-bottom" ></div>
+	                    </div>
+	                </div>
+                    <?php } ?>
+                    <div class="col-md-12">                    	
+                        <div class="col-md-12 store-note" style="display:none;">
+                            <div class="col-sm-12"><p class="relist-job-div"><input type="checkbox" name="relist-job" class="form-control margin-bottom" <?php echo $this->escapeHtml(!empty($resultset['job_relist']) ? 'checked' : ''); ?> checked><span>If locum cancel job then would you like to relist this job? If yes then please check the box.</span></p></div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="col-md-12 store-note store-note-click">
+                            <!--<p>If you want to change store info, please<a href="/user-question-edit" style=" color: #ffb200;">Click here</a></p>-->
+                            <p>To edit your store requirements<a href="javascript:void(0);" onClick="popup();" style=" color: #ffb200;">click here</a></p>
+                        </div>
+                    </div>
+                    <div class="col-md-12" style="display:none">
+                        <div class="col-md-4">Job status</div>
+                        <div class="col-md-8">
+                             <select id="job_satus" name="job_status" class="form-control margin-bottom">
+                                 <!-- <option value="">Select job status</option> -->
+                                 <option value="1" <?php echo $this->escapeHtml((!empty($resultset['job_status']) && $resultset['job_status']=='1') ? 'selected' : 'selected'); ?>>Open</option>
+                                <?php if(isset($resultset['job_status'])){?>
+                                 <option value="2" <?php echo $this->escapeHtml((!empty($resultset['job_status']) && $resultset['job_status']=='2') ? 'selected' : ''); ?>>Close</option>
+                                 <?php }?>
+                               </select>
+                        </div>
+                    </div> 
+                    <div class="col-md-12" align="center">
+                        <?php if(isset($resultset['job_status'])){?>
+                        <button class="post-job-btn" onClick="check_data();">
+                        <!--<i class="glyphicon glyphicon-edit"></i>-->
+                        <?php 
+                        	if ($resultset['job_status'] == 1 && !isset($_GET['duplicate_job'])) {
+                        		?>
+                        		<input type="hidden" name="current_job_id" value="<?php echo $resultset['job_id']; ?>">
+                        		<?php
+                        		//echo $this->escapeHtml('Update Job');
+                        		echo $this->escapeHtml('Search for available locums');
+                        	}else{
+                        		//echo $this->escapeHtml(!empty($resultset['job_relist']) ? 'Relist a job' : 'Post as new job');
+                        		echo $this->escapeHtml('Search for available locums');
+                        	}
+                        	 
+                        ?>
+						<?php  //echo $this->escapeHtml('Post As New Job'); ?>
+                        </button>
+                        <?php }if(!isset($resultset['job_status'])){?>
+	                        <button class="post-job-btn" onClick="check_data();">
+	                       <!-- <i class="glyphicon glyphicon-edit"></i>-->
+	                        <?php echo $this->escapeHtml('Search for available locums'); ?>
+	                        </button>
+                        <?php }?>
+                    </div>
+                    </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-8 col-lg-5 sidebar-right-post-padd">
+                <?php echo $this->rightcontent; ?>
+                <!-- <div class="register-sidebar-notifications">
+                    <ul>
+                        <li>Orem ipsum dolor sit amet, consectetur adipiscing elit.</li>
+                        <li>Phasellus convallis nisl nec leo vehicula malesuada. Praesent eleifend libero sed nunc commodo sodales.</li>
+                        <li>Praesent eleifend libero sed nunc commodo sodales. Sed pretium odio eget nisl consequat,</li>
+                        <li>Dapibus purus euismod. Nam rutrum, erat a mattis sagittis, turpis elit volutpat ligula,</li>
+                        <li>Dapibus purus euismod. Nam rutrum, erat a mattis sagittis, turpis elit volutpat ligula,</li>
+                        <li>Et dapibus purus euismod. Nam rutrum, erat a mattis sagittis, turpis elit volutpat ligula,</li>
+                    </ul>
+                      
+                </div>  --> 
+                
+                <div class="sidebar-help">
+                    <h5>Need help? please <a href="/contact">click here</a></h5>				
+                    <ul>
+                        <li><a href="tel:<?php echo $this->config()->get('site_mobile') ?>"><img src="<?php echo $this->serverUrl().'/public/frontend/locumkit-template/';?>img/contact-ico.png"> <?php echo $this->config()->get('site_mobile') ?></a></li>
+                        <li><a href="mailto:<?php echo $this->config()->get('site_email') ?>"><img src="<?php echo $this->serverUrl().'/public/frontend/locumkit-template/';?>img/mail-ico.png"> <?php echo $this->config()->get('site_email') ?></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="one-page-box visible widget-box no-border col-xs-12">
+            <div class="widget-body">
+               <div class="widget-main form_settings managejob-frm">
+                    
+                </div>
+              </div>
+             </div>
+          </div>
+       </div>	
+    </div>
+</div>
+
+<?php date_default_timezone_set('Europe/London');?>
+<style>
+	.ui-datepicker{
+    	width: 28em !important;
+    	margin: 0 auto 20px;
+  	}
+</style>
+<script>
+	var dateObj = new Date();
+	var currentYear = dateObj.getFullYear();
+	var rangeYear = currentYear+3; 
+	$( document ).ready(datePickerCaller);
+
+	function datePickerCaller(){
+	    $('.datepicker').each(function(){
+	    	var min_date = 0;
+	    	var currentTime = new Date("<?php echo date('Y-m-d H:i:s'); ?>");
+			if (currentTime.getHours() > 11){
+			    min_date = 1;
+			}
+			if (currentTime.getHours() == 11 && currentTime.getMinutes() > 30){
+			    min_date = 1;
+			}
+					
+	        $(this).datepicker({
+				minDate: min_date,
+				changeMonth: true,
+				changeYear: true,
+				//showButtonPanel: true,
+				dateFormat: "dd/mm/yy",
+				yearRange: currentYear+':'+rangeYear,    			
+	    	});
+	    });
+	}
+	/*$(function() {
+	  	$( "input[name^=job_date_new[]]" ).datepicker({changeMonth: true,
+	            changeYear: true,
+	            showButtonPanel: true,
+	            dateFormat: "mm/dd/yy",
+				yearRange: currentYear+':'+rangeYear,
+				onClose: function(dateText, inst) { 
+	                var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
+	                var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
+	                $(this).datepicker('setDate', new Date(year, month, 1));
+	            } });
+	});*/
+	  /*$(function() {
+	    $(".datepicker").datepicker({
+				changeMonth: true,
+	            changeYear: true,
+	            showButtonPanel: true,
+	            dateFormat: "yy-mm-dd",
+				yearRange: currentYear+':'+rangeYear,
+				onClose: function(dateText, inst) { 
+	                var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
+	                var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
+	                $(this).datepicker('setDate', new Date(year, month, 1));
+	            }
+				});
+	});*/
+</script>
+<script type="text/javascript">
+	var i = $(".add_block").size() + 1;
+	$("#add_timeline").click(function () {
+		if(i > 1)
+		{   
+			$('.list_block').append('<div class="add_block"><div class="col-md-4 no-padding-left"><input type="text" name="job_date_new[]" class="form-control margin-bottom datepicker" placeholder="Enter date" required></div><div class="col-md-3 col-sm-12 no-padding-left job_price_div"><input type="text" name="job_rate_new[]" class="form-control margin-bottom" placeholder="Price" required></div><div class="col-md-4  no-padding-left job_hrs_div no-padding-right"><select name="job_timeline_hrs[]" class="form-control margin-bottom" required><option value="">Hours</option><?php for($i=1;$i<=24;$i++){?><option value="<?php echo $i;?>"><?php echo $i;?></option><?php }?></select>  </div><span class="removeclass small2"><i class="fa fa-times" aria-hidden="true"></i></span></div>');
+			//$("#timeline_box_new").append($("#timeline_box").html());
+			i++;
+	        datePickerCaller();
+	        //alert("I am here");
+		}
+		return false;
+	});
+
+	$("body").on("click",".removeclass", function(e){
+		//event.returnValue = false;  // mozilla giving error rest working in safari ,crome and IE
+		if( i > 1 ) { 
+				$(this).parent('.add_block').remove();i--;
+		}
+	});
+</script>
+<script type="text/javascript">
+	function check_data(){ 
+		chks = document.getElementsByName('set_timeline');
+        if (chks[0].checked){
+			if(document.managejob.job_date_new.value==""){
+			   alert("Please enter timeline date");
+			}
+			if(document.managejob.job_rate_new.value==""){
+			   alert("Please enter timeline new rate");
+			}
+			if(document.managejob.job_timeline_hrs.value==""){
+			   alert("Please enter timeline hours");
+			}
+		}
+
+		var job_date = document.getElementsByName('job_date');
+		//alert(job_date);
+		return false;
+	}
+	$(document).ready(function(){
+	    $('input[name="set_timeline"]').click(function(){ 
+			if(document.getElementById("timeline_box").style.display=="none"){
+				$('.in_date').attr('required', 'true');
+				$('.in_rate').attr('required', 'true');
+				$('.in_hrs').attr('required', 'true');
+				$("#timeline_box").show(); 
+				$("#show_add").show();
+			}else{
+				$('.in_date').removeAttr('required');
+				$('.in_rate').removeAttr('required');
+				$('.in_hrs').removeAttr('required');
+				$("#timeline_box").hide(); 
+				$("#show_add").hide();
+			}
+	    });
+	});
+	function copy_div(){
+		 var sid = $('input[name="store_id"]:checked').val(); 
+		 if(sid===undefined){ 
+
+	        $('div#alert-modal #alert-message').html('Please select store to continue.');
+	        $('div#alert-modal').addClass('in');
+	        $('div#alert-modal').css('display','block');
+
+			// alert("Please select store to continue.");
+		 }else{
+			 var cls="st_"+sid; 
+			 $("#step1").hide(1000);
+			 $("#step2").show(1000);
+			 $(".st_list_show").remove();
+			 //$(".show_list").append($("."+cls).show());
+		 }
+	 }
+ 	$('.numbersOnly').keyup(function () {
+	    if (this.value != this.value.replace(/[^0-9\.]/g, '')) {
+	       this.value = this.value.replace(/[^0-9\.]/g, '');
+	    }
+	});
+
+    function popup(){
+		var w = 560;
+        var h = 560;
+        var left = Number((screen.width/2)-(w/2));
+        var tops = Number((screen.height/2)-(h/2));
+        //test1 = <?php echo $this->serverUrl().'user-question-edit';?>;
+        //var win = window.open();
+        //win.document.write('<iframe height="450"  allowTransparency="true" frameborder="0" scrolling="yes" style="width:100%;" src="<?php //echo $this->serverUrl().'/user-question-edit';?>" type= "text/javascript"></iframe>');
+		 var popper=window.open("<?php echo $this->serverUrl().'/user-question-edit?popup=yes';?>","myWindow",
+        "width="+w+", height="+h+", top="+tops+", left="+left+",menubar=no,status=no,scrollbars=yes");
+         popper.focus();
+    }
+
+</script>

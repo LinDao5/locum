@@ -1,0 +1,104 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	$return = $this->script('email-activate-script');
+	$number_1 = mt_rand(1, 9);
+	$number_2 = mt_rand(1, 9);
+	$answer = substr(sha1($number_1+$number_2),5,10);
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		//$redirect=$this->redirect()->toUrl('/user-profile');
+		//echo $redirect;
+	//echo '1';	
+	}
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	$encypt = new Ecryption();
+	$helper = new Zend\View\Helper\ServerUrl();
+	$url = $helper->__invoke(true);
+	//echo $url; //full url
+	$str = explode('?',$url);
+	$str2 = explode('-',$str[1]); 
+	//print_r($str2);
+	$get_email = $str2[0]; // email 
+	$get_date=$str2[1]; // date
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+					<li><a href="/email-activate">Email Verification</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-envelope" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Email Verification</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content register">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+                    <div class="col-md-12">
+                    <div class="one-page-box visible widget-box no-border col-xs-12">
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <div class="welcome-heading">
+                                    <h1><span>Email Verification Status</span></h1>
+                                    <hr class="shadow-line">
+                                </div>
+                                <div style="clear:both;"></div>
+                                <?php if(isset($str[2]) && $str[2] == 'verified1'): ?>
+                                    <div style="font-size:24px; text-align: center;"><?php echo $this->partial('flash-messages'); ?></div>
+                                <?php else: ?>
+                                    <form id="one-page-form" action="<?php echo $url; ?>" method="post" name="email-active" style="visibility:hidden; height:0px">
+                                     <?php if(!empty($return['error_message'])): ?>
+                                            <div class="alert alert-danger"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                                        <?php endif; ?>
+                                        <input type="hidden" name="get_email" value="<?php echo $get_email;?>">
+                                        <input type="hidden" name="get_date" value="<?php echo $get_email;?>">
+                                        <fieldset class="has-warning">
+                                            <span class="block input-glyphicon input-glyphicon-right margin-bottom">
+                                                <input name="email" type="text" class="form-control margin-bottom" placeholder="Enter email" autofocus required  value="<?php echo $encypt->decryptIt($get_email);?>" readonly/>
+                                            </span>
+                        
+                                            <div class="clearfix buttons">
+                                                <button class="pull-right btn btn-small btn-warning">
+                                                    <i class="glyphicon glyphicon-log-in"></i>
+                                                    Verify
+                                                </button>
+                                            </div>
+                                        </fieldset>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                    
+                            <div class="footer clearfix text-right">
+                               
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- col-md-6 end -->
+            </div>
+        </div>
+   	</div>
+</div>
+<?php  if ($get_email != '' && !isset($str[2]) ) { ?>
+    <script type="text/javascript">
+        $('form[name=email-active]').submit();
+    </script>   
+<?php } ?>  
+<?php  if (isset($str[2]) && $this->partial('flash-messages') == '' ) { ?>
+    <script type="text/javascript">
+        window.location.href = "<?php echo $str[0]; ?>";
+    </script>   
+<?php } ?>    

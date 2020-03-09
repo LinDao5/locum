@@ -1,0 +1,73 @@
+<?php
+$qus = 'fre';
+if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+    $qus = 'emp';
+}elseif(isset($_GET['q']) && $_GET['q'] == 'adm'){
+    $qus = 'adm';
+}
+
+if (isset($_GET['c']) && $_GET['c'] != '') {
+    $cat = $_GET['c'];
+}else{
+    $cat = 1;
+}
+?>
+<div style=" display: flow-root;">
+<div class="form-group pull-right">
+             <div class="input-group pull-right">
+<a class="btn btn-warning pull-right" href="<?php echo $this->serverUrl() ?>/admin/content/industrynews/add">Add Industry News</a>
+             </div>
+             </div>
+</div>
+
+<div id="tabs">
+<div class="qus-tabs">
+
+</div>
+    <div id="fre-tab">
+        <div class="cat-tabs">
+
+        </div>
+        <?php if(!empty($newsdata)): ?>
+            <table class="table clickable table-striped table-hover">
+              <thead>
+                <tr>
+                    <th>Sno.</th>
+                    <th>Image</th>
+                    <!--<th>Description</th>-->
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+$i = 1 ;
+                foreach ($newsdata as $news):  ?>
+                    <tr>
+                        <td><?php echo $this->escapeHtml($i); ?></td>
+                        
+                        <!--<td><?php echo $news['description']; ?></td>-->
+                        <td>
+                            <?php  $this->escapeHtml($news['image_path']); ?>
+                            <img width="50" height="50" src="<?php echo $this->serverUrl().'/'.$news['image_path'] ?>" style="object-fit: cover;"/>
+
+                        </td>
+                        <td><?php echo $news['title']; ?></td>
+                        <td><?php echo $this->escapeHtml( @$news['status']== 1 ? 'Active' : 'In Active'); ?></td>
+                        <td>
+                            <a href="<?php echo $this->url('content/industrynews/edit', array('id' => $news['id'])); ?>" class="edit-line">
+                                <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                            </a>
+                        </td>
+                    </tr>
+                <?php $i++ ; endforeach; ?>
+
+                </tbody>
+            </table>
+        <?php
+        else:
+            echo "<h3>No record found..!</h3>";
+        endif;
+        ?>
+    </div>

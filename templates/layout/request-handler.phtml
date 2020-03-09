@@ -1,0 +1,27 @@
+<?php 
+header("Access-Control-Allow-Origin: *");
+header('Content-Type: application/json');
+use GcFrontend\Controller\DbController as DbController;
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+date_default_timezone_set('Europe/London');
+
+
+
+if(isset($_GET) && isset($_GET['username']) && isset($_GET['password'])){
+    $login = $_GET['username'];
+    $password = sha1($_GET['password']);
+	
+	$sqlString_get="SELECT * FROM user WHERE (login='$login' OR email = '$login') AND password='$password' AND (active='1')";	
+    $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+	$row11 = $results0->current(); 
+	if(!empty($row11['id'])){
+	echo json_encode($row11);
+	}else{
+    echo 'error';
+	}
+	
+	
+
+}
+?>

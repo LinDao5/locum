@@ -1,0 +1,171 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+date_default_timezone_set('Europe/London');
+  use Gc\User\Job\Model as JobModel;
+  use Gc\User\Model as UserModel;
+  use Gc\User\JobReminder\OnDayModel as OnDayModel; 
+  use GcFrontend\Controller\EndecryptController as Ecryption;
+  use GcFrontend\Controller\JobmailController as MailController;
+  use Zend\Db\Sql\Sql;
+  use Gc\Registry;
+  use GcFrontend\Controller\DbController as DbController;
+  use Gc\User\Feedback\Model as FeedbackModel;
+  use GcFrontend\Controller\JobsmsController as smsController;
+  use GcFrontend\Controller\PackagePrivilegesController;
+  $packagePrivilegesController    = new PackagePrivilegesController();
+  $encypt         = new Ecryption();
+  $onDayModel     = new OnDayModel();
+  $jobModel       = new jobModel();
+  $userModel      = new UserModel();
+  $mailController = new MailController();
+  $dbConfig       = new DbController();
+  $feedbackModel  = new FeedbackModel();
+  $adapter        = $dbConfig->locumkitDbConfig();
+  $serverUrl      = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+  $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+  $feedbackNotificationTime = $configGet->get('feedback_job_notification');
+  $currentTime  = date('H');
+  $currentDate  = date("d-m-Y");
+
+ echo "Notification Time : $feedbackNotificationTime <br/> Current Uk time : $currentTime <br/><br/>";
+
+  echo $nextDayDate  = date('d/m/Y', strtotime($currentDate .' -1 day'));
+  echo "<br/>";
+  echo $nextWeekDate = date('d/m/Y', strtotime($currentDate .' -1 week'));
+  echo "<br/>";  
+  /* Check for attendance */
+  $jobDoneStatus = $onDayModel->fetchAll($onDayModel->select(array('job_date' =>$nextDayDate, 'status'=> 2)));
+  echo "<pre>";
+  print_r($jobDoneStatus);
+  echo "</pre>";
+
+
+ echo "<br/>";
+  if (!empty($jobDoneStatus)) {
+    foreach ($jobDoneStatus as $key => $jobIds) {
+      /*Check for jo status */
+      $job_id = $jobIds['j_id'];
+      $f_id   = $jobIds['f_id'];
+      $e_id   = $jobIds['e_id'];
+      $jobModel->jobStatusUpdate($job_id,5);
+      $feedback_link_emp = '<a href="'.$serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($e_id).'&utype=emp&uf='.$encypt->encryptIt($f_id).'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Submit your feedback here</a>';
+      $feedback_link_fre = '<a href="'.$serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($f_id).'&utype=fre&ue='.$encypt->encryptIt($e_id).'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Submit your feedback here</a>';
+      $jobModel->update(['job_status'=> 5],['job_id' =>$job_id]);
+      $jobDone = $jobModel->fetchAll($jobModel->select(array('job_id' =>$job_id, 'job_status'=> 5)));
+      if (!empty($jobDone) && $feedbackNotificationTime == $currentTime && $packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$f_id,$adapter) == 1) {
+        $mailController->sendFeedbackNotification($job_id,$f_id,$e_id,$adapter,$feedback_link_fre,$feedback_link_emp);
+        $onDayModel->updateJobOnDayStatus($job_id,3);
+        
+       // send sms
+           $smsController = new smsController();
+          //for Freelancer
+          $smsfeedback_link_fre = $serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($f_id).'&utype=fre&ue='.$encypt->encryptIt($e_id);
+              $smsController->sendFeedbackNotificationFreSms($f_id,$job_id,$smsfeedback_link_fre);
+          //for Employee
+          $smsfeedback_link_emp = $serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($e_id).'&utype=emp&uf='.$encypt->encryptIt($f_id);
+              $smsController->sendFeedbackNotificationEmpSms($e_id,$job_id,$smsfeedback_link_emp);
+          // send sms end
+     
+     
+      }
+    }
+  }
+  /* Check for attendance */
+  $jobDoneStatus = $onDayModel->fetchAll($onDayModel->select(array('job_date' =>$nextWeekDate, 'status'=> 3)));
+ 
+  echo "<pre>======";
+  print_r($jobDoneStatus);
+  echo "==========</pre>";
+
+ 
+if (!empty($jobDoneStatus)) {
+    foreach ($jobDoneStatus as $key => $jobIds) {
+      /*Check for jo status */
+      $job_id = $jobIds['j_id'];
+      $f_id   = $jobIds['f_id'];
+      $e_id   = $jobIds['e_id'];
+      $jobFeedbackStatusFre = $feedbackModel->fetchAll($feedbackModel->select(array('j_id' =>$job_id, 'user_type'=> 2)));
+      $jobFeedbackStatusEmp = $feedbackModel->fetchAll($feedbackModel->select(array('j_id' =>$job_id, 'user_type'=> 3)));
+      
+      if (count($jobFeedbackStatusFre) == 0 && $feedbackNotificationTime == $currentTime && $packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$f_id,$adapter) == 1 ) {        
+        $feedback_link_fre = '<a href="'.$serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($f_id).'&utype=fre&ue='.$encypt->encryptIt($e_id).'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Submit your feedback here</a>';
+        
+        $mailController->sendFeedbackNotificationOneWeekAlert($job_id,$f_id,$feedback_link_fre,2,$adapter);
+        
+     // send sms
+          $smsController = new smsController();
+          $smsfeedback_link_fre = $serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($f_id).'&utype=fre&ue='.$encypt->encryptIt($e_id);
+          $smsController->sendFeedbackNotificationFreSms($f_id,$job_id,$smsfeedback_link_fre,2);
+          // send sms end
+     
+      }
+      if(count($jobFeedbackStatusEmp) == 0 && $feedbackNotificationTime == $currentTime && $packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$f_id,$adapter) == 1 ){
+        $feedback_link_emp = '<a href="'.$serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($e_id).'&utype=emp&uf='.$encypt->encryptIt($f_id).'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Submit your feedback here</a>';        
+        
+        $mailController->sendFeedbackNotificationOneWeekAlert($job_id,$e_id,$feedback_link_emp,3,$adapter);
+        
+          // send sms
+          $smsController = new smsController();
+          $smsfeedback_link_emp = $serverUrl().'/feedback?j='.$encypt->encryptIt($job_id).'&u='.$encypt->encryptIt($e_id).'&utype=emp&uf='.$encypt->encryptIt($f_id);
+          $smsController->sendFeedbackNotificationFreSms($e_id,$job_id,$smsfeedback_link_emp,3);
+          // send sms end
+        
+      }
+
+      $onDayModel->updateJobOnDayStatus($job_id,4);
+      
+    }
+}
+
+/* If job accepted by private locum then update job status to done */
+
+echo $sqlOnDayJobPU = "SELECT * FROM  private_user_job_action AS a JOIN job_post AS jp ON jp.job_id = a.j_id WHERE a.status='3' AND a.notify = '2'  AND DATE(STR_TO_DATE(jp.job_date, '%d/%m/%Y')) = $nextDayDate";
+$jobOnDayDataPU = $adapter->query($sqlOnDayJobPU, $adapter::QUERY_MODE_EXECUTE);
+$jobOnDayPU = $jobOnDayDataPU->toArray();
+echo '<pre>';
+print_r($jobOnDayPU);
+echo '</pre>';
+if (!empty($jobOnDayPU)) {
+	foreach ($jobOnDayPU as $key => $value) {
+	  	$jobModel->jobStatusUpdate($value['job_id'],5);
+	}
+}
+
+/*
+// Testing section 
+echo 'Testing start....';
+$feedback_link_emp = '<a href="'.$serverUrl().'/feedback?j='.$encypt->encryptIt(1980).'&u='.$encypt->encryptIt(205).'&utype=emp&uf='.$encypt->encryptIt(241).'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Submit your feedback here</a>';
+      $feedback_link_fre = '<a href="'.$serverUrl().'/feedback?j='.$encypt->encryptIt(1980).'&u='.$encypt->encryptIt(241).'&utype=fre&ue='.$encypt->encryptIt(205).'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Submit your feedback here</a>';
+
+        $mailController->sendFeedbackNotification(1980,241,205,$adapter,$feedback_link_fre,$feedback_link_emp);
+echo '<br/>Testing end....';
+*/
+
+/* to check feedback received notification app so ignore it 
+$feedbackArray[] = array(
+					'qusId'		=> 2,
+					'qus'		=> 'Test qus',
+					'qusRate'	=> 5
+				);
+			
+			
+		
+		$feedback = serialize($feedbackArray);
+
+$isertArray = array(
+						'emp_id'	=> 201,
+						'fre_id'	=> 241,
+						'j_id'		=> 1980,
+						'rating'	=> 5,
+						'feedback'	=> $feedback,
+						'comments'	=> 'I m testing',
+						'user_type' => 3,
+						'cat_id' 	=> 3,
+					); 
+				//$feedbackId = $feedbackModel->save($isertArray);
+				$mailController->recievedFeedbackFreelancerNotification(142,$isertArray,$adapter);
+echo 'I m here..........';
+			
+*/
+
+?>

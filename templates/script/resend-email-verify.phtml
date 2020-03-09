@@ -1,0 +1,62 @@
+<?php
+	use GcFrontend\Controller\DbController as DbController;
+	use GcFrontend\Controller\JobmailController as MailController;
+    $mailController = new MailController();
+	use GcFrontend\Controller\EndecryptController as Endecrypt;
+    $endecrypt = new Endecrypt();
+	$dbConfig = new DbController();
+        $adapter = $dbConfig->locumkitDbConfig();
+	use Gc\User\Role\Model;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	
+    $sql = new Sql($adapter);
+    $update = $sql->update();
+    $select = $sql->select();
+	$host=$this->getRequest()->getUri()->getHost();
+	
+	$header = $mailController->mailHeader();
+	$footer = $mailController->mailFooter();
+	
+	$request = $this->getRequest();
+	if($request->isPost())
+	{
+	    $post 		= $request->getPost();
+	    $email 		= $post->get('email');
+		$get_resend = $post->get('get_resend');
+		$get_email 	= $post->get('get_email');
+		$get_id 	= $post->get('get_id');
+		$user_status= "";
+			
+		$retrieve_key= 'e='.$endecrypt->encryptIt($get_email).'&re='.$endecrypt->encryptIt($get_resend).'&eu='.$endecrypt->encryptIt($get_id);
+		$resend_email_verify=$post->get('resend_email_verify');
+		if(isset($resend_email_verify) && $resend_email_verify==1){
+			$sqlString_get="select * from user where email='$email'";	
+			$results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+			$row111 = $results0->current();
+			$id = $row111['id'];		
+			$user_status = $row111['active'];
+			if ($user_status != 1 && $row111['user_acl_role_id'] == 2) {
+				$mailController->reSendVerifyEmailtofreelancer($id, $adapter);
+				$this->flashMessenger()->addSuccessMessage('Please check your mail and verify your account.');
+			}else{
+				if($row111['user_acl_role_id'] == 3){
+					$this->flashMessenger()->addSuccessMessage('You are not valid locum.');
+				}else{
+					$this->flashMessenger()->addSuccessMessage('You are already verified locum.');
+				}				
+			}
+			$this->redirect()->toUrl('/resend-email-verify');
+			return true;
+	    
+		}
+		
+		if(empty($get_email) or empty($id) or empty($id2)){
+	    	return array('key'=> $retrieve_key,'error_message' => 'Incorrect details');
+	    }
+	}
+?>

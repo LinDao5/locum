@@ -1,0 +1,50 @@
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section>
+      			<p style="text-align:center;">
+				<img src="<?php echo $this->cdn('/frontend/locumkit-template/'); ?>img/logo.png" alt="logo">
+				</p>
+				<h1 class="successfull_msg">Cron is working...</h1>
+				<!-- <h4 class="feedback_msg">Please give us 24-48 hours.</h4> -->
+				<?php 
+					if (isset($_GET['run']) && $_GET['run'] == 'reminder') {
+						$this->script('reminder');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'onday') {
+						$this->script('cron-on-day');
+					}elseif(isset($_GET['run']) && $_GET['run'] == 'job'){
+						$this->script('manage-job-cron');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'feedback') {
+						$this->script('cron-feedback');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'resetfreeze') {
+						$this->script('cron-resetfreeze');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'timeline') {
+						$this->script('timeline-cron');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'package-upgrade') {
+						$this->script('package-upgrade');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'package-upgrade-status') {
+						$this->script('cron-package-status');
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'subscriber-update') {
+						$this->script('subscriber-list');	
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'close-job') {
+						$this->script('cron-close-job');	
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'guest-user-notification') {
+						$this->script('cron-delete-guest-user');	
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'approve-feedback') {
+						$this->script('cron-approve-feedback');	
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'weekly-reminder') {
+						$this->script('weekly-reminder');	
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'onday-expense') {
+						$this->script('cron-onday-expense');	
+					}elseif (isset($_GET['run']) && $_GET['run'] == 'job-summary') {
+						$this->script('cron-job-summary');	
+					}
+				?>
+             </section>
+            </div>
+        </div>
+   	</div>
+</div>
+    	<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-1.10.2.min.js'); ?>"></script>
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/bootstrap.min.js'); ?>"></script>

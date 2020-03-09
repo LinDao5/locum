@@ -1,0 +1,101 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<script type="text/javascript" src="/backend/assets/datatypes/textrich/ckeditor.js"></script>
+<script type="text/javascript" src="/backend/assets/datatypes/textrich/ckeditor-adapters-jquery.js"></script>   
+<?php echo $this->form()->openTag($this->form); ?>
+    <?php $fieldsets = $this->form->getFieldsets(); ?>
+
+    <div id="accordion">
+        <?php foreach ($fieldsets as $fieldset): ?>
+            <h3><?php echo $this->escapeHtml($this->translate($fieldset->getLabel())); ?></h3>
+            <div>
+                <?php
+                    $i=1; 
+                    foreach ($fieldset->getElements() as $element): ?>
+                    <div class="form-group ">
+                        <?php echo $this->formLabel($element); ?>
+
+                        <div class="col-lg-10 <?php if($i == 1){ echo "email-box";} ?>">
+                            <?php 
+                                $email_finder1 = $element->getAttributes();                                
+                                $email_finder = $email_finder1['name'];                                
+                                if ($email_finder == 'email') {
+                                    //use Gc\User\Collection as UserCollection;
+                                    $userCollection = new Gc\User\Mailchimp\Collection();
+                                    $userList = $userCollection->getSubscribeUsers();
+                                    foreach ($userList as $userModel) {
+                                ?>
+                                        <label class="required control-label col-lg-2 email-list"><input type="checkbox" name="email[]" id="email" class="form-control" value="<?php echo $userModel->getEmail(); ?>"><?php echo $userModel->getEmail(); ?></label>                                        
+                                <?php  }  ?>
+                            <?php  }else{  ?>
+                                <?php echo $this->formElement($element); ?>
+                                <?php echo $this->formElementErrors($element, array('class' => 'text-danger')); ?>
+                            <?php } ?>
+                        </div>
+                    </div>
+                <?php $i++; endforeach; ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <div class="margin-top-30">
+        <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Send')); ?>" name="submit">
+    </div>
+    
+<?php echo $this->form()->closeTag($this->form); ?>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    $('#accordion').accordion({
+        heightStyle: "content",
+        collapsible: true
+    });
+});
+</script>
+ <script type="text/javascript">
+$(function () {
+    var config = {
+        skin: "moono",
+        toolbar: [['Source', 'Save', 'NewPage', 'DocProps', 'Preview', 'Print', 'Templates'], ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', 'Undo', 'Redo'], ['Find', 'Replace', 'SelectAll', 'SpellChecker', 'Scayt'], ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField'], ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', 'RemoveFormat'], ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'CreateDiv', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', 'BidiLtr', 'BidiRtl'], ['Link', 'Unlink', 'Anchor'], ['Image', 'Flash', 'Table', 'HorizontalRule', 'Smiley', 'SpecialChar', 'PageBreak', 'Iframe'], ['Styles', 'Format', 'Font', 'FontSize'], ['TextColor', 'BGColor'], ['Maximize', 'ShowBlocks', 'About'],],
+        allowedContent: true
+    };
+
+    $("#mail_message").ckeditor(config)
+    .ckeditor(function () {
+        this.addCommand("saveDocument",
+        {
+            exec : function (editor, data) {
+                $("#input-save").click();
+            }
+        });
+        this.keystrokeHandler.keystrokes[CKEDITOR.CTRL + 83 /* S */] =  "saveDocument";
+    });
+});
+</script>

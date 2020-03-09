@@ -1,0 +1,51 @@
+<?php $cm = $financeHelper->getCreatedMonth($uid); ?>
+<style>
+    #btnNext {
+        color: red;
+        float: right;
+        height: 39px;
+        display: inline-flex;
+        vertical-align: middle;
+    }
+
+    @media (max-width: 900px) {
+        #btnNext {
+            margin-top: 20px;
+            float: none !important;
+        }
+    }
+</style>
+
+<div class="col-md-12 pad0 select-year-wrapper">
+    <div class="financial-year-title col-sm-7 col-md-7 bglightgrey">
+        <h4 class="text-right">Financial year (<?php echo date('M', mktime(0, 0, 0, $m, 1)); ?>
+            -<?php echo date('M', mktime(0, 0, 0, $m + 11, 1)); ?>)&nbsp;&nbsp;&nbsp;&nbsp;: </h4>
+    </div>
+    <div class="financial-year-select col-sm-5 col-md-5 bglightgrey">
+        <div class="form-group" style="display: inline">
+            <?php
+            $registerYear = $financeHelper->getCreatedYear($uid);
+            $currentFinanaceYear = date('Y');
+
+            if ($cm < $m) {
+                $registerYear = $registerYear - 1;
+            }
+
+            if (($registerYear + 3) <= date('Y')) {
+                $registerYear = date('Y') - 3;
+            }
+
+            ?>
+            <select name="year" class="filter-selection" id="finance-year" onchange="this.form.submit()">
+                <?php
+                for ($i = $registerYear; $i <= $currentFinanaceYear; $i++) {
+                    $t = (date('n') >= $m) ? $i : $i - 1 ?>
+                    <option value="<?php echo $i; ?>" <?php echo @$financialYear == $i ? 'selected' : ''; ?>><?php echo $financeHelper->getoneplusyear($t); ?></option>
+                <?php } ?>
+
+            </select>
+        </div>
+        <button  id="btnNext" class="read-common-btn generated_btn pull-right">Next</button>
+
+    </div>
+</div>

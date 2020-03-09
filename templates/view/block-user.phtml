@@ -1,0 +1,67 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+    use GcFrontend\Controller\EndecryptController as Endecrypt;
+    $actual_link = $_SERVER[REQUEST_URI];
+    $_SESSION['action_url'] = $actual_link;
+    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != '' && isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3) {
+        $endecrypt = new Endecrypt();
+        $currentEid = $_SESSION['user_id'];        
+        if (isset($_GET['eid']) && $_GET['eid'] != ''  && isset($_GET['fid']) && $_GET['fid'] != '') {
+           $eid =  $endecrypt->decryptIt($_GET['eid']);
+           $fid =  $endecrypt->decryptIt($_GET['fid']);
+           if ($eid != $currentEid) {
+               echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+           }
+        }else{            
+            echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+        }
+    ?>
+    <section id="breadcrum" class="breadcrum">
+        <div class="breadcrum-sitemap">
+             <div class="container">
+                <div class="row">
+                    <ul>          
+                        <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/user-profile">My Dashboard</a></li>
+    		            <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+
+                    </ul>
+                 </div>
+             </div>
+         </div>
+    </section>
+    <div id="primary-content" class="main-content about">
+       <div class="container">
+        	<div class="row">
+                <div class="contents white-bg">
+                    <section>
+                    <div class="welcome-heading">
+                        <h1><span><?php echo $this->escapeHtml($this->translate($this->title)); ?></span></h1>
+                        <hr class="shadow-line">
+                    </div>
+                        <?php echo $this->content; ?>
+                        <div id="block-freelancer-confirm">
+                            <a href="javascript:void(0)" onclick="block_user('<?php echo $fid;  ?>')" class="read-common-btn">Block Locum</a>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php }else{ 
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+} ?>
+<script type="text/javascript">
+    function block_user(id){
+$("#loader-div").show();
+        $.ajax({
+              'url'   :'/job-search',
+              'type'  :'POST',
+              'data'  : {block_id : id},
+              'success':function(result){ 
+            //    alert("Freelancer is blocked.");
+                window.location='<?php echo $this->serverUrl();?>/manage-block-freelancer';
+            }
+        });
+    }
+</script>

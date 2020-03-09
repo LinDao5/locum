@@ -1,0 +1,11 @@
+<?php 
+	//For App url 
+	header('Access-Control-Allow-Origin: *');
+	header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+	header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-Request-With,X-XSRF-TOKEN');
+	header("Content-Type: application/json; charset=UTF-8");
+	header('Access-Control-Allow-Credentials: true');
+	use FudugoApp\Controller\IndexController as AppController;
+	$appController = new AppController();
+	$appController->index();
+?>

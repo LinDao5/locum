@@ -1,0 +1,234 @@
+<?php
+    /**
+     * Suraj Wasnik (suraj.wasnik0126@gmail.com)
+     */
+    use GcBackend\Controller\DashboardHelper;
+    $dashboardHelper = new DashboardHelper();
+    $registerUserCount = $dashboardHelper->dashbordUserRegisterData();
+    $jobCount = $dashboardHelper->getTotalJobs();
+    $totalTrunOverRecord = $dashboardHelper->getTotalTrunOver();    
+    $totalTrunOver = ($totalTrunOverRecord > 1000) ? ($totalTrunOverRecord / 1000) : $totalTrunOverRecord ;   
+    /*echo "<pre>";
+    print_r($registerUserCount); 
+    echo "</pre>"; */
+    $session   = $_SESSION['Zend_Auth_Backend']->storage;
+?>
+<?php if($session->getUserAclRoleId() == 1 ) : ?>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="dashbord-short-links">
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashbord-btn">
+                        <a href="/admin/config/user" class="dashbord-btn-link"><i class="glyphicon glyphicon-user"></i> &nbsp; Users</a>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashbord-btn">
+                        <a href="/admin/config/user/job" class="dashbord-btn-link"><i class="glyphicon glyphicon-briefcase"></i> &nbsp;Jobs</a>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashbord-btn">
+                        <a href="/admin/config/user/finance" class="dashbord-btn-link"><i class="glyphicon glyphicon-gbp"></i> &nbsp;Finance</a>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashbord-btn">
+                        <a href="/admin/config/user/feedback/user-feedback" class="dashbord-btn-link"><i class="glyphicon glyphicon-star-empty"></i> &nbsp;Feedback</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="dahsbord-graph-div">
+                <h3 class="garph-title">Users / Jobs / Income By Locum ( Current year )</h3>
+                <canvas id="pi-graph"></canvas>
+                <ul class="bar-legend">
+                    <li><span style="background-color:#0498c7"></span>Users</li>
+                    <li><span style="background-color:#f75b36"></span>Jobs</li>
+                    <li><span style="background-color:#1cdc00"></span>Income</li>
+                </ul>
+            </div>
+        </div>
+        <!-- <div class="col-md-6">
+            <div class="dahsbord-graph-div">
+                <h3 class="garph-title">Visitor Graph ( Current Year )</h3>
+                <canvas id="daily-visitors"></canvas> 
+            </div>
+        </div> -->
+        <div class="col-md-6">
+            <div class="dahsbord-graph-div">
+                <h3 class="garph-title">User Register ( Current year )</h3>
+                <canvas id="user-register-graph"></canvas>
+                <ul class="bar-legend">
+                    <li><span style="background-color:rgba(220,220,220,0.5)"></span>Locums</li>
+                    <li><span style="background-color:rgba(151,187,205,0.5)"></span>Employes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+<?php else: ?>
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Welcome To LocumKit Admin Panel</h1>
+        </div>
+    </div>
+<?php endif; ?>
+
+<script type="text/javascript">
+    Gc.initDashBoard($.parseJSON('<?php echo $this->escapeJs($this->dashboardSortable); ?>'), '<?php echo $this->escapeJs($this->url('admin/dashboard-save')); ?>');
+</script>
+<?php if($session->getUserAclRoleId() == 1 ) : ?>
+    <style type="text/css">
+        .dashbord-btn {
+            text-align: center;
+        }
+        .dashbord-btn a.dashbord-btn-link {
+            width: 100%;
+            margin: 15px auto;
+            padding: 50px 0;
+            font-size: 32px;
+            display: block;
+            background: #f0f0f0;
+            color: #555;
+            text-decoration: none;
+            border: 1px solid #e0dfdf;
+        }
+        .dashbord-btn a.dashbord-btn-link:hover {
+            background: #00a9e0;
+            color: #fff;
+        }
+        .dahsbord-graph-div {
+            background: #f0f0f0;
+            padding: 20px 25px;
+            width: 100%;
+            border: 1px solid #e0dfdf;
+            margin-bottom: 30px;
+        }
+        .dahsbord-graph-div h3.garph-title {
+            margin: 0 0 25px;
+            text-transform: uppercase;
+        }
+        .dashbord-short-links {
+            border: 1px solid #ccc;
+            float: left;
+            padding: 15px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .dahsbord-graph-div ul.bar-legend li span {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            margin: 0 5px 0 10px;
+            border: 1px solid #000;
+        }
+        ul.bar-legend {
+            margin-bottom: 0;
+            margin-top: 15px;
+        }
+        .dahsbord-graph-div ul.bar-legend li {
+            display: inline-block;
+        }
+        ul.bar-legend li span {
+            width: 20px;
+            height: 20px;
+            display: block;
+            margin: 0 5px 0 10px;
+            border: 1px solid #000;
+            float: left;
+        }
+    </style>
+    <script src="https://mdbootstrap.com/wp-content/themes/mdbootstrap4/js/mdb3/mdb.min.js"></script>
+    <script type="text/javascript"> 
+        $(function () {
+            var userData = {
+                labels: [<?php echo $registerUserCount['month']; ?>],
+                datasets: [
+                    {
+                        label: "Locums",
+                        fillColor: "rgba(220,220,220,0.5)",
+                        strokeColor: "rgba(220,220,220,1)",
+                        pointColor: "rgba(220,220,220,1)",
+                        pointStrokeColor: "#fff",
+                        pointHighlightFill: "#fff",
+                        pointHighlightStroke: "rgba(220,220,220,1)",
+                        data: [<?php echo $registerUserCount['locum']; ?>]
+                    },
+                    {
+                        label: "Employer",
+                        fillColor: "rgba(151,187,205,0.5)",
+                        strokeColor: "rgba(151,187,205,1)",
+                        pointColor: "rgba(151,187,205,1)",
+                        pointStrokeColor: "#fff",
+                        pointHighlightFill: "#fff",
+                        pointHighlightStroke: "rgba(151,187,205,1)",
+                        data: [<?php echo $registerUserCount['employer']; ?>]
+                    }
+                    ]
+                };
+           
+            var option = {
+                responsive: true,
+            };
+            var ctx2 = document.getElementById("user-register-graph").getContext('2d');
+            var userRegister = new Chart(ctx2).Line(userData, option); //'Line' defines type of the
+            
+            /*var userData = {
+                labels: [<?php echo $registerUserCount['month']; ?>],
+                datasets: [
+                    {
+                        label: "Locums",
+                        fillColor: "rgba(220,220,220,0.2)",
+                        strokeColor: "rgba(220,220,220,1)",
+                        pointColor: "rgba(220,220,220,1)",
+                        pointStrokeColor: "#fff",
+                        pointHighlightFill: "#fff",
+                        pointHighlightStroke: "rgba(220,220,220,1)",
+                        data: [<?php echo $registerUserCount['locum']; ?>]
+                    },
+                    {
+                        label: "Employer",
+                        fillColor: "rgba(151,187,205,0.2)",
+                        strokeColor: "rgba(151,187,205,1)",
+                        pointColor: "rgba(151,187,205,1)",
+                        pointStrokeColor: "#fff",
+                        pointHighlightFill: "#fff",
+                        pointHighlightStroke: "rgba(151,187,205,1)",
+                        data: [<?php echo $registerUserCount['employer']; ?>]
+                    }
+                    ]
+                };
+            var ctx1 = document.getElementById("daily-visitors").getContext('2d');
+            var dailyVisitors = new Chart(ctx1).Bar(userData, option); //'Line' defines type of the chart.
+    */
+
+            
+            var data = [
+                {
+                    value: <?php echo $registerUserCount['AllUser']; ?>,
+                    color:"#00a9e0",
+                    highlight: "#0498c7",
+                    label: "Total Users"
+                },
+                {
+                    value: <?php echo $jobCount; ?>,
+                    color: "#f75b36",
+                    highlight: "#ea4821",
+                    label: "Total Jobs"
+                },
+                {
+                    value: <?php echo $totalTrunOver; ?>,
+                    color: "#1cdc00",
+                    highlight: "#1cb306",
+                    label: "Total Income ( x1000 ) "
+                }
+            ];
+            
+            var ctx3 = document.getElementById("pi-graph").getContext('2d');
+            var piGraph = new Chart(ctx3).Doughnut(data, option); //'Line' defines type of the chart.
+        });
+    </script>
+<?php endif; ?>

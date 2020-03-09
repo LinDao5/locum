@@ -1,0 +1,165 @@
+<?php
+/**
+ * This source file is part of FUDUGO. *
+ * 
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User\Feedback
+ * @author     Suraj Wasnik (suraj.wasnik0126@gmail.com)
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.fudugo.com
+ */
+
+?>
+
+<form class="relative form-horizontal" action="<?php echo   $_SERVER['REQUEST_URI']; ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <inpute type="hidden" name="user_type" value="<?php echo $this->questionData->getUserType(); ?>">
+	<div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_from">Feedback From</label>        
+        <div class="col-lg-10">
+            <p class="form-control" readonly style="text-transform: capitalize;"><?php echo $this->questionData->getUserType() == 2 ? $this->questionData->freUserInfo : $this->questionData->empUserInfo; ?></p>                 
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_to">Feedback To</label>        
+        <div class="col-lg-10">
+            <p class="form-control" readonly style="text-transform: capitalize;"><?php echo $this->questionData->getUserType() == 2 ? $this->questionData->empUserInfo : $this->questionData->freUserInfo ; ?></p>                            
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="average_rate">Average Rate</label>        
+        <div class="col-lg-10">
+            <div id="stars-rating col-lg-5" class="user-rating" style="width: 130px;  float: left;  padding: 6px 0;">
+                <?php 
+                    $totalStar = 5;
+                    $ratingStar = $this->questionData->getRating();
+                    $currentStar = 1;
+                    while($totalStar > 0){ 
+                        if($ratingStar >= $currentStar){
+                            $starClass = 'glyphicon-star';
+                        }else{                                                 
+                            $starClass = 'glyphicon-star-empty'; 
+                        }
+                ?>
+                    <span class="glyphicon <?php echo $starClass; ?>"></span>
+                <?php $totalStar--; $currentStar++; } ?>                
+            </div> 
+            <div id="stars-rating col-lg-5" style="width: 130px;  float: left;  padding: 8px 0;">
+            	<a href="javascript:void(0)" id="show-details-feedback">Show Deatils</a>
+            </div>
+            <div id="details-feedback" style="display:none;">
+                <?php 
+                    $qusFeedbackRateArray = unserialize($this->questionData->getFeedback());
+                    $qusCount = 1;
+                    foreach ($qusFeedbackRateArray as $qusId => $feedbackRate) {
+                        /*echo "<pre>";
+                        print_r($feedbackRate);
+                        echo "</pre>";*/
+                ?>
+                    <div class="feedback-qus-ans">
+                        <p class="qus"><span>Qus. <?php echo $qusCount++; ?>)</span><?php echo $feedbackRate['qus'] ?></p>
+                        <div class="user-rating">                            
+                            <?php 
+                                $totalStar = 5;
+                                $ratingStar = $feedbackRate['qusRate'];
+                                $currentStar = 1;
+                                while($totalStar > 0){ 
+                                    if($ratingStar >= $currentStar){
+                                        $starClass = 'glyphicon-star';
+                                    }else{                                                 
+                                        $starClass = 'glyphicon-star-empty'; 
+                                    }
+                            ?>
+                                <span class="glyphicon <?php echo $starClass; ?>"></span>
+                            <?php $totalStar--; $currentStar++; } ?>     
+                        </div>
+                    </div>
+                <?php } ?>
+                <div class="feedback-comment">
+                    <label class="required control-label " for="feedback_comment">Feedback Comment</label>        
+                    <div class="f-comment">
+                        <p class="form-control" readonly><?php echo  $this->questionData->getComments() != '' ?  $this->questionData->getComments() : 'No comments...'; ?></p>                            
+                    </div>
+                </div> 
+
+ <?php if($this->questionData->disputeComment != ''){ ?>
+                <div class="feedback-comment dispute">
+                    <label class="required control-label " for="feedback_comment">Dispute Comment</label>
+                    <div class="f-comment">
+                        <p class="form-control" readonly><?php echo  $this->questionData->disputeComment != '' ?  $this->questionData->disputeComment : 'No comments...'; ?></p>
+                    </div>
+                </div>
+                <?php } ?>
+          	
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_status">Feedback Status</label>        
+        <div class="col-lg-10">            
+            <select name="status" class="form-control" id="fd_qus_status">
+            	<!--<option value="0" <?php echo $this->questionData->getStatus()==0 ? 'Selected' : ''; ?>>Pending</option>-->
+                <option value="1" <?php echo $this->questionData->getStatus()==1 ? 'Selected' : ''; ?>>Approved</option>                
+                <option value="2" <?php echo $this->questionData->getStatus()==2 ? 'Selected' : ''; ?>>Dispute Pending</option>                
+				<option value="3" <?php echo $this->questionData->getStatus()==3 ? 'Selected' : ''; ?>>Dispute Approved</option>				
+			</select>                      
+        </div>
+    </div>
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="Save" name="submit">
+</form>
+
+<style type="text/css">
+	div#details-feedback {
+	    clear: both;
+	    padding: 10px;
+	    border: 1px solid #ccc;
+	    border-radius: 3px; 
+	}
+	div#details-feedback p{
+		font-weight: bold;
+	}
+	.user-rating{
+		font-size: 16px; 
+		color: #df7900;
+	}
+    .feedback-comment {
+        border-top: 1px solid #ccc;
+        margin-top: 15px;
+        display:none;
+    }
+    .feedback-comment.dispute {
+        display:block;
+    }
+    .feedback-comment label.required.control-label {
+        margin: 10px 0;
+    }
+    .f-comment p {
+        font-weight: bold;
+        height: auto;
+    }
+    .feedback-qus-ans {
+        border-bottom: 1px solid #cfcfcf;
+        padding: 10px;
+        margin-bottom: 10px;
+        background: #fff;
+        border-radius: 3px;
+    }
+    .feedback-qus-ans:last-child {
+        border-bottom: 0px solid #cfcfcf;
+    }
+    p.qus{
+        font-style: italic;
+    }
+    p.qus span {
+        padding-right: 8px;
+    }
+</style> 
+<script type="text/javascript">
+	jQuery("a#show-details-feedback").click(function(){
+		jQuery("#details-feedback").toggle(1000);
+	});
+</script>

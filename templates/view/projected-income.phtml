@@ -1,0 +1,152 @@
+<?php
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+use GcConfig\Controller\FinanceController as FinanceController  ;
+$financeController = new FinanceController();
+$financeHelper = new FinanceHelper();
+use GcFrontend\Controller\PackagePrivilegesController;
+$packagePrivilegesController    = new PackagePrivilegesController();
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+    $uid=$_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+}
+$currency = $this->config()->get('site_currency');
+$financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+$incomeRecord = $financeHelper->getAllIncome($uid,$financialYear,$filter,false,null,1);
+//$transchart = $financeHelper->chart_getAllIncome($uid,$financialYear,$filter);
+
+$transchart = $financeHelper->chart_getAlltrans($uid,$financialYear,$filter);
+$overallincome = $financeHelper->getIncomeByuser($uid ,$financialYear);
+$overallexpence = $financeHelper->getExpenceByuser($uid , $financialYear);
+$finyeardata =  $financeHelper->getUserFinanceyearStartMonth($uid,true);
+$m =  $finyeardata['month_start'];
+$finyearusrtype = $finyeardata['user_type'] ;
+
+$income_expectchart = $financeHelper->chart_getAllIncomeExpect($uid, $financialYear, $filter);
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/freelancer-reports">REPORTS</a></li>
+                    <li><a href="">Projected Income</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Projected Income</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="text-left">
+
+                    <div class="col-md-12 pad0">
+                        <div class="marb0 text-capitalize text-center finance-page-head">Projected Income</div>
+                    </div>
+
+                    <div class="col-md-12 in_ex_pr_box">
+                        <div class="">
+                            <div class="col-sm-3 col-md-3 text-center">
+                                <h1 class="mar0" id="register_head_blue">Income + Projected</h1>
+                                <h2 class="mar0">
+<!--                                    --><?php //echo $currency.$financeHelper->setPriceFormate($overallincome['job_rate']); ?><!--</h2>-->
+                                    <?php echo $currency.$financeHelper->setPriceFormate($income_expectchart[5]); ?></h2>
+                            </div>
+                            <div class="col-sm-3 col-md-3 text-center">
+                                <h1 class="mar0" id="register_head_blue">Expenses</h1>
+                                <h2 class="mar0">
+                                    <?php echo $currency.$financeHelper->setPriceFormate($overallexpence['cost']); ?></h2>
+                            </div>
+                            <div class="col-sm-3 col-md-3 text-center">
+                                <h1 class="mar0" id="register_head_blue">Profit</h1>
+                                <h2 class="mar0"><?php $profit = $overallincome['job_rate'] - $overallexpence['cost'];
+                                    echo $currency.$financeHelper->setPriceFormate($profit); ?>
+                                </h2>
+                            </div>
+                            <div class="col-sm-3 col-md-3 text-center">
+                                <h1 class="mar0" id="register_head_blue">Income tax</h1>
+                                <h2 class="mar0"><?php  echo $currency.$financeHelper->setPriceFormate($financeController->taxclaculation($overallincome['job_rate'],$finyearusrtype,$financialYear,$uid)); ?></h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 finance-graph incm-desktp" align="center">
+                        <h2 class="marb0"><span class="color-finance">INCOME + Projected<span></h2>
+                        <span class="finance-txt-css">Year <?php echo  $financeHelper->getMonthFinancialYear($uid,$financialYear) ; ?> </span>
+                        <div class="income-graph graph-chart">
+                            <canvas id="myChart" width="400" height="200" class="well"></canvas>
+                            <div id="myChart-legend" class="chart-legend"></div>
+                        </div>
+                    </div>
+
+                </section>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var chartColors = {
+        color1: 'rgba(181, 230, 29, 0.5)',
+        color2: 'rgba(218, 165, 32, 0.5)',
+        color3: 'rgba(175, 0, 42, 0.5)'
+    };
+    $(document).ready(function() {
+        $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+            var data_x = <?php echo json_encode($income_expectchart[0]) ?>;
+            var data1 = <?php echo json_encode($income_expectchart[3]) ?>;
+            var expectIndex = <?php echo json_encode($income_expectchart[4]) ?>;
+            //var data2 = <?php //echo json_encode($income_expectchart[2]) ?>//;
+            // alert(data_x);
+            // alert(data1);
+            var barChartData = {
+                labels: data_x,
+                datasets: [
+                    {
+                        label: "income&expect dataset",
+                        fillColor: "#85A04C",
+                        strokeColor: "#85A04C",
+                        highlightFill: "#85A04C",
+                        highlightStroke: "#85A04C",
+                        data: data1
+                    }
+                ]
+            };
+
+            var ctx = document.getElementById("myChart").getContext("2d");
+            window.myObjBar = new Chart(ctx).Bar(barChartData, {
+                responsive : true
+            });
+
+            for(var i = expectIndex; i < data1.length; i++) {
+                myObjBar.datasets[0].bars[i].fillColor = 'rgba(181, 230, 29, 1)';
+                myObjBar.datasets[0].bars[i].strokeColor = 'rgba(181, 230, 29, 1)';
+                myObjBar.datasets[0].bars[i].highlightFill = 'rgba(181, 230, 29, 1)';
+                myObjBar.datasets[0].bars[i].highlightStroke = 'rgba(181, 230, 29, 1)';
+            }
+
+            myObjBar.update();
+
+        });
+    });
+
+</script>

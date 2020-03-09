@@ -1,0 +1,134 @@
+<?php
+    use GcFrontend\Controller\PackagePrivilegesController;
+    $packagePrivilegesController    = new PackagePrivilegesController();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2 && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+        $uid = $_SESSION['user_id'];
+        $userRoleId = $_SESSION['user_role_id'];
+    }else{  
+        $url= $this->serverUrl().'/login-form';
+        echo "<script type='text/javascript'>window.location='".$url."'</script>";
+    }
+
+  /*   use GcFrontend\Controller\ShorturlController as ShorturlController;
+	$shorturlController = new ShorturlController();	
+	echo $shorturlController->strurl("http://locumkit.fudugosolutions.com");*/
+
+
+use GcFrontend\Controller\JobsmsController as JobsmsController;
+	/*$jobsmsController = new JobsmsController();	
+	try{
+	echo $jobsmsController->sendAcceptSmsToUser('07878160412','hi'); 
+	}
+	 catch(Exception $e) {
+               
+         }*/
+	
+	
+$currency = $this->config()->get('site_currency');
+use GcFrontend\Helper\FinanceHelper as FinanceHelper; 
+use GcConfig\Controller\FinanceController as FinanceController  ;
+	$financeController = new FinanceController();
+$financeHelper = new FinanceHelper();
+$overallincome = $financeHelper->getIncomeByuser($uid , date('Y'));
+$overallexpence = $financeHelper->getExpenceByuser($uid, date('Y'));	
+$finyeardata =  $financeHelper->getUserFinanceyearStartMonth($uid,true);
+	$m =  $finyeardata['month_start'];	
+	$financialYear = date('Y');
+	$finyearusrtype = $finyeardata['user_type'] ;
+?>
+	
+	<section id="breadcrum" class="breadcrum">
+	<div class="breadcrum-sitemap">
+		<div class="container">
+			<div class="row">
+				<ul>         
+					<li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+						<li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+							<li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+							<li><a href="">Reports</a></li>
+				</ul>
+					</div>
+				</div>
+			</div>
+			<div class="breadcrum-title">
+				<div class="container">
+					<div class="row">
+						<div class="set-icon registration-icon">
+							<i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+						</div>
+						<div class="set-title">
+							<h3>Reports</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section class="text-left">
+            
+            <div class="col-md-12 pad0">
+                            <div class="marb0 text-capitalize text-center finance-page-head">Reports</div>
+            </div>
+
+<div class="col-md-12 in_ex_pr_box">
+                                <div class="">
+                                  <div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Income</h1>
+                                  <h2 class="mar0"><?php echo $currency.$financeHelper->setPriceFormate($overallincome['job_rate']); ?></h2>
+                                  </div>
+                                  <div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Expenses</h1>
+                                  <h2 class="mar0"><?php echo $currency.$financeHelper->setPriceFormate($overallexpence['cost']); ?></h2>
+                                  </div>
+                                  <div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Profit</h1>
+                                  <h2 class="mar0"><?php $profit = $overallincome['job_rate'] - $overallexpence['cost'];
+                    echo $currency.$financeHelper->setPriceFormate($profit); ?></h2>
+                                  </div>
+<div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Income tax</h1>
+                             <h2 class="mar0"><?php  echo $currency.$financeHelper->setPriceFormate($financeController->taxclaculation($overallincome['job_rate'],$finyearusrtype,$financialYear,$uid)); ?></h2>
+                                  </div>
+                              </div>
+                          </div>
+
+               <div class="cash_man_chart2 wholeborder padb0">
+   
+   <section id="transaction-see" class="transaction-see">
+           <!-- <div class="col-md-12">
+            <h1 id="register_head_blue">SEE ALL TRANSACTION</h1>
+            </div> -->
+            <div class="col-md-12"> 
+				<ul class="report-btn-list-group">
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/all-transaction';?>">All transaction</a></li>
+					<!-- <li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/weekly-transaction';?>">Weekly transaction</a></li> -->
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/cash-movement-report';?>">Cash flow</a></li>
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/open-invoices';?>">Open invoices (Debtor)</a></li>
+					<!--<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/weekly-job';?>">Weekly jobs</a></li> -->
+					
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/weekly-report';?>">Weekly report</a></li>
+					
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/income-by-area';?>">Income by area</a></li>
+					<li><a class="btn btn-default btn-block" href="/income-filter">Income by category</a></li>
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/income-by-supplier';?>">Income by supplier</a></li>
+					<li><a class="btn btn-default btn-block" href="/expenses-type-filter">Expense by category</a></li>
+					<li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/net-income';?>">Net income</a></li>
+                    <li><a class="btn btn-default btn-block" href="<?php echo $this->serverUrl().'/projected-income';?>">Projected income</a></li>
+					<!--<li> <a class="read-common-btn grad_btn" href="<?php // echo $this->serverUrl().'/net-expense';?>">Net expense</a></li>-->
+
+					<!--<li><a class="btn btn-default btn-block" href="/manage-supplier">Add supplier</a></li>-->
+				</ul>
+            </div> 
+            
+            </section>
+               </div>
+              
+            </section>
+                
+            </div>
+        </div>
+   	</div>
+</div>

@@ -1,0 +1,179 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Zend\Db\Sql\Sql;	
+	use Gc\view\Helper\Config as ConfigModule;
+	use Gc\User\JobAction\Model as ActionModel;
+	use Gc\User\Job\Model as JobModel;
+	use GcFrontend\Controller\EndecryptController as Endecrypt;
+	use GcFrontend\Controller\DbController as DbController;	
+	$endecrypt = new Endecrypt();
+	$actionModel 	= new ActionModel();	
+	$jobModel 	= new JobModel();
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	$actual_link = "$_SERVER[REQUEST_URI]";
+	$_SESSION['action_url'] = $actual_link;
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$host=$this->getRequest()->getUri()->getHost();
+		$uid = $_SESSION['user_id'];		
+		$cjid = '';
+
+		if (isset($_GET['j']) && $_GET['j'] != '') {
+			$cjid = $endecrypt->decryptIt($_GET['j']);
+		}else{
+			$this->redirect()->toUrl('/404');
+		}
+
+		/* Check if invitetion send to current login user or not*/
+		$sqlUser = "SELECT uid from job_invited_user WHERE uid='$uid' AND jid = '$cjid'";	
+        $inviteUser = $adapter->query($sqlUser, $adapter::QUERY_MODE_EXECUTE);
+        $user = $inviteUser->toArray();
+
+        /* Check if current user already freeze this job or not */
+        $sqlFreeze = "SELECT f_id,action,f_notification from job_action WHERE f_id='$uid' AND job_id = '$cjid'";	
+        $freezeUsers = $adapter->query($sqlFreeze, $adapter::QUERY_MODE_EXECUTE);
+        $freezeUser = $freezeUsers->toArray();
+        /*echo "<pre>";
+        print_r($freezeUser);
+        echo "</pre>";*/        
+        if (!empty($user) && $uid == $user[0]['uid']) {
+        	if (!isset($_SESSION['redirect_job'])) {
+				$_SESSION['redirect_job'] = 1;
+			}
+
+        	/* Check the job status */
+        	$sqlJobStatus = "SELECT job_status from job_post WHERE job_id = '$cjid'";	
+	        $jobStatusArray = $adapter->query($sqlJobStatus, $adapter::QUERY_MODE_EXECUTE);
+	        $jobStatus = $jobStatusArray->toArray();
+	        $currentJobStatus = $jobStatus[0]['job_status'];
+	        switch ($currentJobStatus) {
+	        	case 1:
+	        		if (!empty($freezeUser)) {
+			        	if ($freezeUser[0]['f_notification'] < 1) {
+			        		/* 
+			        		*  Check the timeline of current job if current time is 30 
+			        		*  min less than timeline time then user can not freeze it
+			        		*/
+			        		$sqlIsTimeline 	= "SELECT job_id from job_post_timeline WHERE job_id = '$cjid'";
+					        $isTimeLineJobs = $adapter->query($sqlIsTimeline, $adapter::QUERY_MODE_EXECUTE);
+					        $isTimeLineJob 	= $isTimeLineJobs->toArray();
+					        date_default_timezone_set('Europe/London');
+			        		$currentDate 	= date("m/d/Y");
+			        		$currentHr 		= date("H");
+			        		$currentMin 	= date("i");
+			        		$currentHRMin 	= date('H.i',strtotime("+2 days"));
+
+					        if (!empty($isTimeLineJob)) {
+					        	$currentDate = date("d/m/Y");
+				        		$sqlTimeline = "SELECT job_id,job_timeline_hrs,job_date_new from job_post_timeline WHERE job_id = '$cjid'";	
+						        $timeLineJobs= $adapter->query($sqlTimeline, $adapter::QUERY_MODE_EXECUTE);
+						        $timeLineJob = $timeLineJobs->toArray();
+						        
+						        $timelineNewDate = str_replace('/','-',$timeLineJob[0]['job_date_new']);
+						        $currentDate = str_replace('/','-',$currentDate);
+						        $date2 = date_create($timelineNewDate);
+								$date1 = date_create($currentDate);
+								$diff = date_diff($date1,$date2);
+								$diff_timeline_date =  $diff->format("%a days");
+						        
+						        if (!empty($timeLineJob) && $diff_timeline_date > 0) {
+						        	$actionModel->updateWaitingUnFreezeJobaction($cjid,$uid,5);
+						        	$actionModel->updateFreezeJobaction($cjid,$uid,1,1);
+						        	$jobModel->jobStatusUpdate($cjid,6);
+						        	
+						        	$note = '<div class="notification success">Job will be frozen for 15 minutes only.</div>';
+									echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";	
+						        }elseif($timelineNewDate == $currentDate && $timeLineJob[0]['job_timeline_hrs'] > $currentHRMin){
+						        	$actionModel->updateWaitingUnFreezeJobaction($cjid,$uid,5,0);
+						        	$actionModel->updateFreezeJobaction($cjid,$uid,1,1);
+						        	$jobModel->jobStatusUpdate($cjid,6);
+						        	
+						        	$note = '<div class="notification success">Job will be frozen for 15 minutes only.</div>';
+									echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";	
+								}else{
+						        	$note = '<div class="notification error">Job is closed by employer.</div>';
+									echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+						        }
+						        	
+						        
+					        }else{
+				        		$sqlJobCheck = "SELECT job_date,job_start_time from job_post WHERE job_id = '$cjid' AND job_date > '$currentDate' ";	
+						        $isJobCheck = $adapter->query($sqlJobCheck, $adapter::QUERY_MODE_EXECUTE);
+						        $JobCheck = $isJobCheck->toArray();
+						        //print_r($JobCheck);
+						        /*echo "<pre>";
+						        print_r($JobCheck);
+						        echo "</pre>";*/
+						        if (!empty($JobCheck)) {
+						        	$actionModel->updateWaitingUnFreezeJobaction($cjid,$uid,5,0);
+						        	$actionModel->updateFreezeJobaction($cjid,$uid,1,1);
+						        	$jobModel->jobStatusUpdate($cjid,6);
+						        	
+						        	$note = '<div class="notification success">Job will be frozen for 15 minutes only.</div>';
+									echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+						        }else{
+						        	$note = '<div class="notification error">Job is closed by employer.</div>';
+									echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+						        }
+					        }
+			        		
+			        	}else{
+			        		$note ='<div class="notification error">You have already freeze this job , you cannot freeze it again.</div>';
+			        		echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+			        	}	        	
+			        }
+	        		break;
+	        	case 2:
+	        		//$this->flashMessenger()->addErrorMessage('Job is closed');
+	        		$note = '<div class="notification error">Job is closed.</div>';
+					echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		break;
+	        	case 3:
+	        		//$this->flashMessenger()->addErrorMessage('Job is Disable');
+	        		$note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+					echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		break;
+	        	case 4:
+	        		//$this->flashMessenger()->addErrorMessage('Job is Accepted by locum.');
+	        		$note = '<div class="notification error">Sorry - this job is no longer available.</div>';
+					echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		break;
+	        	case 6:
+	        		if (!empty($freezeUser) && $freezeUser[0]['f_notification'] >= 1 ) {
+	        			$f_note ='You have already FREEZE this job.';
+	        			$note = '<div class="notification error">'.$f_note.'</div>';
+						echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+			        	//$this->flashMessenger()->addErrorMessage($f_note);
+	        		}else{
+	        			//$this->flashMessenger()->addErrorMessage('Job is  freeze please check after some time.');
+	        			$note = '<div class="notification error">Thank you for your interest however this job is currently held by another locum. If it goes live again we shall notify you.</div>';
+						echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		}	        		
+	        		break;
+	        	case 7:
+	        		//$this->flashMessenger()->addErrorMessage('Job is Deleted.');
+	        		$note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+					echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		break;
+	        	case 8:
+	        		//$this->flashMessenger()->addErrorMessage('Job is Deleted.');
+	        		$note = '<div class="notification error">Employer no longer needs a locum for this day and hence has removed the posting.</div>';
+					echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		break;	        	
+	        	default:
+	        		//$this->flashMessenger()->addErrorMessage('This is not a valid job.');
+	        		$note = '<div class="notification error">This is not a valid job.</div>';
+					echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+	        		break;
+	        }
+        }else{
+        	//$this->flashMessenger()->addErrorMessage('You are not able to FREEZE this job.');
+        	$note = '<div class="notification error">You are not able to FREEZE this job.</div>';
+			echo "<script type='text/javascript'>$( document ).ready(function() { $('h1#notification_msg').html('".$note."')});</script>";
+        }
+		
+	}else{
+		$this->redirect()->toUrl('/login-form');
+		return true;
+	}
+	

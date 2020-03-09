@@ -1,0 +1,81 @@
+<?php
+/**
+ * Develop By Suraj Wasnik( suraj.wasnik0126@gmail.com ) at FuduGo Solutions
+ */
+?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('finance_year')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('finance_year')); ?>
+            <?php echo $this->formElementErrors($this->form->get('finance_year'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('personal_allowance_rate')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('personal_allowance_rate')); ?>
+            <?php echo $this->formElementErrors($this->form->get('personal_allowance_rate'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('personal_allowance_rate_tax')); ?>
+            <?php echo $this->formElementErrors($this->form->get('personal_allowance_rate_tax'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('basic_rate')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('basic_rate')); ?>
+            <?php echo $this->formElementErrors($this->form->get('basic_rate'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('basic_rate_tax')); ?>
+            <?php echo $this->formElementErrors($this->form->get('basic_rate_tax'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('higher_rate')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('higher_rate')); ?>
+            <?php echo $this->formElementErrors($this->form->get('higher_rate'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('higher_rate_tax')); ?>
+            <?php echo $this->formElementErrors($this->form->get('higher_rate_tax'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('personal_allowance_rate')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('additional_rate')); ?>
+            <?php echo $this->formElementErrors($this->form->get('additional_rate'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('additional_rate_tax')); ?>
+            <?php echo $this->formElementErrors($this->form->get('additional_rate_tax'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('company_limited_tax')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('company_limited_tax')); ?>
+            <?php echo $this->formElementErrors($this->form->get('company_limited_tax'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+</script>

@@ -1,0 +1,116 @@
+
+<!-- Page Title -->
+<section class="innerhead">
+    <div class="container-fluid">
+        <div class="container">
+            <div class="row">  
+                <div class="col-md-12 col-sm-12 col-xs-12 bannercont animate text-center" data-anim-type="zoomIn" data-anim-delay="800">
+                    <!--<h1>Work the way you want. <br> Find opportunities around you.</h1>-->
+                    <div class="center">
+                        <h1>About Us</h1>
+                    </div>
+                    <div class="breadcrum-sitemap">
+                        <ul>          
+                                <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                                <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- .Page Title -->
+<section class="innerlayout">
+    <div class="container">
+        <div class="row bgwhite inbox about-page">
+					<?php use GcFrontend\Controller\DbController as DbController; ?>
+                    <!--<section id="breadcrum" class="breadcrum">
+                        <div class="breadcrum-sitemap">
+                             <div class="container">
+                                <div class="row">
+                                    <ul>          
+                                        <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                                      <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+                                    </ul>
+                                 </div>
+                             </div>
+                         </div>
+                    </section>-->
+                    <div id="primary-content" class="main-content about">
+                        <div class="container">
+                            <div class="row">
+                                <div class="contents white-bg">
+                                <section class="about_section">
+                                             <div class="welcome-heading">
+                                              <!--  <h1><span><?php echo $this->escapeHtml($this->translate($this->title)); ?></span></h1>
+                                                <hr class="shadow-line">-->
+                                              </div>
+                                              <div class="about_para animate fadeInDown">
+                                                <?php echo $this->translate($this->aboutMaincontent); ?>
+                                              </div>
+                                              <div class="mission-vision">
+                                                  <div class="col-md-6 col-sm-6 about_ourvision animate fadeInLeft">
+                                                        <h3><?php echo $this->escapeHtml($this->translate($this->aboutTitle1)); ?></h3>  
+                                                        <?php echo $this->translate($this->aboutContent1); ?>
+                                                  </div>
+                                                  <div class="col-md-6 col-sm-6 about_ourmission animate fadeInRight"> 
+                                                        <h3><?php echo $this->escapeHtml($this->translate($this->aboutTitle2)); ?></h3> 
+                                                        <?php echo $this->translate($this->aboutContent2); ?>
+                                                  </div>
+                                              </div>
+                                    </section>   
+                    
+                    
+                    
+                                    <?php /*  ?><section id="team" class="team-blocks team-section">
+                                        <div class="">
+                                            <div class="row">
+                                                <?php 
+                                                    $dbConfig = new DbController();
+                                                    $adapter = $dbConfig->locumkitDbConfig();
+                                                    $sqlInserteamInfo = "SELECT * FROM locumkit_team_info ORDER BY position ASC"; 
+                                                    $getteamInfo = $adapter->query($sqlInserteamInfo, $adapter::QUERY_MODE_EXECUTE);
+                                                    $getAllteamInfo = $getteamInfo->toArray();
+                                                    //print_r($getAllteamInfo);
+                                                    if(!empty($getAllteamInfo)){
+                                                        $i = 1;
+                                                        foreach ($getAllteamInfo as $key => $teamInfo) {
+                                                ?>
+                    
+                                                        <div class="col-md-2 small-icon-box">
+                                                            <div class="set-icon">
+                                                                <figure>
+                                                                    <img src="<?php echo $teamInfo['image']; ?>" alt="<?php echo $teamInfo['name']; ?>">
+                                                                </figure>
+                                                            </div>
+                                                            <div class="set-content">
+                                                                <h4><?php echo $this->translate($teamInfo['name']); ?></h4>
+                                                                <a href="javascript:void(0);"><p><?php echo $teamInfo['designation']; ?></p></a>
+                                                            </div>
+                                                        </div> 
+                                                        <?php if($i ==2){ ?>
+                                                            <div class="col-md-2 small-icon-box">
+                                                                <div class="set-icon">
+                                                                    <figure class="bor">
+                                                                        <h1>OUR <span> TEAM</span></h1>
+                                                                    </figure>
+                                                                </div>
+                                                                <div class="set-content">
+                                                                    <h4>&nbsp;</h4>
+                                                                    <a href="#"><p>&nbsp;</p></a>
+                                                                </div>
+                                                            </div>
+                                                        <?php } ?>
+                                                <?php $i++; }} ?>
+                                            </div>
+                                        </div>
+                                    </section><?php */ ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+       </div>
+    </div>
+</section>

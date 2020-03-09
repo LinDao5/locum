@@ -1,0 +1,189 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+use Gc\User\Professional\Collection as ProfessionalCollection;
+use Gc\User\Collection as UserCollection;
+use Gc\User\JobAction\Collection as JobActionCollection;
+$userCollection = new UserCollection();
+$users = $userCollection->getUsers();
+$categoryCollection = new ProfessionalCollection();
+$categories = $categoryCollection->getProfessionals();
+?>
+<?php foreach ($jobData as $key => $value) { ?>
+    <form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+        <?php if ($value->getJobStatus() == 1 ) {?>
+            <input type="hidden" value="3" name="job_change_status">
+            <input id="input-save" type="submit" class="btn btn-danger pull-right" value="<?php echo $this->escapeHtml($this->translate('Disable')); ?>" name="submit" style=" margin-top: 2px; margin-right: 2px;">
+        <?php }elseif ($value->getJobStatus() == 3) { ?>
+            <input type="hidden" value="1" name="job_change_status">
+            <input id="input-save" type="submit" class="btn btn-success pull-right" value="<?php echo $this->escapeHtml($this->translate('Enable')); ?>" name="submit" style=" margin-top: 2px; margin-right: 2px;">
+        <?php }else{?>
+            
+        <?php } ?>
+    </form>
+<?php } ?>
+<div class="job-info">
+    <h3>General Information</h3>
+    <table class="table clickable table-striped table-hover">
+        <colgroup>
+            <col width="30%">
+            <col width="60%">
+        </colgroup>
+        <tbody>
+            <?php
+                $jobStatus ='';
+                $jobId ='';
+                foreach ($jobData as $job): 
+                    $jobStatus = $job->getJobStatus();
+                    $jobId = $job->getJobId();
+            ?>
+                <tr>
+                    <th><?php echo $this->escapeHtml($this->translate('Id')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td><?php echo $this->escapeHtml($job->getJobId()); ?></td>
+                </tr>
+                <tr>
+                    <th><?php echo $this->escapeHtml($this->translate('Title')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td><?php echo $this->escapeHtml($job->getJobTitle()); ?></td>
+                </tr>
+                <tr>
+                    <?php 
+                        $catName = '';                       
+                        foreach ($categories as $key => $value) {
+                            if ($value->getId() == $job->getCatId()) {
+                                $catName = $value->getName();
+                            }
+                        }
+                    ?>
+                    <th><?php echo $this->escapeHtml($this->translate('Category')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td><?php echo $this->escapeHtml($catName); ?></td>
+                </tr>
+                <tr>
+                    <th><?php echo $this->escapeHtml($this->translate('Rate')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td>$<?php echo $this->escapeHtml($job->getJobRate()); ?></td>
+                </tr>
+                <tr>
+                    <?php 
+                        $eName = '';
+                        $eEmail = '';
+                        
+                        foreach ($users as $key => $value) {
+                            if ($value->getId() == $job->getEId()) {
+                                $eName = $value->getName();
+                                $eEmail = $value->getEmail();
+                            }
+                        }
+                    ?>
+                    <th><?php echo $this->escapeHtml($this->translate('Employer Name')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td><?php echo $this->escapeHtml($eName); ?></td>
+                </tr>
+                <tr>
+                    <th><?php echo $this->escapeHtml($this->translate('Employer Email')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td><?php echo $this->escapeHtml($eEmail); ?></td>
+                </tr>
+                <tr>
+                    <th><?php echo $this->escapeHtml($this->translate('Status')); ?><sapn class="pull-right ">:</sapn></th>
+                    <td><?php 
+                         switch ($job->getJobStatus()) {
+                            case 1:
+                                echo '<sapn style="color: green;   font-weight: 700;">Open</span>'; 
+                                break;
+                            case 2:
+                                echo '<sapn style="color: red;   font-weight: 700;">Close</span>'; 
+                                break;
+                            case 3:
+                                echo '<sapn style="color: red;   font-weight: 700;">Disable</span>'; 
+                                break;
+                            case 4:
+                                echo '<sapn style="color: green;   font-weight: 700;">Accepted</span>'; 
+                                break;
+                            case 5:
+                                echo '<sapn style="color: #00A9E0;   font-weight: 700;">Done</span>'; 
+                                break;
+                            case 6:
+                                echo '<sapn style="color: #F0AD4E;   font-weight: 700;">Freeze</span>'; 
+                                break;
+
+                        }
+                            
+                        ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<?php if ($jobStatus == 2) { ?>
+    <div class="freelancer-info">
+        <h3>Freelancer Information</h3>
+        <table class="table clickable table-striped table-hover">
+            <colgroup>
+                <col width="30%">
+                <col width="60%">
+            </colgroup>
+            <tbody>
+                <?php
+                    $jobActionCollection = new JobActionCollection();
+                    $jobActions = $jobActionCollection->getJobActions(); 
+                    foreach ($jobActions as $key => $value){ 
+                        if ($value->getJobId() == $jobId) {
+                            $fid = $value->getFId();
+                            $fId = ''; 
+                            $fName = ''; 
+                            $fEmail = ''; 
+                            foreach ($users as $userkey => $user) {
+                                if ($user->getId() == $fid ) {
+                                    $fId    = $user->getId();
+                                    $fName  = $user->getName();
+                                    $fEmail = $user->getEmail();
+                                
+                ?>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Id')); ?><sapn class="pull-right ">:</sapn></th>
+                        <td><?php echo $this->escapeHtml($fId); ?></td>
+                    </tr>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Freelancer Name')); ?><sapn class="pull-right ">:</sapn></th>
+                        <td><?php echo $this->escapeHtml($fName); ?></td>
+                    </tr>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Freelancer Email')); ?><sapn class="pull-right ">:</sapn></th>
+                        <td><?php echo $this->escapeHtml($fEmail); ?></td>
+                    </tr>
+                <?php }  } } } ?>
+            </tbody>
+        </table>
+    </div>
+<?php } ?>
+
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+
+</script>

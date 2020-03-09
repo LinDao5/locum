@@ -1,0 +1,192 @@
+<?php //session_start();?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title><?php echo $this->escapeHtml($this->pageTitle); ?></title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="description" content="<?php echo $this->escapeHtml($this->metaDescription); ?>" />
+        <meta name="keywords" content="<?php echo $this->escapeHtml($this->metaKeywords); ?>" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/bootstrap.min.css'); ?>" rel="stylesheet" type="text/css">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/animations.min.css'); ?>" type="text/css" rel="stylesheet">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/theme.css'); ?>" type="text/css" rel="stylesheet">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/style.css'); ?>" type="text/css" rel="stylesheet">
+
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/jquery-3.3.1.min.js'); ?>" type="text/javascript"></script>
+        <?php echo $this->partial('seo-head'); ?>
+    </head>
+    <body>
+        <?php echo $this->partial('seo-body'); ?> 
+      	<div id="loader-div">
+         	<div class="loader"></div>
+      	</div>
+        <!-- Header -->
+        <?php if($_SERVER[REQUEST_URI] != '/login-form'){ ?>
+            <header class="header">
+                <div class="container-fluid headbar">
+                    <div class="container">
+                        <div class="row">            
+                            <nav class="navbar navbar-default">
+                              <div class="container">
+                                <div class="navbar-header">
+                                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                                    <span class="sr-only">Toggle navigation</span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                  </button>
+                                  <a class="navbar-brand" href="<?php echo $this->serverUrl();?>">
+                                    <img src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/img').'/logo.png';?>" title="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" alt="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" width="80px">
+                                  </a>
+                                </div>
+                                <div id="navbar" class="navbar-collapse collapse">                              
+                                    <ul class="nav navbar-nav navbarmid">
+                                        <?php echo $this->partial('new-design-header'); ?>
+                                        <?php if(isset($_SESSION['user_id'])&& $_SESSION['user_id']!=''){?>
+                                            <li><a href="<?php echo $this->serverUrl();?>/user-profile" title="My Profile" alt="My Profile">My Dashboard</a></li>                                   
+                                            <li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="fa fa-power-off" aria-hidden="true"></i></a></li>
+                                        <?php }elseif(isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 ) || ( isset($_SESSION['un_verified_user']) && $_SESSION['un_verified_user'] == 1)){ ?>
+                                            <li><a href="<?php echo $this->serverUrl();?>/guest-profile" title="Guest Profile" alt="Guest Profile">Profile</a></li>
+                                            <li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="fa fa-power-off" aria-hidden="true"></i></a></li>
+                                            <?php }elseif(!isset($_SESSION['un_verified_user'])){?>
+                                            <li><a href="javascript:void(0);" title="Log In" alt="Log In" data-toggle="modal" data-target="#login-form-model">Log In</a></li>
+                                            <li><a href="<?php echo $this->serverUrl();?>/register" title="Register" alt="Register">Register</a></li>
+                                            <?php echo $this->partial('login-form'); ?> 
+                                        <?php }?>
+
+                                    </ul>
+                                    <ul class="nav navbar-nav navbar-right hidden-xs">
+                                        <a href="https://play.google.com/store/apps/details?id=com.FuduGo.Locumkit&hl=en" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/images/googleplay.png'); ?>" class="Locumkit  Google Play"></a>
+                                        <a href="https://itunes.apple.com/gb/app/locumkit/id1362518464" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/images/appstore.png'); ?>" class="Locumkit App Store"></a>
+                                    </ul>
+                                </div><!--/.nav-collapse -->
+                              </div>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+        <?php } ?>
+        <!-- .Header -->
+
+
+
+        <?php echo $this->content; ?> 
+        <?php if($_SERVER[REQUEST_URI] != '/login-form'){ ?>
+            <?php echo $this->partial('new-design-footer'); ?>
+        <?php } ?>
+        <a href="javascript:" id="return-to-top" class="onHoverWave"><i class="fa fa-arrow-up"></i></a>
+        <!--Theme Fonts-->
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/theme-fonts.css'); ?>" type="text/css" rel="stylesheet">
+        <!--Font Awesome-->
+        <!-- <link rel="stylesheet" href="<?php //echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/font-awesome.min.css'); ?>"> -->
+        <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"> -->
+        <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+        <!--Jquery UI-->
+        <link rel="stylesheet" href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/jquery-ui.css'); ?>">
+
+        <!-- All JS -->     
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/jquery-ui.js'); ?>" type="text/javascript"></script>
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/bootstrap.min.js'); ?>" type="text/javascript"></script>
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/animations.min.js'); ?>" type="text/javascript"></script>
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/theme.js'); ?>" type="text/javascript"></script>
+        <script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js')?>/jquery.dataTables.min.js" charset="UTF-8"></script>
+
+
+
+        <?php if($_SERVER[REQUEST_URI] == '/login-form'){ ?>
+            <script type="text/javascript">
+                $('#login-form-model').modal('show');
+            </script>
+        <?php } ?>
+
+    	<script type="text/javascript">
+    		function logout_user(obj)
+    		{ 
+    			var str=obj.value; //alert(obj);
+    		   if(str!=""){
+    		   $.ajax({
+    					'url'   :'/ajax-request',
+    					'type'  :'POST',
+    					'data'  :{'user_id':str, 'log_out':'1'},
+    					'success':function(result){ //alert(result);
+    						console.log(result);
+    						if($.trim(result)=="1"){
+    							$('div#alert-modal button.close.hide-pop-up').hide();
+    							$("#loader-div").hide(100);		                    
+    							messageBoxOpen('Logged out successfully.');
+    							//$('div#alert-modal button.close-alert.btn.btn-default').html('Login');
+    							$('div#alert-modal button.close-alert.btn.btn-default').remove();
+    							window.setTimeout(function(){
+    						        window.location.href = "<?php echo $this->serverUrl();?>";
+    						    }, 800);
+    						}
+    					}
+    				});
+    		   }
+    		}	
+    	</script>
+
+        <script type="text/javascript">   
+            /*use for manage bank status*/
+            $('input#modal-in_bank').change(function(){
+                var c = this.checked ? '1' : '0';
+                if(c==1){
+                    
+                    $('#fordisplay').show();
+                }else{
+                    $('#fordisplay').hide();
+                }
+            });
+
+            $('input#modal-ex_bank').change(function(){
+                var c = this.checked ? '1' : '0';
+                if(c==1){
+                    
+                    $('#fordisplayex').show();
+                }else{
+                    $('#fordisplayex').hide();
+                }
+            }); 
+
+            function managebankincome(id) {
+            	$('#fordisplay').hide();
+            	$('#in_bankdate').val('');
+            	$('#modal-in_bank').attr('checked', false); 
+                $('#in_bankid').val(id);
+                $('#manage-bank-income').modal('show');
+            }   
+            function managebankexpanse(id) {
+            	$('#fordisplayex').hide();
+            	$('#ex_bankdate').val('');
+            	$('#modal-ex_bank').attr('checked', false); 
+                $('#ex_bankid').val(id);
+                $('#manage-bank-expense').modal('show');
+            }
+            /*use for manage bank status end*/
+            $('div.alert-modal button.close-alert').click(function(){
+                messageBoxClose();
+            }); 
+            $('div.alert-modal button.close.hide-pop-up').click(function(){
+                messageBoxClose();
+            });
+            function messageBoxClose(){
+                $('div#alert-modal').removeClass('in');
+                $('div#alert-modal').css('display','none');
+                $('div#alert-confirm-modal').removeClass('in');
+                $('div#alert-confirm-modal').css('display','none');
+            }
+            function messageBoxOpen(msg, url){
+                $('div#alert-modal #alert-message').html(msg);
+                $('div#alert-modal').addClass('in');
+                $('div#alert-modal').css('display','block'); 
+                if(url != null ) {  
+                   $('button.close-alert').attr('onClick','window.location.replace("'+url+'")');
+                }
+            }            
+        </script>
+    </body>
+</html>

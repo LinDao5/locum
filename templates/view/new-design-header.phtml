@@ -1,0 +1,15 @@
+<?php
+    $component = new \Gc\Component\Navigation();
+    $container = new \Zend\Navigation\Navigation($component->render());
+    $this->navigation($container);
+    $document = $this->currentDocument();
+
+    //echo $this->navigation()->menu()->setMaxDepth(0)->setUlClass('nav navbar-nav navbarmid');
+    foreach ($container as $page) { 
+    	if($page->visible){ 
+    		$activeMenuClass = ( $_SERVER['REQUEST_URI'] == $page->uri ) ? 'class="active"':'';
+    		echo '<li '.$activeMenuClass.'>'.$this->navigation()->menu()->setMaxDepth(0)->htmlify($page) . PHP_EOL.'</li>';
+    	}        
+    }
+?>
+

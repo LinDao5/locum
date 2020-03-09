@@ -1,0 +1,115 @@
+<?php
+/**
+ * Design and develop by SURAJ WASNIK at FUDUGO.
+ * PHP Version >=5.3
+ *
+ * @category    Fudugo
+ * @package     Config
+ * @subpackage  Design
+ * @author      SURAJ WASNIK <suraj.wasnik0126@gmail.com>
+ * @link        http://www.fudugo.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->allRecord));
+$paginator->setItemCountPerPage(20);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+?>
+<form id="filter" action="/report" method="GET">
+    <div class="row">
+        <div class="col-md-2">
+            <h4>Select month :</h4>
+        </div>
+        <div class="col-md-3">
+            <select name="fre_month" id="month_option">
+                <option value="">Please Select Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+            </select>
+            <input type="hidden" id="current_month" value="<?php echo date('F'); ?>">
+        </div>        
+        <div class="col-md-1">
+            <input type="hidden"  name="type" value="all_fre_job">
+            <input id="user_record" type="submit" value="export" style="  margin-top: 0px; float:right;  border: 1px solid #ccc;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px">
+        </div>
+    </div>
+</form>
+
+<hr/>
+
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="10%">
+        <col width="9%">
+        <col width="10%">
+        <col width="9%">        
+        <col width="9%">        
+        <col width="13%">        
+        <col width="13%">        
+        <col width="12%">        
+        <col width="12%">        
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('Freelancer')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Jobs Applied')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Jobs accepted')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Success rate')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Jobs frozen')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('frozen and accepted')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Frozen Success rate')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Private jobs added')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Detailed reports')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($paginator as $key => $value):  ?>
+            <tr>
+                <td><?php echo $this->escapeHtml($value['name']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_applied']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_accepted']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_success_rate']); ?>%</td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_freeze']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_freeze_accepted']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_freeze_success_rate']); ?>%</td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['private_job']); ?></td>
+                <td><a href="/admin/config/report/fre-job-report/single-fre/<?php echo $value['fre_id']; ?>" ><span class="glyphicon glyphicon-eye-open" style="margin: 0 auto;    display: block; color:#00a9e0;    font-size: 14px;"></span></a></td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/fre-job-report'));?>
+</div>
+
+</div>
+        
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+<style type="text/css">
+    select {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+    form#filter {
+        background: #f0f0f0;
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid;
+    }
+</style>
+

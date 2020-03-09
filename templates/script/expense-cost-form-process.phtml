@@ -1,0 +1,155 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use Gc\Registry;
+use GcFrontend\Controller\EndecryptController as Ecryption;
+use GcFrontend\Controller\DbController as DbController;
+use Gc\User\Finance\Model as FinanceModel;
+use Gc\User\Finance\Expense\Model as ExpenseModel;
+use Gc\User\Finance\PrivateJobModel as PrivateJobFinanceModel;
+use Gc\User\Job\Collection as JobCollection;
+use GcFrontend\Controller\FunctionsController as FunctionController;
+$jobCollection = new JobCollection();
+$expenseModel = new ExpenseModel();
+$financeModel = new FinanceModel();
+$functionController = new FunctionController();
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$encypt = new Ecryption();
+$privateJobFinanceModel = new PrivateJobFinanceModel();
+$actual_link = "$_SERVER[REQUEST_URI]";
+$_SESSION['action_url'] = $actual_link;
+$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+    $job_id = 0;
+    if (isset($_GET['j']) && $_GET['j'] != '') {
+        $job_id = $encypt->decryptIt($_GET['j']);
+    }
+
+    $uf_id = 0;
+    if (isset($_GET['uf']) && $_GET['uf'] != '') {
+        $uf_id = $encypt->decryptIt($_GET['uf']);
+    }
+
+    if ( $_SESSION['user_id'] != $uf_id) {
+        $url= $serverUrl().'/login-form';
+        echo "<script type='text/javascript'>$( document ).ready(function() { messageBoxOpen('You are not valid user to access this page.',' $url' ); $('form#expense-form').html('');});</script>";
+    }
+
+    $ue_id = 0;
+    if (isset($_GET['ue']) && $_GET['ue'] != '') {
+        $ue_id = $encypt->decryptIt($_GET['ue']);
+    }
+
+    $presentStatus = 'no';
+    if (isset($_GET['s']) && $_GET['s'] != '') {
+        $presentStatus = $encypt->decryptIt($_GET['s']);
+    }
+
+    $jobType = '';
+    if (isset($_GET['jt']) && $_GET['jt'] != '') {
+        $jobType = $encypt->decryptIt($_GET['jt']);
+    }
+
+    if ($jobType == 'private') {
+
+        $request = $this->getRequest();
+        if($request->isPost())
+        {
+            $post = $request->getPost();
+            $cats = $post->cat;
+            $cost = $post->cost;
+
+            $pJobDate = $pJobEmpName = '';
+            $privateJobObj = $functionController->getPrivateJobInfo($adapter, $job_id);
+            if (!empty($privateJobObj)) {
+                $pJobId = $privateJobObj->pv_id;
+                $pJobFid = $privateJobObj->f_id;
+                $pJobEmpName = $privateJobObj->emp_name;
+                $pJobRate = $privateJobObj->priv_job_rate;
+                $pJobDate = $privateJobObj->priv_job_start_date;
+                //     $pJobLocation = $privateJobObj->priv_job_location;
+            }
+
+            foreach($cats as $key => $cat){
+
+                if($expenseModel->expenseCheck($uf_id,$job_id,$cat,2)){
+
+                    $saveExpenseArray = array(
+                        'job_id' 		=> $job_id,
+                        'job_type' 		=> 2,
+                        'fre_id' 		=> $uf_id,
+                        'cost' 		    => $cost[$key],
+                        'job_date' 	    => date('Y-m-d', strtotime(str_replace('/', '-', $pJobDate))),
+                        'expense_type_id' 	=> $cat,
+                        'description' 	=> $pJobEmpName,
+	    		'bank' 			=> 1, 
+	    		'bank_date' 	=> date('Y-m-d'), 
+                    );
+
+                    $res =  $expenseModel->save($saveExpenseArray);
+                    if($res){
+                        $finance_trans = array(
+                            'trans_type_id' => $res ,
+                            'trans_type' 	=> '2'
+                        );
+                        $financeModel->save($finance_trans);
+                    }
+                    //   echo "<script type='text/javascript'>$('form#expense-form').remove();$('h2#aleardy-submited').html('Expense submitted and have been updated on your records.');$('h2#aleardy-submited').css('color','#00a9e0');$('h2#aleardy-submited').show();</script>";
+                }else{
+                    echo "<script type='text/javascript'>$('h2#aleardy-submited').show();$('form#expense-form').remove();</script>";
+                }
+            }
+            echo "<script type='text/javascript'>$('form#expense-form').remove();$('h2#aleardy-submited').html('Expense submitted and have been updated on your records.');$('h2#aleardy-submited').css('color','#00a9e0');$('h2#aleardy-submited').show();</script>";
+        }
+
+
+    }else{
+
+        $request = $this->getRequest();
+        if($request->isPost())
+        {
+            $post = $request->getPost();
+            $cats = $post->cat;
+            $cost = $post->cost;
+            foreach($cats as $key => $cat){
+
+                $jobDetails = $jobCollection->getJobDetailsByJobId($job_id);
+                $jobRate = '';
+                foreach ($jobDetails as $jobDetail) {
+                    $jobRate = $jobDetail->getJobRate();
+                    $jobDate = $jobDetail->getJobDate();
+                }
+
+                if($expenseModel->expenseCheck($uf_id,$job_id,$cat,1)){
+
+                    $saveExpenseArray = array(
+                        'job_id' 		=> $job_id,
+                        'job_type' 		=> 1,
+                        'fre_id' 		=> $uf_id,
+                        'cost' 		    => $cost[$key],
+                        'job_date' 	    => date('Y-m-d', strtotime(str_replace('/', '-', $jobDate))),
+                        'expense_type_id' 	=> $cat,
+	    		'bank' 			=> 1, 
+	    		'bank_date' 	=> date('Y-m-d'), 
+                    );
+
+                    $res =  $expenseModel->save($saveExpenseArray);
+                    if($res){
+                        $finance_trans = array(
+                            'trans_type_id' => $res ,
+                            'trans_type' 	=> '2'
+                        );
+                        $financeModel->save($finance_trans);
+                    }
+                    //   echo "<script type='text/javascript'>$('form#expense-form').remove();$('h2#aleardy-submited').html('Expense submitted and have been updated on your records.');$('h2#aleardy-submited').css('color','green');$('h2#aleardy-submited').show();</script>";
+                }else{
+                    echo "<script type='text/javascript'>$('h2#aleardy-submited').show();$('form#expense-form').remove();</script>";
+                }
+            }
+            echo "<script type='text/javascript'>$('form#expense-form').remove();$('h2#aleardy-submited').html('Expense submitted and have been updated on your records.');$('h2#aleardy-submited').css('color','#00a9e0');$('h2#aleardy-submited').show();</script>";
+        }
+    }
+}else{
+    $url= $serverUrl().'/login-form';
+    echo "<script type='text/javascript'>alert('You are not valid user to access this page.');window.location='".$url."'</script>";
+}

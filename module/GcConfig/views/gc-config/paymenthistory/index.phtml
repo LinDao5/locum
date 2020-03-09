@@ -1,0 +1,71 @@
+<?php
+/**
+ * Design & develop by Suraj Wasnik (suraj.work0126@gmail.com) at fudugo Solutions 
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+use GcConfig\Controller\PaymenthistoryController as Paymenthistory;
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->paymenthistories));
+$paginator->setItemCountPerPage(30);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+?>
+<?php  $user = new Paymenthistory(); ?>    
+    
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="15%">
+        <col width="20%">
+        <col width="7%">
+        <col width="8%">
+        <col width="30%">
+        <col width="5%">
+        <col width="5%">
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Amount')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Information (Card/token)')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Status')); ?></th>
+            
+            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($paginator as $paymenthistory): ?>
+            <tr>
+                <?php $userData = $user->fetchUser($paymenthistory->getUid(),$paymenthistory->getPid()); ?>
+                <td><?php  echo $userData['firstname'] != '' ? $this->escapeHtml($userData['firstname'].' '.$userData['lastname']) : $this->escapeHtml($userData['user_name']); ?></td>
+                <td><?php echo $this->escapeHtml($userData['email']); ?></td>
+                <td><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml($paymenthistory->getPrice()); ?></td>
+                <td><?php echo $this->escapeHtml($paymenthistory->getPaymentType()); ?></td>
+                <td><?php echo $this->escapeHtml($paymenthistory->getPaymentData()); ?></td>
+                <td><?php 
+                        if ($paymenthistory->getPaymentStatus()) {
+                            echo ' <a href="'.$this->url('config/user/paymenthistory/updatepending', array('id' => $paymenthistory->getPid())) .'">'.$this->escapeHtml('Paid').'</a>'; 
+                        }else{
+                            echo ' <a href="'.$this->url('config/user/paymenthistory/updatepaid', array('id' => $paymenthistory->getPid())).'">'.$this->escapeHtml('Pending').'</a>'; 
+                        }
+                        /*if ($paymenthistory->getPaymentStatus()) {
+                            echo "Paid";
+                        }else{
+                            echo "Pending";
+                        }*/
+                    ?></td>                
+                
+                <td class="text-center">
+                    <a href="<?php echo $this->url('config/user/paymenthistory/delete', array('id' => $paymenthistory->getPid())); ?>" class="delete-line">
+                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/paymenthistory'));?>
+</div>
+<script type="text/javascript">
+    Gc.initTableList();
+</script>

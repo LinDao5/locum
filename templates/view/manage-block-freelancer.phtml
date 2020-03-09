@@ -1,0 +1,127 @@
+<?php 
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+        $uid=$_SESSION['user_id'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+    }
+    use Gc\User\BlockFreelancer as BlockUser;
+    use Gc\User\Collection as UserCollection;
+    $blockUser = new BlockUser();
+    $userCollection = new UserCollection();
+    if (isset($_POST['un_block_id']) && $_POST['un_block_id'] != '') {
+        $blockUser->updateBlockFreelancer($_POST['un_block_id']);
+        $this->flashMessenger()->addSuccessMessage('Locum unblocked.');
+        
+    }
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+					<li><a href="/job-listing">Blocked Locums</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-lock" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Blocked Locums</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+    <div class="container">
+        <div class="row">         
+            <div class="contents gray-gradient">
+            <?php echo $this->partial('flash-messages'); ?>
+                <div class="welcome-heading">
+                    <h1><span>Blocked Locums</span></h1>
+                    <hr class="shadow-line">
+                </div>
+                <div class="block-fre-list cash_table-fiexd-scroll">
+                    <table class="table table-hover table-striped table-fixed">
+                        <!--<colgroup>
+                            <col width="10%">
+                            <col width="30%">
+                            <col width="20%">
+                            <col width="10%">
+                        </colgroup>-->
+                        <thead>
+                            <tr>
+                                <th class="col-xs-3 col-sm-3">User Id</th>
+                                <th class="col-xs-3 col-sm-3">Name</th>
+                                <th class="col-xs-3 col-sm-3">Block Date</th>
+                                <th class="col-xs-3 col-sm-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                                $blockUserRecord = $blockUser->getBlockFreelancerByEmpId($uid);
+                                if (!empty($blockUserRecord)) {
+                                    foreach ($blockUserRecord as $key => $buser) {
+                                        $userInfo = $userCollection->getUserById($buser->getFrelanId());
+                                        foreach ($userInfo as $key => $value) {
+                                       
+                            ?>
+                    
+                            <tr>
+                                <td class="col-xs-3 col-sm-3"><?php echo $value->getId(); ?></td>
+                                <td class="col-xs-3 col-sm-3"><?php echo $value->getFirstname(); ?> <?php echo $value->getLastname(); ?></td>
+                                <td class="col-xs-3 col-sm-3"><?php echo date('d-m-Y', strtotime($buser->getUserBlockDate())); ?></td>
+                                <td class="col-xs-3 col-sm-3"><a href='javascript:void(0)' onClick="un_block_user(<?php echo $value->getId(); ?>)" > unblock </a></td>
+                            </tr>
+                            <?php } } }else{ ?>
+				<tr class="lblock-row"><td colspan="4"><h4 style="display:block; text-align:center; color:red">No record found.</h4></td></tr>
+	 	 	   <?php } ?>
+                        </tbody>
+                    </table>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function un_block_user(id){
+    
+            $('div#alert-confirm-modal #alert-message').html('Please confirm if you want to un-block this locum from recieveing future job invitations');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+        $("#loader-div").show();
+            $.ajax({
+                'url'   :'/manage-block-freelancer',
+                'type'  :'POST',
+                'data'  : {'un_block_id': id},
+                'success':function(result){
+                  //  alert("Freelancer is Un blocked.");
+                    location.reload();
+                }
+            });
+            messageBoxClose();
+        });
+    
+    /*    var result = confirm("Do you really want to un-block this freelancer?");
+        $("#loader-div").show();
+        if(result){ 
+            $.ajax({
+                'url'   :'/manage-block-freelancer',
+                'type'  :'POST',
+                'data'  : {'un_block_id': id},
+                'success':function(result){ 
+                    alert("Freelancer is Un blocked.");
+                    location.reload();
+                }
+            });
+        }*/
+    }
+</script>

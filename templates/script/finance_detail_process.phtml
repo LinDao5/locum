@@ -1,0 +1,90 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\Income\Model as IncomeModel;
+	use Gc\User\Finance\Expense\Model as ExpenseModel; 
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+    $encypt = new Ecryption();
+	$incomeModel = new IncomeModel();
+	$expenseModel = new ExpenseModel(); 
+	
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+	$uid=$_SESSION['user_id'];
+	}else{ 
+		$actual_link = $_SERVER[REQUEST_URI];
+		$_SESSION['action_url'] = $actual_link; 
+		$this->redirect()->toUrl('/login-form');
+	}
+	
+	 $request = $this->getRequest();
+	 $post 	= $request->getPost();
+	if($request->isPost() && $post->get('income-bank-btn') == 'income-bank-btn')
+	{	
+
+		$post 			= $request->getPost();;
+	    $id 			= $post->get('in_bankid') ;
+	    $isBank 		= $post->get('in_bank') ;
+	    $bankDate 		= $post->get('in_bankdate');
+	    $bankDate 		= $bankDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-',$bankDate))) : null;
+	    $incomeData = array(
+	    		'bank' 			=> $isBank, 
+	    		'bank_date' 	=> $bankDate, 
+	    	);
+	   $incomeModel->inupdate_bank($id,$incomeData);	
+	   $this->flashMessenger()->addSuccessMessage('Data updated');			  
+	   $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);		
+	}
+	if($request->isPost() && $post->get('expense-bank-btn') == 'expense-bank-btn')
+	{
+		$post 			= $request->getPost();;
+	    $id 			= $post->get('ex_bankid') ;
+	    $isBank 		= $post->get('ex_bank') ;
+	    $bankDate 		= $post->get('ex_bankdate');
+	    $bankDate 		= $bankDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-',$bankDate))) : null;
+	    $incomeData = array(
+	    		'bank' 			=> $isBank, 
+	    		'bank_date' 	=> $bankDate, 
+	    	);
+	    $expenseModel->exupdate_bank($id,$incomeData);		 
+		$this->flashMessenger()->addSuccessMessage('Data updated');	
+		$this->redirect()->toUrl($_SERVER['HTTP_REFERER']);			
+	}
+
+
+	if($request->isPost() && $post->get('ex_data_delete') == 'ex_data_delete')
+	{
+		$post 			= $request->getPost();;
+	    $id 			= $post->get('delexpenseId') ;
+        $del_id = $encypt->decryptIt($id);
+	    $expenseModel->deleteFinanceexpence($del_id,$uid);
+		$this->flashMessenger()->adderrorMessage('Transaction deleted');
+		$this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+	}
+
+
+	if($request->isPost() && $post->get('in_data_delete') == 'in_data_delete')
+	{
+		$post 			= $request->getPost();;
+	    $id 			= $post->get('delincomeId') ;
+        $del_id = $encypt->decryptIt($id);
+        
+        $incomeModel->deleteFinanceincome($del_id,$uid);
+		$this->flashMessenger()->adderrorMessage('Transaction deleted');
+		$this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+	}
+	
+	if($request->isPost() && $post->get('invoice-required') == 'invoice-required')
+	{
+		$post 			= $request->getPost();;
+	    $id 			= $post->get('id_income') ;
+	    $iRequired 		= @$post->get('invoice-req-val') == 1 ? 1 : 0;
+	    $incomeData = array(
+	    		'invoice_notrequired' 	=> $iRequired, 
+	    	);
+	   $incomeModel->income_invoiceReq($id,$incomeData);	
+	   $this->flashMessenger()->addSuccessMessage('Invoice status updated successfully');			  
+	   $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);		
+	}
+
+
+	
+?>

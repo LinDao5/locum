@@ -1,0 +1,78 @@
+<?php
+
+use GcFrontend\Controller\DbController as DbController;
+
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+
+$view = @$_GET['view'] ? $_GET['view'] : '' ;
+if($view != ''){
+    $select = "SELECT * FROM industry_news where status= '1' and id =".$view  ;
+    $dateobj = $adapter->query($select, $adapter::QUERY_MODE_EXECUTE);
+    $news = $dateobj->current();
+}else{
+    $select = "SELECT * FROM industry_news where status= '1'"  ;
+    $dateobj = $adapter->query($select, $adapter::QUERY_MODE_EXECUTE);
+    $news = $dateobj->toArray();
+}
+
+?>
+
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/Industry-news">Industrial News</a></li>
+                    <?php if($view != ''){ ?>
+                        <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($news['title'])); ?></a></li>
+                    <?php } ?>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+   <div class="container">	   
+    	<div class="row">
+            <div class="contents white-bg">
+				<div class="welcome-heading">
+                    <h1><span><?php if($view != ''){ ?><?php echo $this->escapeHtml($this->translate($news['title'])); ?><?php }else{ ?> Industrial News <?php } ?></span></h1>
+                    <hr class="shadow-line">
+                </div>
+
+
+
+                <section>
+                    <?php if($view != ''){ ?>
+    					<div class="mission-vision">
+    				        <div class="col-md-4">
+    						  <img src="<?php echo $this->serverUrl().'/'.$news['image_path'] ?>" alt="News2">
+    						</div>
+                            <div class="col-md-8"> 
+                                <div class="full-content">
+                                    <?php echo $news['description']; ?>
+                                </div>  
+                            </div>                             
+                        </div>
+                    <?php } else{ ?>
+                        <?php foreach ($news as $key => $n) { ?>
+                            <div class="mission-vision industial-blks-wpp">
+                                <div class="col-md-4">
+                                  <img src="<?php echo $this->serverUrl().'/'.$n['image_path'] ?>" alt="News2">
+                                </div>
+                                <div class="col-md-8"> 
+                                    <div class="full-content">
+                                        <?php echo $n['description']; ?>
+                                    </div>  
+                                </div>                             
+                            </div>
+                        <?php } ?>
+                    <?php } ?>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,105 @@
+<?php
+    date_default_timezone_set('Europe/London');
+    use Zend\Db\Sql\Sql;
+    use GcFrontend\Controller\JobmailController as MailController;
+    use GcFrontend\Controller\DbController as DbController;
+    $mailController = new MailController();
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    //$currentDate = date("Y-m-d");
+    $currentDate = date("d-m-Y"); 
+    /* Get job reminder dates information locum job */ 
+    $sqlReminderJob = "SELECT * from job_reminder WHERE job_start_date >= '$currentDate' AND job_reminder_status = '0' AND j_id IN (SELECT job_id FROM job_post WHERE job_status = '4')";	
+    $jobReminderData = $adapter->query($sqlReminderJob, $adapter::QUERY_MODE_EXECUTE);
+    $jobReminder = $jobReminderData->toArray();	
+    $currentDate = date("Y-m-d");
+
+
+    foreach ($jobReminder as $key => $value) {
+    	$jobId 	= $value['j_id'];
+    	$jobDate = $value['job_start_date'];
+    	$jobFid = $value['f_id'];      
+    	$jobDateArray = unserialize($value['job_reminder_date']);     
+    	$isDateOfReminder = in_array($currentDate,$jobDateArray);
+    	if ($isDateOfReminder) {
+		    /* Get the difference betwwen date */
+  			$date1	= date_create($jobDate);
+  			$date2	= date_create($currentDate);
+  			$diff 	= date_diff($date2,$date1);
+  			$notifyDay = $diff->format("%a");
+  			if ($notifyDay && $notifyDay > '0' && date('G') == '9') {
+  				$mailController->sendReminder($jobFid,$notifyDay,$jobId,$adapter);
+				$sqlUpdateReminderJob = "UPDATE job_reminder SET job_reminder_status = '1' WHERE j_id = '$jobId'";
+         			$jobUpdateReminderData = $adapter->query($sqlUpdateReminderJob, $adapter::QUERY_MODE_EXECUTE);
+  			}
+            }
+    }
+
+    $pNextDayDate = date('Y-m-d', strtotime('+1 day'));
+    /* Get job reminder dates information Private job */
+echo '<br/>=====>Notification time : '.date('G') .'== 9<br/>';
+    echo '<br/><br/>'.$sqlPJReminderJob = "SELECT * from freelancer_private_job WHERE priv_job_start_date = '$pNextDayDate' AND status = '0'";  
+    $pJobReminderData = $adapter->query($sqlPJReminderJob, $adapter::QUERY_MODE_EXECUTE);
+    $pJobReminder = $pJobReminderData->toArray(); 
+    echo '<pre>';
+    print_r($pJobReminder);
+    echo '</pre>';
+
+    foreach ($pJobReminder as $key => $pValue) {
+      $jobPvid      = $pValue['pv_id'];
+      $jobFid       = $pValue['f_id'];
+      $pEmpName     = $pValue['emp_name'];
+      $pEmpEmail    = $pValue['emp_email'];
+      $pJobTitle    = $pValue['priv_job_title'];
+      $pJobRate     = $pValue['priv_job_rate'];
+      $pJobDate     = $pValue['priv_job_start_date'];
+      $pJobLocation = $pValue['priv_job_location'];
+
+      /* Get the difference betwwen date */
+
+      $pdate1  = date_create($pJobDate);
+      $pdate2  = date_create($pNextDayDate);
+      $pdiff   = date_diff($pdate2,$pdate1);
+      $pnotifyDay = $pdiff->format("%a");
+      if ($pnotifyDay == '0' && date('G') == '9') {
+        $mailController->sendPrivateJobReminder($jobPvid,$jobFid,$pEmpName,$pEmpEmail,$pJobTitle,$pJobRate,$pJobDate,$pnotifyDay,$pJobLocation,$adapter);
+        $sqlPJReminderJobUpdate = "UPDATE freelancer_private_job SET status = '1' WHERE priv_job_start_date = '$pNextDayDate' && status = '0' && pv_id = '$jobPvid'";  
+        $pJobReminderUpdate = $adapter->query($sqlPJReminderJobUpdate , $adapter::QUERY_MODE_EXECUTE);
+      }
+     
+    }
+//var_dump($jobReminder);
+
+$CurrentDate = date("Y-m-d");
+$datetime = new DateTime($CurrentDate);
+$datetime->modify('+1 day');
+$tomm = $datetime->format('Y-m-d');
+
+
+echo $sqlOnDayJobPU = "SELECT * FROM  private_user_job_action AS a JOIN job_post AS jp ON jp.job_id = a.j_id WHERE a.status='3' AND notify = '0'  AND DATE(STR_TO_DATE(jp.job_date, '%d/%m/%Y')) = '$tomm'";
+$jobOnDayDataPU = $adapter->query($sqlOnDayJobPU, $adapter::QUERY_MODE_EXECUTE);
+$jobOnDayPU = $jobOnDayDataPU->toArray();
+echo '<pre>';
+print_r($jobOnDayPU);
+echo '</pre>';
+
+
+foreach ($jobOnDayPU as $key => $value) {
+    $pua_id = $value['pua_id'];
+    $jobId 	= $value['job_id'];
+    $jobpuid = $value['puid'];
+    $jobEid = $value['emp_id'];
+    $job_date = date('Y-m-d', strtotime(str_replace('/', '-', $value['job_date'])));
+
+    if($attendNotificationTime == $currentTime && date('G') == '9') {
+
+        if ($value['job_status'] == 4) {
+
+            $mailController->sendRemindertoprivateuser($jobpuid,$jobId,$jobEid,$adapter);
+
+            $sqlPJReminderJobUpdate = "UPDATE private_user_job_action SET notify = '1' WHERE pua_id = '$pua_id' AND status = '3'";
+            $pJobReminderUpdate = $adapter->query($sqlPJReminderJobUpdate , $adapter::QUERY_MODE_EXECUTE);
+
+        }
+    }
+}

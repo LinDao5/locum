@@ -1,0 +1,84 @@
+<?php
+	$return = $this->script('login-process');
+	$number_1 = mt_rand(1, 9);
+	$number_2 = mt_rand(1, 9);
+	$answer = substr(sha1($number_1+$number_2),5,10);
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+?>
+    <script type="text/javascript">window.location.href = "/user-profile";</script>
+<?php		 
+	}elseif(isset($_SESSION['user_email']) && $_SESSION['user_email']!='' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1){
+?>
+    <script type="text/javascript">window.location.href = "/guest-profile";</script>
+<?php }else{ ?>
+    <div id="login-form-model" class="modal fade" role="dialog">
+        <div class="modal-dialog">                                              
+            <div class="modal-content">
+                <div class="modal-body">
+                    <?php if($_SERVER[REQUEST_URI] != '/login-form'){ ?>
+                        <button type="button" class="close" data-dismiss="modal" onclick="close_dive('profession_question');">&times;</button>
+                    <?php }else{ ?>
+                        <a href="<?php echo $this->serverUrl();?>" class="close">&times;</a>
+                    <?php } ?>
+                    <section class="signsc">
+                        <div class="innerhead signlft">
+                            <div class="container-fluid">
+                                <div class="col-md-12 col-sm-12 col-xs-12 text-right">
+                                    <!--<h1>Work the way you want. <br> Find opportunities around you.</h1>-->
+                                    <div class="center">
+                                        <h1>Work the way you <br> want. Find opportunities <br> around you.</h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="signrgt">
+                            <div class="col-md-12 col-sm-12 col-xs-12 formlft">
+                                <h2>Welcome back!</h2>
+                                <form action="/login-form" method="post" id="signinform"> 
+                                    <?php                             
+                                        if(isset($_GET['u']) && $_GET['u']=="verified"){
+                                            if(isset($_GET['role'])&& $_GET['role']==3){
+                                                echo '<div class="alert alert-danger" style="margin-bottom:0px;">Email verified successfully and your profile will get active in 24 hrs. </div>';
+                                            }
+                                            if(isset($_GET['role'])&& $_GET['role']==2){
+                                                echo '<div class="alert alert-danger" style="margin-bottom:0px;">Email verified successfully. Please login and update your profile. </div>';
+                                            }
+                                        }
+                                        if($_SERVER[REQUEST_URI] == 'login-form'){
+                                            if(!isset($_GET['u']) && !isset($_SESSION['action_url'])){
+                                                echo '<div class="alert alert-danger" style="margin-bottom:0px;">Please enter valid details.</div>';
+                                            }elseif($_GET['u']="verified"){
+                                                echo '<div class="alert alert-danger" style="margin-bottom:0px;">Please enter login details to access the page.</div>';
+                                            }
+                                        }
+                                        if(!empty($return['error_message'])): 
+                                            echo '<div  class="alert alert-danger" style="margin-bottom:0px;"><span>'.$this->escapeHtml($return['error_message']).'<span></div>';
+                                        endif;                                        
+
+                                    ?>
+                                    <div class="form-group">
+                                        <label for="email">Enter your email or username</label>
+                                        <input type="text" class="form-control" id="login-email" name="login" placeholder="<?php echo $this->escapeHtml($this->translate('Enter username or email')); ?>" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="password">Enter your password</label>
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="<?php echo $this->escapeHtml($this->translate('Password')); ?>" required>
+                                    </div>  
+                                    <div class="col-md-6 col-sm-6 col-xs-12 btnbx">                
+                                        <button type="submit" class="btn btn-default btn-1 lkbtn"><span><?php echo $this->escapeHtml($this->translate('Login')); ?></span></button>
+                                    </div>
+                                    <div class="col-md-6 col-sm-6 linkbx col-xs-12">                
+                                        <a href="<?php echo $this->serverUrl();?>/forgot-password" class="simpllink">Forgot password?</a>
+                                    </div>
+                                    <div class="col-md-12 col-sm-12 col-xs-12 forgotlnk">
+                                        <a href="<?php echo $this->serverUrl();?>/resend-email-verify" class="simpllink">Resend email verification</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>    
+<?php } ?>

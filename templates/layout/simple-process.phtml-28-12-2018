@@ -1,0 +1,1643 @@
+<?php
+setcookie('PHPSESSID', session_id(), 0, '/');
+@session_start();
+use Gc\Db\AbstractTable; 
+use Zend\Db\Sql\Sql; 
+use Zend\Db\Sql\Select;
+use Zend\Db\Sql\Insert; 
+use Zend\Db\TableGateway\TableGateway;
+use Gc\User\Question\Model;
+use Gc\User\Model as Model2;
+use Gc\User\Collection as UserCollection;
+use Gc\User\Packageresource\Model as Model009;
+use Gc\User\Package\Model as Model001;
+use Gc\User\Feedback\Model as FeedbackModel;
+use GcFrontend\Controller\DistancecalculateController as Distancecal;
+use GcFrontend\Controller\PaypalFormController as PaypalFormController;
+use Zend\Db\Adapter\Driver\DriverInterface as DriverInterface;
+use GcFrontend\Controller\PackageUpgradeController as PackageUpgradeController;
+use GcFrontend\Controller\DbController as DbController;
+use Gc\User\Feedback\Dispute as Dispute;
+use GcFrontend\Controller\FunctionsController;
+use GcFrontend\Controller\JobmailController as MailController;
+
+$functionsController 	= new FunctionsController();
+$distancecal 		= new Distancecal();
+$feedbackModel 		= new FeedbackModel();
+$paypalFormController 	= new PaypalFormController();
+$pkgUpgController 	= new PackageUpgradeController();
+$userCollection 	= new UserCollection();
+$dbConfig 		= new DbController();
+$mailController 	= new MailController();
+$adapter 		= $dbConfig->locumkitDbConfig();
+date_default_timezone_set('Europe/London');
+$insert = new insert();
+if(isset($_POST)){
+	if(isset($_POST['question'])){
+	$question=$_POST['question'];
+	$cat_id=$_POST['cat_id'];
+	$role_id=$_POST['role_id'];
+	if($cat_id!=''){
+		if($role_id == 3){
+			$sqlFreQues = "SELECT * from user_question WHERE (equestion != '' OR fquestion != null) AND cat_id = '$cat_id' ORDER BY sort_order ASC";	
+		    $freQuesData = $adapter->query($sqlFreQues, $adapter::QUERY_MODE_EXECUTE);
+		    $rows = $freQuesData->toArray();
+	    }elseif($role_id == 2){
+	    	$sqlFreQues = "SELECT * from user_question WHERE (fquestion != '' OR fquestion != null) AND cat_id = '$cat_id' ORDER BY sort_order ASC";	
+		    $freQuesData = $adapter->query($sqlFreQues, $adapter::QUERY_MODE_EXECUTE);
+		    $rows = $freQuesData->toArray();
+	    }
+        $count = count($rows);        
+        $i=0;
+        $j=0;
+		$tip="";
+        echo "<input type='hidden' id='total_qus' value='".$count."'>";
+       	foreach ($rows as $key => $row) {
+       		$j++;
+       		
+			if(!empty($row)){
+				    
+					//get ans
+					if ((isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1)){
+						$guest_email=$_SESSION['user_email'];
+						//get user id from email
+						$sqlguest = "SELECT id from user WHERE email='$guest_email'";	
+						$guestData = $adapter->query($sqlguest, $adapter::QUERY_MODE_EXECUTE);
+						$rows_guest = $guestData->current(); //print_r($rows_guest );
+						$guest_id=$rows_guest['id'];
+						
+						$sqlFreQues_Ans = "SELECT question_id, type_value from user_answer WHERE user_id='$guest_id' and question_id='".$row['id']."'";	
+						$freQuesAnsData = $adapter->query($sqlFreQues_Ans, $adapter::QUERY_MODE_EXECUTE);
+						$rows_ans = $freQuesAnsData->current();//print_r($rows_ans );
+						$guest_qus_id=$rows_ans['question_id'];
+						$guest_qus_ans=$rows_ans['type_value'];
+					}
+					$id_name="ro".$role_id."_cat".$row['cat_id']; $questionsarr="";$array=array();
+					$question_type=""; $opt_arrs=""; $get_arr="";$question_method="";$ans_method2="";$ans_method=""; $hidden_field="";
+					$hidden_field="<input type='hidden' id='question_id_".$i."' name='question_id[]' value='".$row['id']."'>";
+
+					if ($row['required_status'] && $row['required_status'] == 1 ) {
+						$qus_required = 1;
+					}else{
+						$qus_required = 0;
+					}
+
+					if($row['type_key']==1){
+						if($guest_qus_id==$row['id']){
+							$guest_ans_txt=$guest_qus_ans;
+						}
+						if ($qus_required && $qus_required == 1) {
+							$ans_method.="<input type='text' id='ans_text_".$i."' name='ans_val[]' class='width-100 req-qus-".$row['id']."' value='".$guest_ans_txt."'>";
+							$ans_method.= "<div id='required-qus-".$row['id']."' style='clear: both;'></div>";
+						}else{
+							$ans_method.="<input type='text' id='ans_text_".$i."' name='ans_val[]' class='width-100' value='".$guest_ans_txt."'>";
+						}
+					}
+					if($row['type_key']==2){
+						
+						if($guest_qus_id==$row['id']){
+							$guest_ans_sel=$guest_qus_ans;
+						}
+						
+						if ($qus_required && $qus_required == 1) {
+							$ans_method .='<input type="hidden" value="" id="select-ans-'.$row['id'].'"  class="width-100 req-qus-'.$row['id'].'">';
+							$ans_method .="<select name='ans_val[]' id='ans_option_".$i."' required class='width-100 req-qus-".$row['id']."'><option value=''>Please select</option>";
+							$var1=unserialize($row['type_value']);
+							foreach($var1 as $get_arr){
+								$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel)? "selected":"").">".$get_arr."</option>";
+							}
+							$ans_method.="</select>";
+						
+							$ans_method.= "<div id='required-qus-".$row['id']."' style='clear: both;'></div>";
+							?>
+							<script type="text/javascript">
+								$( ".req-qus-<?php echo $row['id'] ?>" ).change(function () {
+									$( "#select-ans-<?php echo $row['id'] ?>" ).val(this.value);
+									//alert(this.value);
+
+								});
+							</script>
+							<?php
+						}else{
+							$ans_method="<select name='ans_val[]' id='ans_option_".$i."' class='width-100'><option value=''>Please select</option>";
+							$var1=unserialize($row['type_value']);
+							foreach($var1 as $get_arr){
+								
+							 	$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel)? "selected":"").">".$get_arr."</option>";
+							}
+							$ans_method.="</select>";
+						}
+					}
+					if($row['type_key']==3){
+						// guest ans 
+						if($guest_qus_id==$row['id']){
+							if(isset($guest_qus_ans) && $guest_qus_ans!=""){
+							$guest_ans_chk=explode(',',$guest_qus_ans);}
+						}
+						$var2=unserialize($row['type_value']);
+						$ans_method ='<div class="multi-select">';
+						foreach($var2 as $k => $get_arr1){
+							if(isset($guest_ans_chk) && !empty($guest_ans_chk)){ $inarr=in_array($get_arr1, $guest_ans_chk);}else{$inarr="";}
+					        
+						 	$ans_method .="<div class='check-option'><input type='checkbox' ".(($inarr=='1' || $k == '0')? "checked disabled":"")."  id='ans_option_".$j."' required class='width-100' value='".$get_arr1."'>";
+						 	$ans_method .="<p>".$get_arr1."</p> </div>";
+						}
+						
+						?>
+							<?php if ($qus_required && $qus_required == 1) { ?>
+								<input type="hidden" value="" id="multi-select-ans-<?php echo $j; ?>" name='ans_val[]' class='width-100 req-qus-<?php echo $row['id'] ?>'>
+								<?php $ans_method.= "<div id='required-qus-".$row['id']."' style='clear: both;'></div>"; ?>
+							<?php }else{ ?>
+								<input type="hidden" value="" id="multi-select-ans-<?php echo $j; ?>" name='ans_val[]'>
+							<?php } ?>
+							<script type="text/javascript">
+						    	var countChecked = function() {
+							        var n = $( ".check-option input:checked#ans_option_<?php echo $j ?>" ).val();
+							        var str = '';
+							        $( ".check-option input:checked#ans_option_<?php echo $j ?>" ).each(function() {
+								      	str += $( this ).val() + ",";
+								    });
+								    $("#multi-select-ans-<?php echo $j ?>").val(str);
+							        
+							    };
+							    countChecked();     
+							    $( ".check-option input[type=checkbox]#ans_option_<?php echo $j ?>" ).on( "click", countChecked );
+						    </script>
+						<?php
+						$ans_method .='</div>';
+						
+					}
+					
+					//////////
+					if($row['type_key']==4){
+						$range_type_unit=$row['range_type_unit'];
+						$range_type_condition=$row['range_type_condition'];  //1. Greater than 2. Greater than OR equel to 3. Less than 4. Less than OR equel to 5. Equel to
+						//condition_arr
+						$condition_arr=array("1"=>"Greater than","2"=>"Greater than OR equal to","3"=>"Less than","4"=>"Less than OR equal","5"=>"Equal to");
+						
+						if($guest_qus_id==$row['id']){
+							$guest_ans_sel=$guest_qus_ans;
+						}
+						
+						if ($qus_required && $qus_required == 1) {
+							$ans_method .='<input type="hidden" value="" id="select2-ans-'.$row['id'].'"  class="width-100 req-qus-'.$row['id'].'">';
+							$ans_method .="<select name='ans_val[]' id='ans_option_".$i."' required class='width-100 req-qus-".$row['id']."'><option value=''>Please select</option>";
+							$var1=unserialize($row['type_value']);
+							foreach($var1 as $get_arr){
+								$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel)? "selected":"").">".$get_arr." ".$range_type_unit."</option>";
+							}
+							$ans_method.="</select>";
+						
+							$ans_method.= "<div id='required-qus-".$row['id']."' style='clear: both;'></div>";
+							?>
+							<script type="text/javascript">
+								$( ".req-qus-<?php echo $row['id'] ?>" ).change(function () {
+									$( "#select2-ans-<?php echo $row['id'] ?>" ).val(this.value);
+									//alert(this.value);
+
+								});
+							</script>
+							<?php
+						}else{
+							$ans_method="<select name='ans_val[]' id='ans_option_".$i."' class='width-100'><option value=''>Please select</option>";
+							$var1=unserialize($row['type_value']);
+							foreach($var1 as $get_arr){
+								
+							 	$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel)? "selected":"").">".$get_arr." ".$range_type_unit."</option>";
+							}
+							$ans_method.="</select>";
+						}
+					}
+					///////// question type=4 end
+					////////// question type=5
+					if($row['type_key']==5){ 
+					    $var00=unserialize($row['type_value']);
+						$range_type_unit=$row['range_type_unit'];
+						if ($role_id == 3){ $setvalue=$var00[0];}else{$setvalue="";}
+						
+						if($guest_qus_id==$row['id']){
+							$guest_ans_sel=$guest_qus_ans;
+						}?>
+                         <script type="text/javascript">
+								// save ans like string
+								function showMe(val,getopt) {
+									var selO = document.getElementsByName('ans_val'+getopt)[0];									
+									var selValues = '';
+									for(i=0; i < selO.length; i++){
+										if(selO.options[i].selected){
+											if(selValues == ''){
+												selValues = selO.options[i].value;
+											}else{
+												selValues = selValues+','+selO.options[i].value; //alert(selValues);
+											}
+											
+											$("#multi-select-ans-range-"+getopt).val(selValues);
+										}
+									}									
+								}
+							</script>
+                        <?php
+						
+						if ($qus_required && $qus_required == 1) {
+							$ans_method .='<input type="hidden" value="'.$setvalue.'" id="select3-ans-'.$row['id'].'"  class="width-100 req-qus-'.$row['id'].'">';
+							if ($role_id == 2){
+								$ans_method .="<select name='ans_val[]' id='ans_option_".$i."' required class='width-100 req-qus-".$row['id']."'					><option value=''>Please select</option>";
+								$var1=unserialize($row['type_value']);
+								foreach($var1 as $k => $get_arr){
+									$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel)? "selected":"").">".$get_arr." ".$range_type_unit."</option>";
+								}
+							}
+							if ($role_id == 3){// for employer
+							    //$tip="<br><span class='tip_font'>(you can select multiple options)</span>";
+							    $tip="";
+							    $var1=unserialize($row['type_value']);
+								$ans_method .="<input type='hidden' value='".$var1[0]."' id='multi-select-ans-range-".$row['id']."' name='ans_val[]'><select name='ans_val".$row['id']."' id='ans_option_".$i." multi_range".$row['id']."' required class='width-100 req-qus-".$row['id']."' multiple onChange='showMe(this.value,".$row['id'].")'>";								
+								foreach($var1 as $k => $get_arr){
+									$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel || $k == 0)? "selected":"").">".$get_arr." ".$range_type_unit."</option>";
+								}
+							}
+							
+							$ans_method.="</select>";
+						
+							$ans_method.= "<div id='required-qus-".$row['id']."' style='clear: both;'></div>";
+							?>
+							<script type="text/javascript">
+								$( ".req-qus-<?php echo $row['id'] ?>" ).change(function () {
+									$( "#select3-ans-<?php echo $row['id'] ?>" ).val(this.value);
+									//alert(this.value);
+								});
+							</script>
+							<?php
+						}else{
+							if ($role_id == 2){// freelancer
+								$ans_method="<select name='ans_val[]' id='ans_option_".$i."' class='width-100'><option value=''>Please select</option>";
+								$var1=unserialize($row['type_value']);
+								foreach($var1 as $k => $get_arr){
+								 	$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel )? "selected":"").">".$get_arr." ".$range_type_unit."</option>";
+								}
+							}
+							if ($role_id == 3){// employer can select more than one option
+							    //$tip="<br><span class='tip_font'>(you can select multiple options)</span>";
+							    $tip="";
+							    $var1=unserialize($row['type_value']);
+								$ans_method="<input type='hidden' value='".$var1[0]."' id='multi-select-ans-range-".$row['id']."' name='ans_val[]'><select name='ans_val".$row['id']."' id='ans_option_".$i." multi_range".$row['id']."' class='width-100 multiple' multiple onChange='showMe(this.value,".$row['id'].")'>"; 								
+								foreach($var1 as $k => $get_arr){
+								 	$ans_method.="<option value='".$get_arr."' ".(($get_arr==$guest_ans_sel || $k==0)? "selected":"").">".$get_arr." ".$range_type_unit."</option>";
+								}
+							}
+							
+							$ans_method.="</select>";
+						}
+					}
+					
+					/////////question type 5 end
+
+					/* Yes No option question with Yes */
+					if ($row['type_key']==6) {
+						if ($qus_required && $qus_required == 1) {
+							$ans_method="<select name='ans_val[]' id='ans_option_".$i."' required class='width-100'>";
+							/*if ($role_id == 3) {
+								$ans_method.="<option value='Yes'>Yes</option>";
+								$ans_method.="<option value='Yes'>No</option>";
+							}else{
+								$ans_method.="<option value='Yes'>Yes</option>";
+								$ans_method.="<option value='No'>No</option>";
+							}*/
+							$ans_method.="<option value='No'>No</option>";
+							$ans_method.="<option value='Yes'>Yes</option>";
+							$ans_method.="</select>";
+							$ans_method.= "<div id='required-qus-".$row['id']."'></div>";
+						}else{
+							$ans_method="<select name='ans_val[]' id='ans_option_".$i."' class='width-100'>";
+							/*if ($role_id == 3) {
+								$ans_method.="<option value='Yes'>Yes</option>";
+								$ans_method.="<option value='Yes'>No</option>";
+							}else{
+								$ans_method.="<option value='Yes'>Yes</option>";
+								$ans_method.="<option value='No'>No</option>";
+							}*/
+							$ans_method.="<option value='No'>No</option>";
+							$ans_method.="<option value='Yes'>Yes</option>";
+							$ans_method.="</select>";
+						}
+					}
+
+					/* Que type 6 end */
+					
+					if ($role_id == 2) {
+						if ($qus_required && $qus_required == 1) {
+							$questionsarr="<div id='".$id_name."' class='col-md-11' >
+									<div class='col-md-6 margin-bottom text-right'><p>".$row['fquestion']."<i class='fa fa-asterisk required-stars' aria-hidden='true'  ></i>".$tip."</p></div>
+									<div class='col-md-6 margin-bottom'>".$ans_method."</div></div>";
+						}else{
+							$questionsarr="<div id='".$id_name."' class='col-md-11' >
+									<div class='col-md-6 margin-bottom text-right'><p>".$row['fquestion'].$tip."</p></div>
+									<div class='col-md-6 margin-bottom'>".$ans_method."</div></div>";
+						}
+					}else{
+						if ($qus_required && $qus_required == 1) {
+							$questionsarr="<div id='".$id_name."' class='col-md-11' >
+									<div class='col-md-6 margin-bottom text-right'><p>".$row['equestion']."<i class='fa fa-asterisk required-stars' aria-hidden='true' ></i>".$tip."</p></div>
+									<div class='col-md-6 margin-bottom'>".$ans_method."</div></div>";
+						}else{
+							$questionsarr="<div id='".$id_name."' class='col-md-11' >
+									<div class='col-md-6 margin-bottom text-right'><p>".$row['equestion'].$tip."</p></div>
+									<div class='col-md-6 margin-bottom'>".$ans_method."</div></div>";
+						}
+					}
+					echo $questionsarr.$hidden_field;
+			}else{
+				echo "0";
+			}
+		}
+		echo "</div>";
+	}
+	
+	}// question form
+	if(isset($_POST['ans_val']) && isset($_POST['question_id']) ){		
+		$ans_val = $_POST['ans_val'];
+		$question_id = $_POST['question_id'];
+		$newData = array();
+		foreach ($question_id as $qKey => $qValue) {
+			foreach ($ans_val as $akey => $aValue) {
+				if ($qKey == $akey) {
+					$newData[$qValue] = $aValue;
+				}
+			}
+		}		
+        if(!empty($newData)){
+			$checkVal = 1;
+			foreach ($newData as $key => $value) {
+				if ($value) {
+					$checkVal = 1;
+				}else{
+					$checkVal = 1;
+					//break;
+				}
+			}
+			foreach ($newData as $key => $value) {
+				if ($checkVal) {
+				?>
+					<input type='hidden' name='ans_text[]' value='<?php echo $value; ?>'>
+					<input type='hidden' name='ques_id[]' value='<?php echo $key; ?>'>
+				<?php
+				}
+			}
+		}else{
+			echo "1";
+		}
+	}
+	
+	if(isset($_POST['log_out'])&& $_POST['log_out']==1){
+		session_destroy();
+		echo 1;
+	}
+	
+	if(isset($_POST['email_check'])&& $_POST['email_check']=='check'){
+		$email=$_POST['email'];
+		$userTable = new Model2();
+        $row2       = $userTable->fetchRow($userTable->select(array('email' => $email)));
+		if ($row2['email']==$email  ) {
+			echo "1";
+		} else {
+			echo "0";
+		}
+	}
+	if(isset($_POST['login_check']) && $_POST['login_check']=='check'){
+		$login=$_POST['login'];
+		$userTable = new Model2();
+        $row22       = $userTable->fetchRow($userTable->select(array('login' => $login)));
+		if ($row22['login']==$login) {
+			echo "1";
+		} else {
+			echo "0";
+		}
+	}
+	
+	if(isset($_POST['pack_id']) && $_POST['open_block']=='1'){
+		 $ddd="";$gggg="";
+         $PackageId=$_POST['pack_id'];
+         $packageTable = new Model001();
+         $row_pack       = $packageTable->fetchRow($packageTable->select(array('id' => (int) $PackageId)));
+		 /*$res_pack_id=unserialize($row_pack['user_acl_package_resources_id']);
+		 foreach ($res_pack_id as $res_id) {
+			 $packageResourceTable = new Model009();
+			 $row       = $packageResourceTable->fetchRow($packageResourceTable->select(array('id' => (int) $res_id)));
+			 $ddd.='<i class="fa fa-check-square-o margin-right square-font"></i>'.$row['
+			 resource_value'].'<br>';
+		 }*/
+		 	$sqlInserPkgInfo = 'SELECT * FROM pkg_privilege_info';
+		 	switch ($PackageId) {
+		 		case '1':
+		 			$sqlInserPkgInfo = "SELECT p_label FROM pkg_privilege_info WHERE p_gold = '1' "; 		 			
+		 			break;
+		 		case '2':
+		 			$sqlInserPkgInfo = "SELECT p_label FROM pkg_privilege_info WHERE p_silver = '1' ";		 			
+		 			break;
+		 		case '3':
+		 			$sqlInserPkgInfo = "SELECT p_label FROM pkg_privilege_info WHERE p_bronze = '1' ";		 			
+		 			break;
+		 	}
+
+		 	
+			$getPkgInfo = $adapter->query($sqlInserPkgInfo, $adapter::QUERY_MODE_EXECUTE);
+			$getAllPkgInfo = $getPkgInfo->toArray();
+			$ddd = '';
+			foreach ($getAllPkgInfo as $package_info) {				
+				$ddd.='<i class="fa fa-check-square-o margin-right square-font"></i>'.$package_info['p_label'].'<br>';
+		 	}
+		 	$gggg="<h2>Benefits</h2><p id='".strtolower($row_pack['name'])."-benifits'>".$ddd."</p>";
+		 	echo $gggg;
+        }
+        /* Get store list */
+	if(isset($_POST['get_list']) && $_POST['get_list']==1){
+		if (isset($_POST['town_page'])) {
+			$page = $_POST['town_page'];
+		}else{
+			$page = 1;
+		}
+		$limit = 50;
+		$offset = $page*$limit;
+		$val 	= "";$list=""; $distance="";
+		$zip	= $_POST['zip'];
+		$town	= str_replace("'", "", $_POST['city']);
+		//$addr 	= str_replace(' ','+',$_POST['full_addr']);
+		$addr 	= $_POST['city'].'+UK';
+		$max_dis = $_POST['max_dis'];
+		$cat_id	= $_POST['cat_id'];
+
+		//echo "Zip : $max_dis";
+		//echo "Address : $addr, $zip";
+
+		// get store list from Database
+		//echo $distance = round($distancecal->getDistance('NW88EX','N144XA','N')).'<br>';
+		$sourceLatLng = $distancecal->getDistanceLatLng($zip,$addr);
+		$sourceLat = $sourceLatLng['lat'];
+		$sourceLng = $sourceLatLng['lng'];
+		$sqlstorelist = "SELECT * from site_town_table WHERE Town = '$town' AND Lat != '' AND Lon !='' "; 
+		 
+		$storeDetails = $adapter->query($sqlstorelist, $adapter::QUERY_MODE_EXECUTE); //print_r($storeDetails);
+		$storeResultset = $storeDetails->toArray();		
+		
+
+		$results_count22=$storeDetails->count();
+		echo '<div class="col-md-12">';
+		
+	    /*if($results_count22>0){		
+	        foreach($storeResultset as $result2){ */
+
+				//$lat = $distancecal->getDistanceLat($zip,$addr); // latitude of center of bounding circle in degrees
+				$lat = $sourceLat; // latitude of center of bounding circle in degrees
+
+				//$lon = $distancecal->getDistanceLng($zip,$addr); // longitude of center of bounding circle in degrees
+				$lon = $sourceLng; // longitude of center of bounding circle in degrees
+				
+	             
+	            if ($max_dis == "Over 50") {
+	            	$rad = 6371; 
+	            }else{
+	            	$rad = $max_dis; // radius of bounding circle in kilometers
+	            }
+	            
+	            $R = 6371;  // earth's mean radius, km
+	            // first-cut bounding box (in degrees)
+	            $maxLat = $lat + rad2deg($rad/$R);
+	            $minLat = $lat - rad2deg($rad/$R);
+	            // compensate for degrees longitude getting smaller with increasing latitude
+	            $maxLon = $lon + rad2deg($rad/$R/cos(deg2rad($lat)));
+	            $minLon = $lon - rad2deg($rad/$R/cos(deg2rad($lat)));
+	            $lat = deg2rad($lat);
+	            $lon = deg2rad($lon);
+	            $sqlList = "Select tw_id, Town, county , acos(sin($lat)*sin(radians(Lat)) + cos($lat)*cos(radians(Lat))*cos(radians(Lon)-$lon)) * $R As D
+	                    From (
+	                        Select *
+	                        From site_town_table
+	                        Where Lat Between '$minLat' And '$maxLat'
+	                          And Lon Between '$minLon' And '$maxLon'
+	                    ) As FirstCut
+	                    Where acos(sin($lat)*sin(radians(Lat)) + cos($lat)*cos(radians(Lat))*cos(radians(Lon)-$lon)) * $R < $rad
+	                    Order by D";
+	            $getDiust = $adapter->query($sqlList, $adapter::QUERY_MODE_EXECUTE); 
+	            $results = $getDiust->toArray();
+	            /*echo "<pre>";
+	            print_r($results);
+	            echo "</pre>";*/
+	            
+				$results_count = $getDiust->count();
+
+$select_county = $county_option = '';
+if (!empty($results)) {
+ foreach ($results as $key => $value) { $arr_con[] = $value['county'] ; }
+$arr_counties =  array_unique($arr_con);
+        $select_county = '<select id="myInputTextField" class="form-control"><option value="">All County</option>';
+        foreach($arr_counties as $arr_county){
+            $select_county .= '<option value="'.$arr_county.'">'.$arr_county.'</option>';
+        }
+        $select_county .= '</select>';
+        $county_option = '<div class="filter-row"><div class="col-md-4 col-sm-6 col-xs-12 countylable pad0"><span class="pull-left">Filter by county</span></div><div class="col-md-8 col-sm-6 col-xs-12 pull-right pad0">'.$select_county.'</div></div><div style="clear:both"></div>';
+}
+echo '<div class="store_list margin-top"><p class="col-md-8 list_count">'.$results_count.' record(s) found.</p><p class="col-md-4 list_count_save_btn"><input type="button" class="btn btn-small btn-block btn-warning" name="save_list_data" value="Save & Continue" onClick="save_list();"></p></div>';
+    
+if (!empty($results)) {
+  echo '<div class="store_list">'.$county_option.'<table width="100%"  id="simpledata"><thead><tr><th>&nbsp;</th><th>&nbsp;</th><th width="20%" style="text-align:right;">&nbsp;</th></tr></thead>';        
+            foreach ($results as $key => $value) {
+                echo '<tr><td><div class="col-md-1 no-padding-left"><span class="margin-right"><input type="checkbox" class="st_data margin-right" name=store_list[] value="'.$value['tw_id'].'" checked></span></div></td>';
+                //echo '<td>'.$value['county'].'</td>';
+                echo '<td><p><span class="town-name text-right">'.$value['Town'].'</span></p></td><td><p><span class="distance text-right"> '.number_format((float)$value['D'], 2, '.', '').' Miles</span></p></td></tr>';
+            }
+ echo'</table></div>';
+        }else{
+ echo '<div class="store_list" style="text-align: center;"><strong>No record found. Please check the post code Or try with higher range.</strong></div>';
+        }
+
+    				/* echo '<div class="store_list margin-top"><p class="col-md-8 list_count">'.$results_count.' record(s) found.</p><p class="col-md-4 list_count_save_btn"><input type="button" class="btn btn-small btn-warning" name="save_list_data" value="Save & Continue" onClick="save_list();"></p></div>';
+				if (!empty($results)) {
+					foreach ($results as $key => $value) {
+						echo '<div class="store_list"><div class="col-md-1 no-padding-left"><span class="margin-right"><input type="checkbox" class="st_data margin-right" name=store_list[] value="'.$value['tw_id'].'" checked></span></div><div class="col-md-11 no-padding-right">
+						<p><span class="town-name text-right">'.$value['Town'].'</span><span class="distance text-right"> '.number_format((float)$value['D'], 2, '.', '').' Miles</span></p></div></div>';
+					}
+				}else{
+					echo '<div class="store_list"><strong>No record found. Please check the post code Or try with higher range.</strong></div>';
+				} */
+				
+	        //} //foreach end
+		/*}else{
+			 echo '<div class="store_list"><strong>No record found. Please check the post code or try with higher range.</strong></div>';
+		}*/
+
+
+	   echo '</div>';
+	   ?>
+
+
+
+
+
+	   	<!-- <div class="col-md-12">
+	   		<div class="town-pagination">
+	   			<a href="#" id="loadMore">Load More</a>
+	   		</div>
+	   	</div> -->
+	   <?php
+	   
+
+	}
+	if(isset($_POST['save_list']) && $_POST['save_list']==1){
+		$values = array();
+		$values_store_id = array();
+		$values_store_data = array();
+        parse_str($_POST['data_all'], $values);
+        $var_list=implode(',',$values['store_list']); //Outputs 'store'
+		parse_str($_POST['store_id'], $values_store_id);
+        $store_id_list=implode(',',$values_store_id['store_id']); //Outputs 'store_id'
+		parse_str($_POST['store_data'], $values_store_data);
+        $store_data_list=implode(',',$values_store_data['store_data']); //Outputs 'store_data'
+		$var="";
+		$data_all=$_POST['data_all'];
+		$store_id=$store_id_list;
+		$max_distance=$_POST['max_distance'];
+		$store_data=$store_data_list;
+		$store_list=$var_list;
+		$strArray = explode("&", $_POST['data_all']);
+		$goc=$_POST['goc'];
+		$aop=$_POST['aop'];
+		$inshurance_company=$_POST['inshurance_company'];
+		$inshurance_no=$_POST['inshurance_no'];
+		$inshurance_renewal_date=$_POST['inshurance_renewal_date'];
+		if(!empty($data_all) || $max_distance){
+		$var='<input type="hidden" name="max_distance" value="'.$max_distance.'"><input type="hidden" name="store_id" value="'.$store_id.'"><input type="hidden" name="store_data" value="'.$store_data.'"><input type="hidden" name="store_list" value="'.$store_list.'">';
+		echo $var;}else{
+			echo 0;
+		}
+	}
+	/* Update the store list where freelancer travel to work */
+	if(isset($_POST['update_work_store_list']) && $_POST['update_work_store_list']==1){
+		$values = array();
+		$values_store_id = array();
+		$values_store_data = array();
+        parse_str($_POST['data_all'], $values);
+        $var_list=implode(',',$values['store_list']); //Outputs 'store'
+		parse_str($_POST['store_id'], $values_store_id);
+        $store_id_list=implode(',',$values_store_id['store_id']); //Outputs 'store_id'
+		parse_str($_POST['store_data'], $values_store_data);
+        $store_data_list=implode(',',$values_store_data['store_data']); //Outputs 'store_data'
+		$var="";
+		$data_all=$_POST['data_all'];
+		$store_id=$store_id_list;
+		$max_distance=$_POST['max_distance'];
+		$store_data=$store_data_list;
+		$store_list=$var_list;
+		$strArray = explode("&", $_POST['data_all']);
+		$u_id = $_POST['u_id'];
+		if(!empty($data_all) || $max_distance){
+			/*$var='<input type="hidden" name="max_distance" value="'.$max_distance.'"><input type="hidden" name="store_id" value="'.$store_id.'"><input type="hidden" name="store_data" value="'.$store_data.'"><input type="hidden" name="store_list" value="'.$store_list.'">';
+			echo $var;*/
+			//$sqlUpdateStoreList = "UPDATE user_store_list SET store_list = '$store_list' WHERE s_uid = '$u_id'";
+			//$updateStoreList = $adapter->query($sqlUpdateStoreList, $adapter::QUERY_MODE_EXECUTE);
+			$sqlUpdateStoreListGet = "SELECT * from user_store_list WHERE s_uid = '$u_id'";
+			$selStoreListGet = $adapter->query($sqlUpdateStoreListGet, $adapter::QUERY_MODE_EXECUTE);
+			$selStoreListGetcount=$selStoreListGet->count();
+			if($selStoreListGetcount>0){
+			    $sqlUpdateStoreList = "UPDATE user_store_list SET store_list = '$store_list' WHERE s_uid = '$u_id'";
+				$updateStoreList = $adapter->query($sqlUpdateStoreList, $adapter::QUERY_MODE_EXECUTE);
+			}else{
+				$sqlUpdateStoreListIns = "INSERT into user_store_list (s_uid,store_list) VALUES('$u_id','$store_list')";
+				$insertStoreList = $adapter->query($sqlUpdateStoreListIns, $adapter::QUERY_MODE_EXECUTE);
+			}
+			
+			
+			echo "Update Success";
+		}else{
+			echo 0;
+		}
+
+	}
+	/* -- end update store list to travel -- */
+
+	if(isset($_POST['feedback_name']) && $_POST['feedback_name']!=''){
+		/* feedback form */
+		$feedback_name 		= $_POST['feedback_name'];
+		$feedback_email 	= $_POST['feedback_email'];
+		$feedback 		= $_POST['feedback'];
+		$feedbackQusId 		= $_POST['feedbackQusId'];
+		$feedbackQus		= $_POST['feedbackQus'];
+		$feedback_user_id 	= $_POST['feedback_user_id'];
+		$feedback_job_id 	= $_POST['feedback_job_id'];
+		$feedback_comment 	= $_POST['feedback_comment'];
+		$user_role			= $_POST['user_role'];
+		$user_cat			= $_POST['user_cat'];
+		$rating				= $_POST['rating'];
+		$feedback_to_user_id= $_POST['feedback_to_user_id'];
+		/* merge rate vale with qus ids */
+		$feedbackValueArray = explode(',', $feedback);
+		$feedbackQusIdArray = explode(',', $feedbackQusId);
+		$feedbackQusArray = explode(',', $feedbackQus);
+		$arrayIndex = 0;
+		$feedbackArray = '';
+		foreach ($feedbackQusIdArray as $key => $feedbackQusId) {
+			$feedbackArray[] = array(
+					'qusId'		=> $feedbackQusIdArray[$arrayIndex],
+					'qus'		=> $feedbackQusArray[$arrayIndex],
+					'qusRate'	=> $feedbackValueArray[$arrayIndex]
+				);
+			$arrayIndex++;
+			
+		}
+		$feedback = serialize($feedbackArray);
+		$checkFeedbackData = $feedbackModel->checkFeedback($feedback_job_id,$feedback_user_id,$user_role);
+		if ($checkFeedbackData && $checkFeedbackData == 1) {
+			echo "2";
+		}else{
+			if ($user_role == 2) {
+				$isertArray = array(
+						'emp_id'	=> $feedback_to_user_id,
+						'fre_id'	=> $feedback_user_id,
+						'j_id'		=> $feedback_job_id,
+						'rating'	=> $rating,
+						'feedback'	=> $feedback,
+						'comments'	=> $feedback_comment,
+						'user_type' => $user_role,
+						'cat_id' 	=> $user_cat,
+					); 
+				$feedbackId = $feedbackModel->save($isertArray);
+				$mailController->recievedFeedbackEmployerNotification($feedbackId,$isertArray,$adapter);
+			}elseif($user_role == 3){
+				#Employer feedback
+				$isertArray = array(
+						'emp_id'	=> $feedback_user_id,
+						'fre_id'	=> $feedback_to_user_id,
+						'j_id'		=> $feedback_job_id,
+						'rating'	=> $rating,
+						'feedback'	=> $feedback,
+						'comments'	=> $feedback_comment,
+						'user_type' => $user_role,
+						'cat_id' 	=> $user_cat,
+					); 
+				$feedbackId = $feedbackModel->save($isertArray);
+				$mailController->recievedFeedbackFreelancerNotification($feedbackId,$isertArray,$adapter);
+			}
+			echo "1";
+		}
+	}
+
+
+	/* Upgrade account */
+	if (isset($_POST['pack_upgrade_uid']) && isset($_POST['pack_upgrade_price']) && isset($_POST['pack_upgrade_pid'])) {
+		
+		$uid = $_POST['pack_upgrade_uid'];
+		$pkgPrice = $_POST['pack_upgrade_price'];
+		$pkgId = $_POST['pack_upgrade_pid'];
+		echo $getPaypalForm = $paypalFormController->accountUpgradePaypalForm($uid,$pkgPrice,$pkgId,$adapter);
+		$token = '';
+		if (isset($_SESSION['upgrade_pkg_token'])) {
+			$token = $_SESSION['upgrade_pkg_token'];
+		}
+		$getPkgUpgStatus = $pkgUpgController->insertPaymentInfo($uid,$pkgId,$pkgPrice,$token,$adapter);
+		$expiryDate = $pkgUpgController->getExpiryDate($uid,$pkgId,$adapter);
+		if (!empty($expiryDate)) {
+			$expiryDate['package_expire_date'];
+			$currentDate = date("Y-m-d");
+			$newActiveDate = date('Y-m-d', strtotime('+1 day', strtotime($expiryDate['package_expire_date'])));
+			$newExpiredDate = date('Y-m-d', strtotime('+1 month', strtotime($newActiveDate)));
+			$getPkgUpgStatus = $pkgUpgController->insertPkgDetails($uid,$pkgId,$newActiveDate,$newExpiredDate,$adapter);
+		}
+		
+		
+        //$_SESSION['last_payment_insert_id'] = $paymentInfo->current();
+		 //print_r($storeDetails);
+    	//$pkgRecord = (array)$pkgDetails->current();
+		//$getPaypalForm = $PaypalFormController->getToken();
+	}
+	///Package Change//
+	if(isset($_POST['package_change']) && $_POST['package_change']=="change"){
+		
+		$uid = $_POST['pack_change_uid'];
+		$pkgPrice = $_POST['pack_change_price'];
+		$pkgId = $_POST['pack_change_pid'];
+		echo $getPaypalForm = $paypalFormController->accountChangePaypalForm($uid,$pkgPrice,$pkgId,$adapter);
+		$token = '';
+		if (isset($_SESSION['change_pkg_token'])) {
+			$token = $_SESSION['change_pkg_token'];
+		}
+		$getPkgUpgStatus = $pkgUpgController->insertPaymentInfo($uid,$pkgId,$pkgPrice,$token,$adapter);
+		$expiryDate = $pkgUpgController->getExpiryDate($uid,$pkgId,$adapter);
+		if (!empty($expiryDate)) {
+			$expiryDate['package_expire_date'];
+			$currentDate = date("Y-m-d");
+			$newActiveDate = date('Y-m-d');
+			$newExpiredDate = date('Y-m-d', strtotime('+1 year', strtotime($currentDate)));
+			$getPkgUpgStatus = $pkgUpgController->insertPkgDetails($uid,$pkgId,$newActiveDate,$newExpiredDate,$adapter);
+		}
+	}
+	/* Insert temp user */
+	if (isset($_POST['temp_user'])) {
+		echo $params = $_POST['temp_user'];
+		parse_str($params);
+		$password = sha1($upassword);
+		$dob = date('Y-m-d',strtotime($dob));
+		$profile_image = '';
+
+		if($role == $role_pack){
+			if (isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) {
+if($profession !='' &&  $login != '' && $password != ''){
+ $sqlString_insert="UPDATE user SET updated_at = NOW(),firstname = '$fname',lastname = '$lname',login = '$login',password = '$password',user_acl_role_id = '$role',user_acl_profession_id = '$profession',user_acl_package_id = '' WHERE email = '$email'";
+}	
+}else{
+				echo  $sqlString_insert="INSERT INTO user (created_at,firstname,lastname,email,login,password,active,user_acl_role_id,user_acl_profession_id,user_acl_package_id) VALUES(NOW(),'$fname','$lname','$email','$login','$password',3,'$role','$profession',0)";
+			}
+			
+		}else{
+			if (isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) {
+				
+if($profession !='' && $fname != '' && $login != '' && $password != ''){
+ $sqlString_insert="UPDATE user SET updated_at = NOW(),firstname = '$fname',lastname = '$lname',login = '$login',password = '$password',user_acl_role_id = '$role_pack',user_acl_profession_id = '$profession' WHERE email = '$email'";
+}	
+
+
+}else{
+				echo  $sqlString_insert="INSERT INTO user (created_at,firstname,lastname,email,login,password,active,user_acl_role_id,user_acl_profession_id) VALUES(NOW(),'$fname','$lname','$email','$login','$password',3,'$role_pack','$profession')";
+			}
+			
+		}
+
+		$results2 = $adapter->query($sqlString_insert, $adapter::QUERY_MODE_EXECUTE);
+		//$row_user = $results2->current();
+		//$uid = $row_user['id'];
+		$sqlString_get99 ="SELECT * FROM user WHERE email = '$email'";	
+        $results99 = $adapter->query($sqlString_get99, $adapter::QUERY_MODE_EXECUTE);
+	    $row99 = $results99->current();
+       echo $uid = $row99['id'];
+
+		// insert into user temprary table
+		// check for value inserted in temporary table
+		$sqlString_get90 ="SELECT uid FROM temporary_user_data WHERE uemail = '$email'";	
+        $results90 = $adapter->query($sqlString_get90, $adapter::QUERY_MODE_EXECUTE);
+	    $row90 = $results90->current();
+		
+		// insert into user temprary table
+		if ($row90>0){
+			$sql_temp="update temporary_user_data set fname='$fname',lname='$lname',uemail='$email',upassword='$upassword' where uid='$uid'";
+			$results_temp = $adapter->query($sql_temp, $adapter::QUERY_MODE_EXECUTE);
+		}else{
+			$sql_temp="insert into temporary_user_data (uid,fname,lname,uemail,upassword,date_added) value('$uid','$fname','$lname','$email','$upassword',NOW())";
+			$results_temp = $adapter->query($sql_temp, $adapter::QUERY_MODE_EXECUTE);
+		}
+		$city = str_replace("'", "", $city);
+		// insert into users extra table
+		if (isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) {
+			$sql_extra="UPDATE user_extra_info SET gender = '$gender',dob = '$dob',mobile = '$mobile',address = '$address',city = '$city',zip = '$zip',telephone = '$telephone',company = '$company',form_id = '$form_id' WHERE uid = '$uid'";
+		}else{
+			echo $sql_extra="INSERT INTO user_extra_info (uid,gender,dob,mobile,address,city,zip,telephone,company,profile_image,form_id) VALUES('$uid','$gender','$dob','$mobile','$address','$city','$zip','$telephone','$company','$profile_image','$form_id')";
+		}
+		
+		$results77 = $adapter->query($sql_extra, $adapter::QUERY_MODE_EXECUTE);
+		$_SESSION['user_email'] = $email;
+		$_SESSION['is_guest'] = 1;
+		
+		echo 'Inserted Successfully';
+
+		
+	}
+    //save temporary data
+	if(isset($_POST['all_temp_data'])&& $_POST['all_temp_data']!=""){
+		
+		$params=$_POST['all_temp_data'];
+		$list_store_id=array();
+		parse_str($params);//print_r($params); print_r($store_data); 
+		$question_id2 = array();
+	    $ans_val2 = array();
+		$question_id2 = $question_id;
+	    $ans_val2 = $ans_val;
+		$list_store_id=$store_id;
+		$store_id2 = implode(',',$list_store_id); //print_r($list_store_id);
+		$store_data2 = implode(',',$store_data);
+		$min_rate_data=$min_rate;
+		
+		// get week days array
+		$day_with_rate = array();
+	    $day_with_rate = array(
+	  		'Monday' 	=> $min_rate[0],
+	  		'Tuesday' 	=> $min_rate[1],
+	  		'Wednesday' => $min_rate[2],
+	  		'Thursday' 	=> $min_rate[3],
+	  		'Friday' 	=> $min_rate[4],
+	  		'Saturday' 	=> $min_rate[5],
+	  		'Sunday' 	=> $min_rate[6],
+	  	);
+		$minimum_rate=serialize($day_with_rate);
+		//get user id
+		$sqlString_user ="select id from user where email='$email'";
+		$results_user = $adapter->query($sqlString_user, $adapter::QUERY_MODE_EXECUTE);
+		$results_userdata=$results_user->current();
+		$uid =$results_userdata['id'];
+		
+		// check for user ans stored or not
+		$sqlString_userans ="select user_id from user_answer where user_id='$uid'";
+		$results_userans = $adapter->query($sqlString_userans, $adapter::QUERY_MODE_EXECUTE);
+		$results_useransdata=$results_userans->current();
+		$count_useransdata=$results_userans->count();
+		$uid_get =$results_useransdata['user_id'];
+		
+		//update user_extra_info
+		$sql_guest_extra="update user_extra_info set minimum_rate='$minimum_rate',aoc_id='$aoc_id',max_distance='$max_distance',store_id='$store_id2',store_data='$store_data2',goc='$goc',aop='$aop',inshurance_company='$inshurance_company',inshurance_no='$inshurance_no',inshurance_renewal_date='$inshurance_renewal_date' where uid='$uid'";
+		$results_guest_extra = $adapter->query($sql_guest_extra, $adapter::QUERY_MODE_EXECUTE);
+		
+		if(isset($store_list) && $store_list!=""){
+			$store_list2=implode(',',$store_list); //print_r($store_list);
+			$sql_storeg="select * from user_store_list where s_uid='$uid'";
+			$results_storeg = $adapter->query($sql_storeg, $adapter::QUERY_MODE_EXECUTE);
+			$count_stg=$results_storeg->count();
+			
+			if ( $count_stg >0 ) {
+				$sql_storeup="Update user_store_list set store_list ='$store_list2' where s_uid='$uid'";
+			    $results_storeup = $adapter->query($sql_storeup, $adapter::QUERY_MODE_EXECUTE);
+			}else{
+				$sql_store="insert into user_store_list (s_uid,store_list,date_created) values('$uid','$store_list2',NOW())";
+			    $results_store = $adapter->query($sql_store, $adapter::QUERY_MODE_EXECUTE);
+			}
+		}
+		$results_guest_extra = $adapter->query($sql_guest_extra, $adapter::QUERY_MODE_EXECUTE);
+		//insert user answer
+		$newData = array();
+		foreach ($question_id2 as $qKey => $qValue) {
+			foreach ($ans_val2 as $akey => $aValue) {
+				if ($qKey == $akey) {
+					$newData[$qValue] = $aValue;
+				}
+			}
+		}
+		if(!empty($newData)){
+			foreach ($newData as $key => $value) {
+				if(is_array($value)){ $newval=implode(',',$value);}else{$newval=$value;}
+				if($count_useransdata>0){
+					$sqlString_ansup="update user_answer set type_value='$newval' where user_id='$uid' and question_id='$key'";
+					$results_ansup = $adapter->query($sqlString_ansup, $adapter::QUERY_MODE_EXECUTE);
+				}else{
+					$sqlString_insert_ans="insert into user_answer (user_id,question_id,type_value) values('$uid','$key','$newval')";
+					$results_ans = $adapter->query($sqlString_insert_ans, $adapter::QUERY_MODE_EXECUTE);
+				}
+			}			
+			
+		}
+		
+	}
+
+	/* == 24-6-2016 == */
+	/* Profile page calander  dates Managment */
+	if(isset($_POST['calender_update']) && $_POST['calender_update'] != ''){
+		$params = $_POST['calender_update'];
+		parse_str($params);
+	  	/*Get alreday present data */
+		$sqlGetRecord="SELECT * FROM user_work_calender  WHERE uid = '$uid'"; 
+	  	$getRecord = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+	  	$allRecord = $getRecord->toArray();
+	  	$updateArray = array();
+	  	if (!empty($allRecord)) {
+	  		if ($availability == 1) {
+	  			
+	  			$blockDatesString = $allRecord[0]['block_date'];
+	  			$blockDatesArray = unserialize( $allRecord[0]['block_date'] );
+	  			
+	  			foreach ($blockDatesArray as $key => $value) {
+	  				if (in_array($selected_date, $value)) {
+	  					if ($value['date'] == $selected_date) {
+	  						unset($blockDatesArray[$key]);
+	  						/* update block array by removing unblock date */
+	  						$insertUpdateArray = serialize($blockDatesArray);
+				  			$sqlString_data="UPDATE user_work_calender SET block_date = '$insertUpdateArray' WHERE uid = '$uid'"; 
+				  			$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	  					}
+	  				}
+	  			}
+	  			
+
+	  			$updateArray = array();
+	  			$tempExistArray = array();
+	  			$existArray = unserialize( $allRecord[0]['available_date'] );
+	  			$tempExistArray = array();
+	  			$dateExist = 0;
+	  			if (!empty($existArray)) {
+	  				$dateExist = 2;
+	  				foreach ($existArray as $key => $value) {
+		  				if (in_array($selected_date, $value)) {
+		  					if ($value['date'] == $selected_date) {
+		  						$existArray[$key] =  array(
+					  				'date' => $selected_date,
+					  				'min_rate' => $min_rate_date,
+					  			);	
+		  					}
+		  					$dateExist = 1;
+		  				}
+		  				
+		  			}
+	  				
+	  			}
+	  			if ($dateExist == 0) {
+  					$updateArray[] = array(
+		  				'date' => $selected_date,
+		  				'min_rate' => $min_rate_date,
+		  			);
+		  		}elseif ($dateExist == 2) {
+		  			$updateArray[] = array(
+		  				'date' => $selected_date,
+		  				'min_rate' => $min_rate_date,
+		  			);
+		  			$updateArray = array_merge($updateArray,$existArray);
+		  		}else{
+	  				$updateArray = $existArray;
+	  			}	
+  				
+	  			
+	  			$insertUpdateArray = serialize($updateArray);
+	  			$sqlString_data="UPDATE user_work_calender SET available_date = '$insertUpdateArray' WHERE uid = '$uid'"; 
+	  			$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	  			echo '1';
+	  		}elseif ($availability == 2) {
+	  			$updateArray[] = array(
+	  				'date' => $selected_date,
+	  			);
+	  			if (!empty($allRecord[0]['block_date'])) {
+	  				$existArray = unserialize( $allRecord[0]['block_date'] );
+	  				$updateArray = array_merge($updateArray,$existArray);
+	  			}
+	  			$insertUpdateArray = serialize($updateArray);
+
+	  			$sqlString_data="UPDATE user_work_calender SET block_date = '$insertUpdateArray' WHERE uid = '$uid'"; 
+	  			$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	  			echo '2';
+	  		}
+	  	}else{
+	  		if ($availability == 1) {
+	  			$allAvailableDates[] = array(
+	  				'date' => $selected_date,
+	  				'min_rate' => $min_rate_date,
+	  				
+	  			);
+	  			$availableDates = serialize($allAvailableDates);
+	  			$sqlString_data="INSERT INTO user_work_calender VALUES ('','$uid','','$availableDates')"; 
+	  			$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	  			echo '1';
+	  		}elseif ($availability == 2) {
+	  			$allBlockDates[] = array(
+	  				'date' => $selected_date,
+	  			);
+	  			$blockDates = serialize($allBlockDates);
+	  			$sqlString_data="INSERT INTO user_work_calender VALUES ('','$uid','$blockDates','')"; 
+	  			$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	  			echo '2';
+	  		}
+	  	}
+	}
+
+	/* Get information about specific date on freelancer profile page calender*/
+	if (isset($_POST['info_about_date']) && $_POST['info_about_date'] != "") {
+		$uid = $_POST['uid'];
+		$infoDate = date('Y-m-d', strtotime($_POST['info_about_date']));
+		if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3) {//employer
+		    $infoDate2 = date('d/m/Y', strtotime($_POST['info_about_date']));
+			$result=0;
+			$sql_usern="select jp.job_id,ja.f_id,jp.job_title from job_post jp, job_action ja where jp.job_status=4 and jp.job_id=ja.job_id and jp.job_date like '%$infoDate2%' and jp.e_id='$uid'";
+			$getRecordUsern = $adapter->query($sql_usern, $adapter::QUERY_MODE_EXECUTE);
+			$fetRecordUsern=$getRecordUsern->current();
+			$countRecordUsern=$getRecordUsern->count();
+			if($countRecordUsern>0){ // for normal user
+			  	$freelacer_id=$fetRecordUsern['f_id'];
+			  	$job_title=$fetRecordUsern['job_title'];
+			    $job_id=$fetRecordUsern['job_id'];
+				// get user details
+			    $sql_user="select firstname,lastname from user where id='$freelacer_id' ";
+			    $getRecordUser = $adapter->query($sql_user, $adapter::QUERY_MODE_EXECUTE);
+				$fetRecordUser=$getRecordUser->current();
+				$user_name=$fetRecordUser['firstname'];
+			    $result='<p>This date is booked.</p><p><b>Job Title:</b>'.ucfirst($job_title).'</p><p><b>Locum Name:</b> '.ucfirst($user_name).'</p>';
+			}else{ // for privat user
+				$sql_userp="select jp.job_id,ja.puid,jp.job_title from job_post jp, private_user_job_action ja where jp.job_status=4 and jp.job_id=ja.j_id and jp.job_date like '%$infoDate2%' and jp.e_id='$uid'";
+				$getRecordUserp = $adapter->query($sql_userp, $adapter::QUERY_MODE_EXECUTE);
+				$fetRecordUserp=$getRecordUserp->current();
+				$countRecordUserp=$getRecordUserp->count();
+				if($countRecordUserp>0){
+					$freelacer_id=$fetRecordUserp['puid'];
+					$job_title=$fetRecordUserp['job_title'];
+					$job_id=$fetRecordUserp['job_id'];
+					// get user/freelancer name from privat user
+					$sql_user="select p_name,p_email from private_user where p_uid='$freelacer_id' ";
+					$getRecordUser = $adapter->query($sql_user, $adapter::QUERY_MODE_EXECUTE);
+					$fetRecordUser=$getRecordUser->current();
+					$user_name=$fetRecordUser['p_name'];
+					$result='<p>This date is booked.</p><p><b>Job Title:</b>'.ucfirst($job_title).'</p><p><b>Locum Name:</b> '.ucfirst($user_name).'</p>';
+				}
+			}
+			echo $result;
+			
+		}else{
+			$sqlGetRecord="SELECT available_date FROM user_work_calender  WHERE uid = '$uid'"; 
+		  	$getRecord = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+		  	$allRecord = $getRecord->toArray();
+		  	$recordArray = unserialize($allRecord[0]['available_date']);
+		  	$isSetupRate = 0;
+		  	if (!empty($recordArray)) {
+		  		foreach ($recordArray as $key => $value) {
+			  		if (date("Y-m-d", strtotime($value['date'])) == $infoDate) {
+			  			echo number_format($value['min_rate'],2);
+		  			$isSetupRate = 1;
+		  			exit();
+		  		}else{
+		  			$isSetupRate = 0;
+		  		}
+		  		//print_r($value);
+		  	}
+	  	}
+	  	
+	  	if ($isSetupRate == 0) {
+	  		$sqlGetDayRecord="SELECT minimum_rate FROM user_extra_info  WHERE uid = '$uid'"; 
+		  	$getDayRecord = $adapter->query($sqlGetDayRecord, $adapter::QUERY_MODE_EXECUTE);
+		  	$allDayRecord = $getDayRecord->toArray();
+		  	
+		  	if (!empty($allDayRecord)) {
+		  		$dayWaiseRate = unserialize($allDayRecord[0]['minimum_rate']);
+		  		$day = date('l', strtotime($infoDate));
+		  		foreach ($dayWaiseRate as $key => $dayRate) {
+		  			if ($key == $day) {
+		  				echo $dayRate;
+		  			}
+		  		}
+		  	}
+
+	  	}
+	  }//else end
+	}
+
+	/* Get booking information of specific date on Employer profile page calender*/
+	if (isset($_POST['book_info_about_date']) && $_POST['book_info_about_date'] != '') {
+		if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3) {//employer
+		    $uid = $_POST['uid'];
+		    $infoDate2 = date('d/m/Y', strtotime($_POST['book_info_about_date']));
+			$result=0;
+			$sql_usern="select jp.job_id,ja.f_id,jp.job_title,jp.job_rate from job_post jp, job_action ja where (jp.job_status=4 or jp.job_status=5) and jp.job_id=ja.job_id and jp.job_date like '%$infoDate2%' and jp.e_id='$uid' and (ja.action = 3 or ja.action = 4)";
+			$getRecordUsern = $adapter->query($sql_usern, $adapter::QUERY_MODE_EXECUTE);
+			$fetRecordArray=$getRecordUsern->toArray();
+			//print_r($fetRecordUsern);
+			$countRecordUsern=$getRecordUsern->count();
+
+			// for privat user
+			$sql_userp="select jp.job_id,ja.puid,jp.job_title,jp.job_rate from job_post jp, private_user_job_action ja where (jp.job_status=4 or jp.job_status=5) and jp.job_id=ja.j_id and jp.job_date like '%$infoDate2%' and jp.e_id='$uid' and (ja.status=3 or ja.status=4)";
+			$getRecordUserp = $adapter->query($sql_userp, $adapter::QUERY_MODE_EXECUTE);
+			$fetRecordUserp=$getRecordUserp->toArray();
+			$countRecordUserp=$getRecordUserp->count();
+if(strtotime($_POST['book_info_about_date']) > strtotime(date('Y-m-d'))){
+			$result='<p><b>This date is booked.</b><br/><span style="font-size:12px">(Click on date to post another job.)</span></p><hr/>';
+}else{
+			$result='<p><b>This date is booked.</b></p><hr/>';
+}
+			foreach ($fetRecordArray as $key => $fetRecordUsern) {
+				
+				if($countRecordUsern>0){ // for normal user
+				  	$freelacer_id=$fetRecordUsern['f_id'];
+				  	$job_title=$fetRecordUsern['job_title'];
+				    $job_id=$fetRecordUsern['job_id'];
+					$job_rate=$fetRecordUsern['job_rate'];
+					// get user details
+				    $sql_user="select firstname,lastname from user where id='$freelacer_id' ";
+				    $getRecordUser = $adapter->query($sql_user, $adapter::QUERY_MODE_EXECUTE);
+					$fetRecordUser=$getRecordUser->current();
+					$user_name=$fetRecordUser['firstname'].' '.$fetRecordUser['lastname'];
+				    $result.='<p><b>Job Title:</b>'.ucfirst($job_title).'</p><p><b>Locum Name:</b> '.ucfirst($user_name).'</p><p><b>Rate:</b> '.$this->config()->get('site_currency').number_format($job_rate,2).'</p><hr/>';
+				    
+				}
+			}
+			foreach ($fetRecordUserp as $key => $fetRecordUserp) { 
+				if($countRecordUserp>0){
+					$freelacer_id=$fetRecordUserp['puid'];
+					$job_title=$fetRecordUserp['job_title'];
+					$job_id=$fetRecordUserp['job_id'];
+					$job_rate=$fetRecordUserp['job_rate'];
+					// get user/freelancer name from privat user
+					$sql_user="select p_name,p_email from private_user where p_uid='$freelacer_id' ";
+					$getRecordUser = $adapter->query($sql_user, $adapter::QUERY_MODE_EXECUTE);
+					$fetRecordUser=$getRecordUser->current();
+					$user_name=$fetRecordUser['p_name'];
+					$result.='<p style="color:red">Private  booked.</p><p><b>Job Title:</b>'.ucfirst($job_title).'</p><p><b>Locum Name:</b> '.ucfirst($user_name).'</p><p><b>Rate:</b> '.$this->config()->get('site_currency').number_format($job_rate,2).'</p>';
+					
+				}
+			}
+			
+			echo $result;
+			
+		}else{
+		
+		$selected_date1 = date('Y-m-d', strtotime($_POST['book_info_about_date']));
+		$selected_date = date('d/m/Y', strtotime($selected_date1));
+		$uid = $_POST['uid'];
+		$sqlGetBookings = " SELECT job_rate,job_address,job_region,job_zip,store_id FROM job_post WHERE job_date = '$selected_date' AND (job_status = 4 OR job_status = 5) AND job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND (action = 3 OR action = 4))"; 
+		$getBooking = $adapter->query($sqlGetBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getCurrentBookings = $getBooking->toArray();
+		$location = '';
+		$rate = '';
+		$company = '';
+		if (!empty($getCurrentBookings)) {
+			foreach ($getCurrentBookings as $key => $value) {
+				$location = $value['job_address'].', '.$value['job_region'].', '.$value['job_zip'];
+				$rate = $value['job_rate'];
+				if ($value['store_id'] && $value['store_id'] != '') {
+					$sql_company = 'SELECT emp_store_name FROM  employer_store_list WHERE emp_st_id ='. $value['store_id'];
+					$getCompany = $adapter->query($sql_company, $adapter::QUERY_MODE_EXECUTE);
+					$getCurrentCompany = $getCompany->current();
+					$company = $getCurrentCompany['emp_store_name'];
+				}
+				
+			}
+		}else{
+			$sqlGetPBookings = " SELECT priv_job_rate,priv_job_location from freelancer_private_job WHERE priv_job_start_date = '$selected_date1' AND f_id = $uid"; 
+			$getPBooking = $adapter->query($sqlGetPBookings, $adapter::QUERY_MODE_EXECUTE);
+			$getCurrentPBookings = $getPBooking->toArray();
+			if (!empty($getCurrentPBookings)) {
+				foreach ($getCurrentPBookings as $key => $pValue) {
+					$location = $pValue['priv_job_location'];
+					$rate = $pValue['priv_job_rate'];
+				}
+				echo "<p><b> This is private job </b></p>";
+			}
+		}
+		
+		echo "<p><b>Location :</b> ".$location."</p>";
+		echo "<p><b>Job Rate :</b> ".$this->config()->get('site_currency').number_format($rate,2)."</p>";
+		if ($company && $company != '') {
+			echo "<p><b>Company :</b> ".$company."</p>";
+		}
+		
+	   }// freelancer end
+	}
+
+	/* == Profile page calender management end == */
+        /* Store package table information */
+	if (isset($_POST['package_form_id']) && $_POST['package_form_id'] == 1) {
+		$sqlTruncatePkgInfo = "TRUNCATE TABLE  pkg_privilege_info"; 
+		$truncatePkgInfo = $adapter->query($sqlTruncatePkgInfo, $adapter::QUERY_MODE_EXECUTE);
+		$pakgeLabel = $_POST['pkg_label'];
+		$pkgBronze 	= $_POST['pkg_bronze'];
+		$pkgSilver 	= $_POST['pkg_silver'];
+		$pkgGold 	= $_POST['pkg_gold'];
+		$pkgData = array();
+		$recordCount = count($pakgeLabel);
+		$i = 0;
+		while ( $recordCount > $i) {
+			$pkgData[$i] = array(
+					'label' 	=> $pakgeLabel[$i],
+					'bronze' 	=> $pkgBronze[$i],
+					'silver' 	=> $pkgSilver[$i],
+					'gold' 		=> $pkgGold[$i],
+				);
+			$i++;
+		}
+		foreach ($pkgData as $key => $value) {
+			$label = $value['label'];
+			$bronze = $value['bronze'];
+			$silver = $value['silver'];
+			$gold = $value['gold'];
+			$sqlInserPkgInfo = "INSERT INTO pkg_privilege_info VALUES ('','$label','$bronze','$silver','$gold')"; 
+			$setPkgInfo = $adapter->query($sqlInserPkgInfo, $adapter::QUERY_MODE_EXECUTE);
+		}
+		echo "Data updated.";
+	}
+	/* Multi store timing form */
+	if (isset($_POST['multi_store_time']) && $_POST['multi_store_time'] == 1) {
+	?>
+		<div class="col-md-11 oppning-time-append-div">
+          <div class="col-md-4 text-right"><p>What is your opening time(s)?</p></div>
+          <div class="col-md-8">
+              <div class="col-md-12">
+                  <div class="col-xs-3 col-sm-3 col-md-3"></div>
+                  <div class="col-xs-3 col-sm-3 col-md-3">Opening time</div>
+                  <div class="col-xs-3 col-sm-3 col-md-3" align="center">Closing time</div>
+                  <div class="col-xs-3 col-sm-3 col-md-3 ">Lunch break (mins)</div>
+              </div>
+              <?php $arr_week=array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
+                    $timeToSelect = '0:00';
+                    $arr_start_hours="";
+                    $arr_end_hours="";
+                    $arr_lunch="";
+                    for($th=0;$th<96;$th++){
+                        $hrs = date ('H:i',strtotime($timeToSelect));
+                        $endTime = strtotime("+15 minutes", strtotime($hrs));
+                        $timeToSelect = date('H:i', $endTime);
+                        //if($th<=9){$th='0'.$th;}
+                        if($timeToSelect == "09:00"){$defaultSatrtTime = "selected";}
+                        else{$defaultSatrtTime = "";}
+                        if($timeToSelect == "17:30"){$defaultEndTime = "selected";}
+                        else{$defaultEndTime = "";}
+                        $arr_start_hours.='<option value="'.$timeToSelect.'"'.$defaultSatrtTime.'>'.$timeToSelect.'</option>';
+                        $arr_end_hours.='<option value="'.$timeToSelect.'"'.$defaultEndTime.'>'.$timeToSelect.'</option>';
+                    }
+                    for($tl=0;$tl<=12;$tl++){
+                        if($tl==0){$lunch='00';}else{$lunch=$tl*5;}
+                        if($lunch== 30){
+                            $arr_lunch.='<option value="'.$lunch.'" selected>'.$lunch.'</option>';
+                        }else{
+                            $arr_lunch.='<option value="'.$lunch.'">'.$lunch.'</option>';
+                        }
+                    }
+                    $st_cnt=1;
+                    foreach($arr_week as $weekdays){
+              ?>
+              <div class="col-md-12">
+                  <div class="col-xs-3 col-sm-3 col-md-3"><p><?php echo $weekdays;?></p><input type="hidden" name="job_week_days[]" value="<?php echo $weekdays;?>" ></div>
+
+                  <div class="col-xs-3 col-sm-3 col-md-3"><select name="job_start_time[<?php echo $weekdays;?>][]" class="input-text width-100 "><?php echo $arr_start_hours;?></select></div>
+
+                  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><select name="job_end_time[<?php echo $weekdays;?>][]" class="input-text width-100 "><?php echo $arr_end_hours;?></select></div>
+
+                  <div class="col-xs-3 col-sm-3 col-md-3 "><select name="job_lunch_time[<?php echo $weekdays;?>][]" class="input-text width-100 "><?php echo $arr_lunch;?></select></div>
+
+              </div>
+              <?php $st_cnt++;}?>
+          </div>
+      </div>
+	<?php
+	}
+	if (isset($_POST['emp_multi_store_time']) && $_POST['emp_multi_store_time'] == 1 && isset($_POST['emp_store_id'])) {
+		$emp_st_id = $_POST['emp_store_id'];
+		$sqlString_data="select * from employer_store_list where emp_st_id='$emp_st_id'";	
+        $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+        $resultset = $results_get->toArray();  //print_r($resultset);
+		
+		if(!empty($resultset)){
+			
+			foreach($resultset as $result){ 
+				//print_r($result);
+				$emp_start_time = unserialize($result['store_start_time']);
+				$emp_end_time = unserialize($result['store_end_time']);
+				$emp_lunch_time = unserialize($result['store_lunch_time']);
+			}
+			
+			/*echo "<pre>";
+			print_r($emp_start_time);
+			echo "</pre>";
+			echo "<pre>";
+			print_r($emp_end_time);
+			echo "</pre>";
+			echo "<pre>";
+			print_r($emp_lunch_time);
+			echo "</pre>";*/
+	?>
+		<div class="col-md-12 store-timing-div">
+          <div class="col-md-4 text-right"><p>What are your store opening time(s)?</p></div>
+          <div class="col-md-8">
+              <div class="col-md-12">
+                  <div class="col-xs-3 col-sm-3 col-md-3"></div>
+                  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><p>Opening time</p></div>
+                  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><p>Closing time</p></div>
+                  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><p>Lunch break (mins)</p></div>
+              </div>
+              <?php $arr_week=array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
+                    $arr_hours="";
+                    $arr_lunch="";
+                    for($th=0;$th<96;$th++){
+			//if($th<=9){$th='0'.$th;}
+			$hrs = date ('H:i',strtotime($timeToSelect));
+			$endTime = strtotime("+15 minutes", strtotime($hrs));
+			$timeToSelect = date('H:i', $endTime);
+			$arr_hours.='<option value="'.$timeToSelect.'">'.$timeToSelect.'</option>';
+		    }
+                    for($tl=0;$tl<=12;$tl++){
+                        if($tl==0){$lunch='00';}else{$lunch=$tl*5;}
+                        if($lunch== 30){
+                            $arr_lunch.='<option value="'.$lunch.'" selected>'.$lunch.'</option>';
+                        }else{
+                            $arr_lunch.='<option value="'.$lunch.'">'.$lunch.'</option>';
+                        }
+                        
+                    }
+                    $st_cnt=1;
+                    foreach($arr_week as $weekdays){
+              ?>
+              <div class="col-md-12">
+                  <div class="col-xs-3 col-sm-3 col-md-3"><p><?php echo $weekdays;?></p><input type="hidden" name="job_week_days[]" value="<?php echo $weekdays;?>" ></div>
+
+                  <div class="col-xs-3 col-sm-3 col-md-3"><select name="job_start_time_<?php echo $emp_st_id; ?>_[<?php echo $weekdays;?>][]" class="input-text width-100 " id="start_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>" ><?php echo $arr_hours;?></select></div>
+
+                  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><select name="job_end_time_<?php echo $emp_st_id; ?>_[<?php echo $weekdays;?>][]" class="input-text width-100 " id="end_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>"><?php echo $arr_hours;?></select></div>
+
+                  <div class="col-xs-3 col-sm-3 col-md-3"><select name="job_lunch_time_<?php echo $emp_st_id; ?>_[<?php echo $weekdays;?>][]" class="input-text width-100 " id="lunch_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>"><?php echo $arr_lunch;?></select></div>
+
+	            </div>
+	            <?php $index = $st_cnt-1; ?>
+	            <script type="text/javascript">
+	            	$("#start_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>").val("<?php echo isset($emp_start_time[$index][$weekdays])?$emp_start_time[$index][$weekdays]:'00' ?>");
+	            	$("#end_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>").val("<?php echo isset($emp_end_time[$index][$weekdays])?$emp_end_time[$index][$weekdays]:'00' ?>");
+	            	$("#lunch_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>").val("<?php echo isset($emp_lunch_time[$index][$weekdays])?$emp_lunch_time[$index][$weekdays]:'00' ?>");
+	            	//alert("#lunch_time_day_<?php echo $emp_st_id.'_'.$st_cnt ?>");
+	            </script>
+	            <?php $st_cnt++;}?>
+          	</div>
+     	 </div>
+		<?php
+			
+		}
+	}
+
+	/* Dispute On feedback Submit */
+	if (isset($_POST['submit_id']) && $_POST['submit_id'] == 'dispute-feedback') {
+		$disputeModelObj 		= new Dispute\Model();
+		$disputeCollectionObj 	= new Dispute\Collection();
+		parse_str($_POST['disputeData'], $disputeData);	
+		$feedback_id 		= $disputeData['feedback_id'];
+		$feedback_fre_id 	= $disputeData['feedback_fre_id'];
+		$feedback_emp_id 	= $disputeData['feedback_emp_id'];
+		$feedback_job_id 	= $disputeData['feedback_job_id'];
+		$feedback_user_type     = $disputeData['feedback_user_type'] ;
+		$feedback_status 	= $disputeData['feedback_status'];
+		$dispute_comment 	= $disputeData['dispute-comment'];
+		$dispute_avg_rate 	= $disputeData['feedback_avg_rate'];
+		if ($disputeModelObj->checkDisputeFeedback($feedback_id,$feedback_user_type)) {
+			echo "2";
+		}else{
+			$saveArray = array(
+				'd_feedback_id'	=> $feedback_id,
+				'd_user_type'	=> $feedback_user_type,
+				'd_comment'		=> $dispute_comment,
+				'd_status'		=> 0,
+			);
+			$updateArray = array(				
+				'status' => 2, //Dispute pending
+			);
+			$disputeModelObj->save($saveArray);
+			$feedbackModel->updateDispute($updateArray,$feedback_id);
+			$mailController->sendDisputeSubmitNotification($feedback_id,$feedback_fre_id,$feedback_emp_id,$feedback_job_id,$feedback_user_type,$dispute_avg_rate, $adapter);
+			echo "1";
+		}
+	}
+
+	/* View Applicant on Search Freelancer Page */
+	if (isset($_POST['view_applicant_id']) && $_POST['view_applicant_id'] != '') {
+		$userId = $_POST['view_applicant_id'];
+		$userInfo = $userCollection->getUserById($userId);		
+		$currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $userId, 3);
+		$totalFeedback = count($currentFeedbackData);
+		$perRating = $functionsController->getOverallRating($currentFeedbackData) > 0 ? ceil(($functionsController->getOverallRating($currentFeedbackData)/100)*5) : 0 ;
+
+		?>
+		<table class="table table-hover view_applicant_record table-bordered">
+			<tr>
+				<th>Locum ID  </th>
+				<td><?php echo $userId; ?></td>
+			</tr>
+			<tr>
+				<th>Average Rating  </th>
+				<td>
+					<?php if($totalFeedback > 0): ?>
+						<div id="stars-rating" class="user-rating">
+							<?php 
+								$totalStar = 5;
+								$ratingStar = $perRating;
+								$currentStar = 1;
+								while($totalStar > 0){ 
+									if($ratingStar >= $currentStar){
+										$starClass = 'fa-star';
+									}else{                                                 
+										$starClass = 'fa-star-o'; 
+									}
+							?>
+								<i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+							<?php $totalStar--; $currentStar++; } ?>      
+							<span>  <?php echo $totalFeedback > 0 ? 'By '.$totalFeedback.' Employer': ' No feedback.'; ?> </span>          
+						</div> 
+					<?php else: ?>
+						<span style="margin-left:0px;color: red;">No feedback.</span>
+					<?php endif; ?>
+				</td>
+			</tr>
+		</table>	
+		<div class="individual-rating">
+			<?php if (!empty($currentFeedbackData)) { ?>
+	            <a href="#fre_individual_feedback" data-toggle="collapse" aria-expanded="false" class="collapsed fre_individual_feedback"><h4><i class="fa fa-caret-right" aria-hidden="true"></i> &nbsp; Individual Ratings</h4></a>
+	            <div id="fre_individual_feedback" aria-expanded="false" class="collapse col-md-12">
+	            		            	
+		            <div id="myCarousel" class="carousel slide" data-ride="carousel">
+						<!-- Wrapper for slides -->
+						<div class="carousel-inner" role="listbox">
+			                <?php 	                  
+			                    $i = 0;
+			                   	foreach ($currentFeedbackData as $key => $value) {
+			                   	$feedback_uid = $value['emp_id'];   
+			                   	$feedbackUserData = $functionsController->getFeedbackUserInfo($adapter, $userId);
+			                ?>
+				                <div class="item <?php if($i == 0){echo 'active';} ?>">
+				                    <div class="row">                                   
+				                        <div class="col-md-12 feebacl-comment-section">				                           
+				                           <div class="user-info">
+				                            <?php 
+				                            //print_r($feedbackUserData);
+				                            if(!empty($feedbackUserData)){ ?>
+				                                <ul>
+				                                    <li>
+				                                      <div id="stars-rating" class="user-rating">
+				                                          <?php 
+				                                              $totalStar = 5;
+				                                              $ratingStar = $value['rating'];
+				                                              $currentStar = 1;
+				                                              while($totalStar > 0){ 
+				                                                  if($ratingStar >= $currentStar){
+				                                                    $starClass = 'fa-star';
+				                                                }else{                                                 
+				                                                    $starClass = 'fa-star-o'; 
+				                                                }
+				                                          ?>
+				                                              <i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+				                                          <?php $totalStar--; $currentStar++; } ?>                
+				                                      </div> 
+				                                    </li>
+				                                    <li><h6><i class="fa fa-user" aria-hidden="true"></i> <?php echo $feedbackUserData['firstname'].' '.$feedbackUserData['lastname'] ?></h6></li>
+				                                </ul>
+				                            <?php } ?>
+				                            </div>
+				                        </div>
+				                    </div>
+				                    
+				                </div>
+				            <?php  $i++;  }  ?> 
+		                </div>
+		                <?php if($i > 1) { ?>
+		                <!-- Left and right controls -->
+						<a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
+							<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+							<span class="sr-only">Previous</span>
+						</a>
+						<a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
+							<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+							<span class="sr-only">Next</span>
+						</a>
+		                <?php } ?>
+		            </div>
+	        	</div>
+		    <?php } ?>
+        </div>
+
+		<?php
+	}
+
+	if (isset($_POST['in_data_view']) && $_POST['in_data_view'] != '') {
+		$job_id = $_POST['job_no'];
+		$job_type = $_POST['job_type'];
+		
+	if($job_type == '1' && $job_id != ''){
+		$sqlGetjob = "SELECT job_id, e_id, job_title,  STR_TO_DATE( `job_date`, '%d/%m/%Y') as job_date, job_post_desc, job_rate, job_type, job_address, job_region, store_id , esl.emp_store_name as store_nm , user.firstname as first_nm , user.lastname as last_nm FROM job_post as jp left join employer_store_list as esl on jp.store_id = esl.emp_st_id left join user as user on user.id = jp.e_id	 WHERE job_id = '$job_id'"; 
+		$getjobs = $adapter->query($sqlGetjob, $adapter::QUERY_MODE_EXECUTE);
+			$getjob = $getjobs->toArray();
+			if(!empty($getjob)){
+				$job_data = array(
+				'emp_id' => $getjob[0]['e_id'],
+				'rate' => $getjob[0]['job_rate'],
+				'store_nm' => $getjob[0]['store_nm'],
+				'location' => $getjob[0]['job_address'],
+				'supplier' => $getjob[0]['first_nm']." ". $getjob[0]['last_nm'],
+				//'job_date' => $getjob[0]['job_date'],			
+				'job_date' => date('d/m/Y', strtotime($getjob[0]['job_date'])),			
+				);
+				echo json_encode($job_data);
+			}else{
+				null;
+			}
+		}else if($job_type == '2' && $job_id != ''){
+			$sqlGetpvjob = "SELECT pv_id , f_id , emp_name , emp_email , priv_job_title, priv_job_rate , priv_job_start_date ,  priv_job_location from freelancer_private_job WHERE pv_id = '$job_id'"; 
+			$getPvjobs = $adapter->query($sqlGetpvjob, $adapter::QUERY_MODE_EXECUTE);
+			$getpvjob = $getPvjobs->toArray();
+			if(!empty($getpvjob)){				
+				$job_data = array(
+				'emp_id' => null,
+				'rate' => $getpvjob[0]['priv_job_rate'],
+				'store_nm' => $getpvjob[0]['emp_name'],
+				'location' => $getpvjob[0]['priv_job_location'],
+				'supplier' => $getpvjob[0]['emp_name'],
+				'job_date' =>  date('d/m/Y', strtotime($getpvjob[0]['priv_job_start_date']))  ,
+				);
+				echo json_encode($job_data);
+			}else{
+				null ;
+			}
+		}else{
+			null;
+		}	
+		
+	}
+
+
+		// Resend email varification 
+	    if (isset($_POST['email_resend']) && $_POST['email_resend'] == 'resendemail') {
+	        $email = $_POST['email'];
+	        $userid = $_POST['userid'];
+	        $mailController->reSendVerifyEmailtofreelancer($userid,$adapter);
+	        echo '1';
+	        exit ;
+	    }
+
+
+	    if (isset($_POST['managefinancialyear']) and $_POST['managefinancialyear'] == 1 ) {
+	        $fyid = $_POST['fyid'] ;
+	        $uid = $_POST['uid'] ;
+	        $fiusertype = $_POST['fiusertype'] ;
+		if(isset($fiusertype) && $fiusertype == 'soletrader'){
+		        $monthstart =  '4' ;
+		        $monthend = '3' ;
+		}else{
+		        $monthstart =  $_POST['month'] ;
+		        $monthend = @$monthstart == 1 ? '12' : $monthstart - 1 ;
+		}     
+
+    	if(isset($fyid) and $fyid != '' ){
+        	$sqlGetjob = "UPDATE `financial_year` SET month_start=$monthstart , month_end=$monthend , user_type='$fiusertype' where id = $fyid and user_id = $uid";
+            $getjobs = $adapter->query($sqlGetjob, $adapter::QUERY_MODE_EXECUTE);
+            if($getjobs){
+                echo '1' ;
+            }
+        }else{
+            $sqlGetjob = "INSERT INTO financial_year(user_id, user_type, month_start, month_end) VALUES ('$uid','$fiusertype','$monthstart','$monthend')";
+            $getjobs = $adapter->query($sqlGetjob, $adapter::QUERY_MODE_EXECUTE);
+            if($getjobs){
+                echo '1' ;
+            }
+        }
+    }
+}
+
+ if (isset($_POST['supplier_data']) and $_POST['supplier_data'] == 1 ) {
+	$name = $_POST['store_name'];
+	$sqlSupplier = "SELECT * from add_supplier where name = '$name'"; 
+	$getSupp = $adapter->query($sqlSupplier, $adapter::QUERY_MODE_EXECUTE);
+	$getSup = $getSupp->current();
+	if(!empty($getSup)){	
+	echo json_encode($getSup);
+	}
+}
+
+
+?>
+<?php if(isset($_POST['get_list']) && $_POST['get_list']==1){ ?>
+	<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>" charset="UTF-8"></script>
+	<script>
+	    //$(document).ready(function() {
+	        $('#simpledata').DataTable( {
+	           /* searching: false, */
+	          "bInfo": false,
+	            "ordering": false
+	        } );
+	        oTable = $('#simpledata').DataTable();
+	        $('#myInputTextField').change(function(){
+	            oTable.search($(this).val()).draw() ;
+	        })
+	    //} );
+	</script>
+
+<?php } ?>
+
+
+
+
+
+
+<?php 
+	if(isset($_POST['team_info']) && $_POST['team_info']==1){ 
+		/* Locumkit Team  */		
+		$team_data = json_decode($_POST['team_data'], true);
+  		print_r($_FILES);   
+	}
+?>

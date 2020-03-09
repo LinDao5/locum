@@ -1,0 +1,155 @@
+<?php
+	use GcFrontend\Controller\DbController as DbController;
+	
+	use Gc\User\Role\Model;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	$dbConfig = new DbController();
+        $adapter = $dbConfig->locumkitDbConfig();
+    //$get_redirect= new Redirect();
+    
+    $sql = new Sql($adapter);
+    $update = $sql->update();
+    $select = $sql->select();
+	$popupwin="";
+    $request = $this->getRequest();
+    if($request->isPost())
+    {
+        $post = $request->getPost();
+		$popupwin=$post->get('popupwin');
+		$uid=$post->get('uid');
+		//$store_id = $post->get('store_id');
+		//$store_data = array_filter($post->get('store_data'));
+		$store_id_emp= $post->get('store_id_emp'); //store id for employer
+		// freelancer --optometry
+		$aoc_id	=$post->get('aoc_id');
+		//$aoc_id	= '';
+		$store_id	= '';
+		$store_data	= '';
+		$cet=$post->get('cet');
+		$goc=$post->get('goc');
+		$aop=$post->get('aop');
+		$inshurance_company=$post->get('inshurance_company'); 
+		$inshurance_no=$post->get('inshurance_no'); 
+		$inshurance_renewal_date=$post->get('inshurance_renewal_date');
+		
+		if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){
+		  $max_distance=$post->get('max_distance');
+		  $min_rate=$post->get('minimum_rate');
+		  $day_with_rate = array();
+		  $day_with_rate = array(
+				'Monday' 	=> $min_rate[0],
+				'Tuesday' 	=> $min_rate[1],
+				'Wednesday' => $min_rate[2],
+				'Thursday' 	=> $min_rate[3],
+				'Friday' 	=> $min_rate[4],
+				'Saturday' 	=> $min_rate[5],
+				'Sunday' 	=> $min_rate[6],
+			);	
+		 
+		  /*echo "<pre>";
+		  print_r(serialize($day_with_rate));
+		  echo "</pre>";
+		  exit();*/
+		  $minimum_rate=serialize($day_with_rate);
+		}else{
+		  $max_distance="";
+		  $minimum_rate="";
+		}
+		
+		if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ // employer
+			//new unique time
+			
+			$job_new_start_time=$post->get('job_new_start_time');
+			$job_new_end_time=$post->get('job_new_end_time');
+			$job_new_lunch_time=$post->get('job_new_lunch_time'); 
+			$store_unique_time_arr=array('start_time'=>$job_new_start_time,'end_time'=>$job_new_end_time,'lunch_time'=>$job_new_lunch_time);
+			$store_unique_time=serialize($store_unique_time_arr);
+			
+			// week store time
+			$week_days_emp=$post->get('week_days_emp');
+			$job_day_time_frm=$post->get('job_day_time_frm');
+			$job_day_time_to=$post->get('job_day_time_to');
+			$job_lunch_time=$post->get('job_lunch_time'); 
+			$result_arr=array();
+			foreach($week_days_emp as $key=>$name){
+				$result_arr[]=array($name,$job_day_time_frm[$key],$job_day_time_to[$key],$job_lunch_time[$key]);
+			}
+			$store_week_time=serialize($result_arr);//print_r($result_arr);print_r($post);
+		}
+		//die();
+		
+		//first delete from user_answer table and insert
+		$sql_del     = "delete from user_answer where user_id='$uid'";
+		$results_del = $adapter->query($sql_del, $adapter::QUERY_MODE_EXECUTE);
+		
+		$question_id=$post->get('question_id');
+		foreach($question_id as $ansarr){
+			$questions=explode('-',$ansarr);
+			$question=$questions[0]; //question id
+			$question_type=$questions[1];
+			if($question_type==1){ // text field
+				$ans=$post->get('textans_'.$question);
+			}
+			if($question_type==2){ // select option
+				$ans=$post->get('selectans_'.$question);
+			}
+			if($question_type==3){ // checkbox
+				$ans_data=$post->get('checkboxans_'.$question);
+				$ans=implode(',',$ans_data);
+			}
+			if($question_type==4){ // select option for comparative
+				$ans=$post->get('selectans2_'.$question);
+			}
+			if($question_type==5){ // select option for range
+				$ans_data=$post->get('selectans4_'.$question);
+				$ans=implode(',',$ans_data);
+			}
+			if($question_type==6){ // select option for range
+				$ans_data=$post->get('selectans6_'.$question);
+				$ans=implode(',',$ans_data);
+			}
+			
+			//$sqlString_update="UPDATE user_answer set type_value='$ans' where user_id='$uid' and question_id='$question'";
+			$sqlString_update="INSERT INTO user_answer (user_id,question_id,type_value) VALUES('$uid','$question','$ans')";
+			$results_update = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE);
+			//print_r($results_update);
+			
+		}
+		if(isset($store_week_time)){ //update week time with lunch for employer
+			$sqlString22_update="UPDATE user_extra_info set store_week_time='$store_week_time' where uid='$uid'";
+			$results22_update = $adapter->query($sqlString22_update, $adapter::QUERY_MODE_EXECUTE);
+		}
+		if(isset($store_unique_time)){
+			$sqlString22_updatest="UPDATE user_extra_info set store_unique_time='$store_unique_time' where uid='$uid'";
+			$results22_updatest = $adapter->query($sqlString22_updatest, $adapter::QUERY_MODE_EXECUTE);
+		}
+		//if(isset($store_id) && !empty($store_data)){
+			//$store_id00 = implode(',',$store_id);
+		    //$store_data00 = implode(',',$store_data);
+			$sqlString20_update="UPDATE user_extra_info set aoc_id='$aoc_id', store_id='$store_id',store_data='$store_data',cet='$cet',goc='$goc',aop='$aop',inshurance_company='$inshurance_company',inshurance_no='$inshurance_no',inshurance_renewal_date='$inshurance_renewal_date' where uid='$uid'";
+			$results20_update = $adapter->query($sqlString20_update, $adapter::QUERY_MODE_EXECUTE);
+			echo $sqlString20_update;
+		//}
+		if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){
+			$sqlString29_update="UPDATE user_extra_info set minimum_rate='$minimum_rate',max_distance='$max_distance' where uid='$uid'";
+			$results29_update = $adapter->query($sqlString29_update, $adapter::QUERY_MODE_EXECUTE);
+		}
+		if(isset($store_id_emp)){ // set Details for employer storeid
+			$sqlString22_update="UPDATE user_extra_info set store_id='$store_id_emp' where uid='$uid'";
+			$results22_update = $adapter->query($sqlString22_update, $adapter::QUERY_MODE_EXECUTE);
+		}
+		//die();
+		if($popupwin){ //echo 'inside';
+			echo '<script type="text/javascript">window.close();</script>'; //die('STOP');
+		}else{
+		$this->flashMessenger()->addSuccessMessage('Information Updated.');
+        $this->redirect()->toUrl('/user-question-edit');
+        return TRUE;
+		}
+	} // post end
+?>

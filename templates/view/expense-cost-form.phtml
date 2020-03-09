@@ -1,0 +1,145 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+	use GcFrontend\Controller\PackagePrivilegesController;
+$financeHelper = new FinanceHelper();
+$cattype = $financeHelper->getExpencetype();
+
+	$packagePrivilegesController    = new PackagePrivilegesController();
+
+
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+        $uid = $_SESSION['user_id'];
+        $userRoleId = $_SESSION['user_role_id'];
+    }else{  
+        $url= $this->serverUrl().'/login-form';
+        echo "<script type='text/javascript'> window.location='".$url."'</script>";
+    }
+?>
+
+<section id="breadcrum" class="breadcrum">
+			<div class="breadcrum-title">
+				<div class="container">
+					<div class="row">
+						<div class="set-icon registration-icon">
+							<i class="glyphicon glyphicon-list-alt" aria-hidden="true"></i>
+						</div>
+						<div class="set-title">
+							<h3>Add EXPENSE</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		
+
+    <div id="primary-content" class="main-content about">
+        <div class="container">
+            <div class="row">
+                <div class="contents white-bg">
+                    <section>
+                        <div class="welcome-heading">
+                            <h1><span><?php echo $this->title; ?></span></h1>
+                            <hr class="shadow-line">
+                        </div>
+                        <div clas="content mart30">
+                            <?php echo $this->content; ?>
+                            <h2 id="aleardy-submited" style="display:none; color:#ff8d00"> You have already Submited expenses for this job. </h2>
+                        </div>
+                        
+                        <form action="" method="post" id="expense-form">
+
+                            <div class="input_fields_wrap expense-form-wrapp">
+                               
+                                <div class="col-md-12 mart30">
+<div class="col-md-2"></div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                           
+                                                <select class="form-control" name="cat[]" id="cat0" required="">
+                                                    <option value="">Select Category</option>
+                                                    <?php $catCollections = $cattype;
+                                                    foreach ($catCollections as $key => $cat) {
+                                                        echo '<option value="'.$cat['id'].'">'.$cat['cat'].'</option>';
+                                                    } ?>
+                                                </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                   <input type="text" class="form-control" name="cost[]"  value="" placeholder="Amount" id="ex_rate0" onkeyup="onlyisnan(0)" required=""/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-1">
+                                        <div class="col-md-12">
+                                            <button class="add_field_button btn btn-info btn-sm pull-right"><i class="fa fa-fw fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+
+                            <div class="submit-btn row">
+                                <div class="col-md-12">
+                                    <input type="submit" name="submit" value="Submit" class="common-btn">
+                                </div>
+                            </div>
+
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $('input.form-control.width-100.input-text.margin-bottom').keypress(function(event) {
+            if ((event.which != 46 || $(this).val().indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
+                event.preventDefault();
+            }
+        });
+
+        $(document).ready(function() {
+            var category = '<?php echo json_encode($cattype);?>';
+            var r_data = JSON.parse(category);
+            var otpt1 = '<option value="">Select Category</option>';
+            $.each(r_data, function( index, value ) {
+                otpt1 += '<option value="'+value.id+'">'+value.cat+'</option>';
+            });
+            var max_fields      = 10;
+            var wrapper         = $(".input_fields_wrap");
+            var add_button      = $(".add_field_button");
+            var x = 1;
+            $(add_button).click(function(e){
+                e.preventDefault();
+                if(x < max_fields){
+                    var catrr = '<div class="col-md-2"></div><div class="col-md-4"><div class="form-group">';
+                    catrr += '<select class="form-control" name="cat[]" id="cat'+x+'" required="">'+otpt1+'</select>';
+                    catrr += '</div></div>';
+                    var catval = '<div class="col-md-4"><div class="form-group">';
+                    catval += '<input type="text" class="form-control" name="cost[]"  value=""  id="ex_rate'+x+'" onkeyup="onlyisnan('+x+')" placeholder="Amount" required=""/>';
+                    catval += '</div></div>';
+                    var remove = '<div class="col-md-1"><div class="col-md-12"><a href="#" class="remove_field btn-sm btn btn-danger pull-right remove_field-btn"><i class="fa fa-fw fa-remove"></i></a></div></div>';
+                    $(wrapper).append('<div class="col-md-12">'+catrr+catval+remove+'</div>'); //add input box
+                    x++; //text box increment
+                }
+            });
+
+            $(wrapper).on("click",".remove_field", function(e){ //user click on remove text
+                e.preventDefault(); $(this).parent().parent().parent('div').remove(); x--;
+            })
+        });
+
+
+
+    function onlyisnan(val){
+     var ex_rate = $("#ex_rate"+val).val();
+        if (isNaN(ex_rate)){ $("#ex_rate"+val).val('');  }
+    }
+       
+
+
+    </script>
+<?php $this->script('expense-cost-form-process'); ?>

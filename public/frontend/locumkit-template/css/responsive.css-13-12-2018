@@ -1,0 +1,1590 @@
+.main-content  .alert-success{
+	text-align: center;
+	text-transform: lowercase !important;
+    font-size: 20px;
+    padding: 10px 15px;
+    background-color: #fff;
+    border-color: #ddd;
+    border-style: dashed;
+}
+.main-content  .alert-danger{
+	text-align: center;
+    text-transform: lowercase !important;
+    font-size: 20px;
+    padding: 8px 15px;
+}
+.feedback-form h3#feedback-msg {
+    padding-top: 100px;
+    font-size: 30px;
+}
+.main-content  .alert-success::first-letter, .main-content  .alert-danger::first-letter{
+	text-transform: uppercase !important;
+}
+.sliderarea .btn-banner li a.common-btn {
+    width: 150px;
+    text-align: center;
+}
+.multi_sel-ques-padd>.col-md-12{
+	padding: 0;
+}
+.multi_sel-ques-padd>.col-md-12>.col-md-8{
+	padding-right: 0;
+}
+.cash_man_chart2.incomeBycategoryWtdth .add_item_form.form-inline .form-control{
+	max-width: 155px !important;
+    min-width: 125px !important;
+	width: auto !important;
+} 
+/**start jquery datatable pagination Design*/
+.show-transactions-table table>thead{
+	background: #e0e0e0;
+}
+.show-transactions-table table>thead>tr>th{
+	border-bottom: 0;
+}
+.show-transactions-table table>thead>tr>th,
+.show-transactions-table table>tbody>tr>td{
+	text-align: center;
+}
+.show-transactions-table .table.dataTable thead .sorting{
+	background: url("../img/sort_both.png") no-repeat center right;
+}
+.show-transactions-table .dataTables_wrapper .dataTables_paginate .paginate_button{
+	background: #00a9e0;
+    border: 2px solid #00a9e0;
+    color: #fff !important;
+}
+.show-transactions-table .dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+.show-transactions-table .dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+.show-transactions-table .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
+	background: #fff;
+	color: #333 !important;
+	border: 2px solid #00a9e0;
+}
+.show-transactions-table table.dataTable.no-footer{
+	    border-bottom: 1px solid #ddd;
+}
+.show-transactions-table .dataTables_wrapper .dataTables_paginate{
+	padding: 0.25em 0;
+}
+.show-transactions-table .dataTables_filter>label>input,
+.show-transactions-table .dataTables_length>label>select {
+	border: 1px solid #838383;
+    padding: 4px 5px;
+    border-radius: 4px;
+    color: #838383;
+	font-weight: 500;
+}
+
+/**end jquery datatable pagination Design*/
+.package-bg table.table.table-bordered.table-hover tr td i{
+	font-size: 18px;
+    height: 25px;
+    width: 25px;
+}
+.sidebar-help{
+	float: left;
+}
+.post-content .sub .glyphicon-calendar{
+	margin-right: 4px;
+}
+.package .package-block .package-price-box .set-pack-content{
+	margin-bottom: 0px;
+	min-height: 140px;
+}
+.team-section .col-md-2{
+	width: 20%;
+	margin-left: 0;
+}
+.read-more-about{
+	text-align: right;
+}
+.read-more-benifits{
+	margin-top: 5px;
+}
+.privet-save-btn-wrap, .private_user .list_div>.add_div{
+	clear: both;
+}
+.private_user .list_div>.add_div .margin-bottom .col-md-2,
+.private_user .list_div>.add_div .margin-bottom .col-md-3{
+	line-height: 35px;
+}
+
+.required-stars{
+	color: red;
+	font-style: normal;
+	font-size: 10px;
+	position: relative;
+	top: -5px;
+	margin-left: 4px;
+}
+.sliderarea .btn-banner ul li a{
+	float: left;
+}
+.mission-vision{
+	width: 100%;
+	float: left;
+}
+.post-feature-img img{
+	min-height: 125px;
+}
+.register .user_edit_form p{
+	margin-bottom: 0;
+	line-height: 32px; 
+}
+.sidebar-right-post .sidebar-notifications{
+	margin-left: -15px;
+	margin-right: -15px;
+}
+.income_sum_table td:first-child, .income_sum_table th:first-child{
+	text-indent: 0;
+} 
+.mission-vision img{
+	max-width: 100%;
+	
+}
+.expense-form-wrapp .form-group{
+	 float: left;
+	 width: 100%;
+}
+.expense-form-wrapp .col-md-12{
+	clear: both;
+}
+.remove_field-btn{
+	margin-bottom: 8px;
+}
+.job-list-table .job-list-table-inner .job-accept-btn, 
+.job-list-table .job-list-table-inner .job-freeze-btn{
+	margin-bottom: 10px;
+	float: left;
+	margin-right: 5px;
+	min-width: 62px;
+}
+/**.cash_table-fiexd-scroll .tbody-scroll{
+	max-height: 390px;
+	min-height: 318px;
+}
+.cash_table-fiexd-scroll .table-responsive{
+	max-height: auto;
+	min-height: auto;;
+}
+.cash_table-fiexd-scroll tbody{
+	overflow-y: auto;
+}**/
+/**table header fiedd**/
+.table-fixed {
+  width: 100%;
+  background-color: #f3f3f3;
+}
+.table-fixed tbody {
+  height: 280px;
+  overflow-y: auto;
+  width: 100%;
+}
+.table-fixed thead,
+.table-fixed tbody {
+  display: block;
+}
+.table-fixed tbody td {
+  float: left;
+}
+.table-fixed tbody tr, .table-fixed thead tr{
+	float: left;
+	width: 100%;
+}
+.table-fixed thead tr th {
+  float: left;
+}
+.table-fixed .col-md-2{
+	width: 16.66666667% !important;
+	float: left;
+}
+.table-fixed .col-md-1{
+	width: 8.33333333% !important;
+	float: left;
+}
+table.table-fixed td[class*="col-"], 
+table.table-fixed th[class*="col-"]{
+	float: left;
+}
+/**end table header fiedd**/
+.package-upgrade-form .package-block .package-price-box .set-pack-content{
+	min-height: 110px !important;
+}
+.package-upgrade-form .package-block .package-price-box{
+	padding: 26px 0 30px;
+}
+.table-responsive-scroll{
+	max-height: inherit !important;
+	min-height: inherit !important;
+}
+.table-responsive-scroll thead{
+	display: block;
+}
+.table-responsive-scroll tbody{
+	display: block;
+	overflow-y: scroll;
+	min-height: 180px;
+	max-height: 280px;
+}
+.table-responsive-scroll .table > tbody > tr > td, 
+.table-responsive-scroll .table > tbody > tr > th, 
+.table-responsive-scroll .table > tfoot > tr > td, 
+.table-responsive-scroll .table > tfoot > tr > th, 
+.table-responsive-scroll .table > thead > tr > td, 
+.table-responsive-scroll .table > thead > tr > th{
+	min-width: 95px;
+}
+
+table#weekly-job-records tr td, table#weekly-job-records tr th {
+    min-width: 50px;
+}
+table#weekly-job-records tr td:first-child, table#weekly-job-records tr th:first-child {
+    min-width: 85px;
+}
+table#weekly-job-records tbody{
+   overflow-y: auto;
+}
+
+
+/**Report btn list group**/
+.contents.white-bg .report-btn-list-group{
+	margin: 0 -15px ;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	list-style-type: none;
+        text-align: center;
+}
+.contents.white-bg .report-btn-list-group li{
+	width: 19%;
+	/*float: left;*/
+        padding: 0 5px;
+        margin: 0 0 15px;
+        display: inline-block;
+}
+.contents.white-bg .report-btn-list-group li a{
+	padding: 15px;
+}
+.contents.white-bg .report-btn-list-group li a:hover{
+	background: #00a9e0;
+	color: #fff;
+} 
+.guest-prof-notification h4 {
+    border: 1px solid #FF8D00;
+    width: 80%;
+    margin: 0 auto 28px;
+    padding: 12px 0;
+    color: #FF8D00;
+    border-radius: 5px;
+}
+
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance:textfield;
+}
+
+.welcome-heading.job-overview h1 {
+    margin-bottom: 35px;
+}
+div#step2 h1#register-head {
+    margin-bottom: 20px;
+}
+s {
+    text-decoration: none;
+}
+
+div#detail_box .individual-rating {
+    width: 100%;
+}
+
+div#detail_box .individual-rating .carousel .col-md-12.feebacl-comment-section{
+    min-height: 40px;
+}
+div#fre_individual_feedback div#myCarousel a.left.carousel-control {
+    left: 0 !important;
+}
+div#fre_individual_feedback div#myCarousel a.right.carousel-control {
+    right: 0 !important;
+
+    left: auto !important;
+    width: 18px;
+}
+
+/**media only screen min-width 992 and max-width 1999**/
+@media only screen and (min-width: 992px) and (max-width: 1199px) {
+.service-blocks .small-icon-box .set-content h3{
+	font-size: 20px;
+}
+.team-blocks .small-icon-box .set-icon figure{
+	min-width: 160px;
+	height: 165px;
+}
+.team-blocks .small-icon-box .set-icon h1{
+	font-size: 35px;
+}
+/**.profile-details .profile-edit-btn{line-height:61px;}**/
+.profile-details .profile-edit-btn a{
+	margin-right: 20px;
+}
+.finance-graph .income-graph canvas{
+	width: 450px !important;
+}
+.contents.job-offer{
+	background-size: 930px 790px; 
+}
+}
+
+@media only screen and (max-width: 1199px){
+.read-more-benifits {
+	margin-top: 0;
+}
+.register-frm li{
+	padding: 10px 0 0;
+}
+.register-frm .width-30{
+	width: 100%;
+}
+.register-frm ul{
+	line-height: inherit;
+}
+.post-feature-img{
+	min-height: 110px;
+}
+.cash_man_chart .mapdiv canvas{
+	width: 100% !important;
+	height: auto !important;
+}
+#register_head_blue{
+  font-size: 16px;
+}
+.col-md-4.padl0 .filter{
+	margin: -3px 32px 0 0;
+}
+
+}
+
+@media only screen and (max-width: 991px){
+.benifits ul li{
+	width: 100%;
+	float: left;
+}
+form#supplier-form label {
+    margin-right: 0px !important;
+    margin: 5px 0px;
+}
+form#expense-form .required-stars {
+    position: relative;
+    left: 14px;
+}
+form#income_form .form-group .col-md-3 {
+    padding: initial;
+}
+.add_item .add_item_form label {
+    margin: 5px 0px;
+}
+form#income_form label {
+    margin-right: 0px;
+}
+form#expense-form label {
+    margin-right: 0px !important;
+}
+.feature-img{
+	margin:25px auto 35px;
+}
+.price-info{
+	margin-bottom: 30px;
+}
+form#income_form .col-md-7 {
+    padding-left: 0px;
+}
+.profiles .gray-gradient .welcome-heading,
+.profiles .gray-gradient .profile-details,
+.finance-graph .income-graph{
+	float: none;
+}
+.profile-details .profile-edit-btn a{
+	padding: 10px 15px;
+	margin-right: 10px;
+	font-size:14px;
+	line-height:50px;
+}
+div#block-dates .ui-datepicker {
+	width: 85% !important; 
+}
+.change-password{
+	width: 100%;
+}
+.text-right p{
+	float: none;
+}
+.profile-edit.job-list-table .list-head{
+	overflow: scroll;
+	max-height: 310px;
+}
+.profile-edit.job-list-table .list-head>table{
+	min-width: 1020px; 
+}
+.profile-details .profile-edit-btn.listing-page{
+	padding: 0;
+}
+.user-store-list.heading-list p{
+	padding: 6px;
+	text-align: center;
+}
+.register.manage-store-wrapper .contents,
+.register.manage-store-wrapper .contents .col-md-12.manage-store{
+	padding: 0;
+}
+.register.manage-store-wrapper .contents .col-md-12.manage-store .user-store-list.heading-list{
+	padding: 15px;
+}
+.opening-div-wrapp .store-timing-div>.col-md-8{
+	padding: 0;
+	display: block;
+	float: left;
+	width: 100%;
+}
+.opening-div-wrapp .store-timing-div .col-md-12{
+	width: 100%;
+	float: left;
+}
+.opening-div-wrapp .store-timing-div{
+	padding: 0;
+}
+.user-store-btn-list .col-sm-6{
+	margin-bottom: 15px;
+}
+.store-opening-tdive-wrapp .col-md-12, 
+.store-opening-tdive-wrapp, .post-job-content .job-content .col-md-12, 
+.post-job-content{
+	float: left;
+	width: 100%;
+}
+.cash_man_chart .mapdiv {
+	width: 437px !important;
+	margin: 0 auto;
+	display: block;
+	float: none;
+}
+.cash_table-fiexd-scroll{
+	padding: 0;
+	font-size: 12px;
+	overflow-x: scroll;
+}
+.cash_table-fiexd-scroll .dataTables_wrapper{
+	min-width: 900px;
+}
+.add_item .add_item_form .col-md-12,
+.wholeborder .col-md-12{
+	float: left;
+	width: 100%;
+}
+.add_item_form.form-inline label{
+	text-align: left;
+}
+.mission-vision img{
+	margin-bottom: 15px;
+}
+.table-fixed{
+	min-width: 900px;
+}
+.save-update-btn{
+	float: left;
+}
+.show_add_btn{
+	position: relative;
+	z-index: 99;
+}
+.addjob-new div[class*="col-"]{
+	padding-left: 0;
+	margin-bottom: 15px;
+}
+.in_ex_pr_inbox{
+	width: 100%;
+}
+.open-inv-canvas{
+	padding:0 !important;
+}
+.open-inv-canvas .mapdiv{
+	overflow-x: scroll;
+}
+.open-inv-canvas .mapdiv canvas{
+	min-width: 500px !important;
+	height: auto !important;
+}
+.all_transection_sc .col-md-12, .all_transection_sc{
+	float: left;
+	width: 100%;
+	padding: 0;
+}
+.all_transection_sc .col-md-8.col-sm-12{
+	padding: 0;
+}
+.information-tile.text-right{
+	text-align: left;
+}
+.contents.job-offer{
+	background-size: 100% 790px; 
+}
+.accept-job-div, .freez-job-div{
+	width: 100%;
+}
+.threeyear{
+	display: inherit;
+	width: 100%;
+	float: left;
+}
+.moreyearpie .mapdiv{
+	min-height: auto;
+}
+.moreyearpie .form-group.add_item_form.form-inline{
+	padding-right: 124px;
+}
+.cash_man_chart.moreyearpie{
+	min-width: auto;
+}
+.canvas-scroll-x, .cash_man_chart.moreyearpie, 
+.wholeborder .col-md-4.cash_man_chart,
+.mapdiv-wrap-sec{
+	width: 100%;
+	float: left; 
+}
+.wholeborder .form-group.add_item_form.form-inline{
+	float: none;
+}
+.wholeborder .col-md-4.cash_man_chart .form-group.add_item_form.form-inline{
+	padding-right: 124px;
+	margin-top: 10px;
+} 
+.wholeborder #register_head_blue{
+	line-height: 45px;
+}
+.mapdiv-height-wrap{
+	min-height: 350px;
+}
+.register-frm-next-step .text-right p{
+	text-align: left;
+	float: left;
+}
+.register-frm.register-frm-next-step .col-md-12 {
+	clear: inherit;
+}
+.register-frm.register-frm-next-step .dist_list,
+.register-frm.register-frm-next-step .check-option{
+	float: left;
+}
+.ans-que-heading h1{
+	font-size: 30px;
+}
+.profile-details .profile-edit span, .profile-details h3{
+	font-size: 15px;
+}
+.profile-name h2 {
+	font-size: 20px;
+}
+.private_user_list-item .col-md-12{
+	clear: both;
+}
+.profile-edit>.col-md-12{
+	padding-left: 0;
+	padding-right: 0;
+}
+.profile-edit-scroll{
+	overflow-x: scroll;
+}
+.profile-edit-scroll .profile-edit{
+	min-width: 800px;
+}
+.profile-edit-btn{
+	margin-top: 15px;
+}
+.add_item.send_invoice section.add_item_form.form-inline{
+	width: 100%;
+	float: left;
+}
+.add_item.send_invoice section.add_item.add_item_form .col-md-12.marb30{
+	padding: 0;
+	margin-left: -15px;
+	margin-right: -15px;
+}
+.add_item.send_invoice section.add_item_form.form-inline #template-div div[style*="width: 700px;margin:0 auto;"] {
+	width: 100% !important;
+	float: left;
+}
+.register-frm .width-30{
+	width: 100%;
+}
+.private_user .list_div .add_div >.margin-bottom{
+	padding-left: 0;
+	padding-right: 0;
+}
+.private_user .list_div, 
+.private_user .list_div,
+.private_user .heading_add{
+	padding: 0;
+	clear: both;
+}
+
+.job-details .profile-edit .private_user_list-item .col-md-12 {
+    padding: 0px;
+}
+.store-details.add-new-store-inner-scroll > [class*="col-xs-"]{
+    width: calc(50% - 21px);
+    display: inline-block;
+    margin-bottom: 15px;
+}
+.store-opening-tdive-wrapp .col-md-offset-4.col-md-2 {
+    display: inline-block;
+    width: 100%;
+}
+.col-md-12.cash_table {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 15px;
+}
+.all_transection_sc table#example a.btn.btn-xs.btn-info {
+    float: left;
+    margin-left: 0;
+}
+.emply-finance h2.mar0 {
+    font-size: 20px;
+}
+.emply-finance .col-sm-3.col-md-3 {
+    margin-bottom: 10px;
+}
+form#supplier-form .required-stars {
+    left: 2px;
+}
+}
+
+/**media only screen min-width 768 and max-width 991**/
+@media only screen and (min-width: 770px) and (max-width: 991px) {
+.service-blocks .small-icon-box{
+	margin-bottom: 40px;
+}
+.package .package-block .package-price-box .set-pack-content{
+	min-height: 160px;
+}
+.footers .recentpost{
+	padding-left: 0;
+}
+.footers .contactus .socials .footer_links li{
+	font-size: 11px;
+	padding-right: 6px;
+} 
+.footerrs .newslater{
+	padding-right: 0;
+}
+.team-blocks .small-icon-box .set-icon figure{
+	max-width: 200px;
+}
+.team-section .col-md-2 {
+	width: 50%;
+	float: left;
+}
+.btn-img.btn-colmd{
+	padding-left: 220px;
+	clear: both;
+}
+.add_item_form.form-inline .col-md-12{
+	width: 100%;
+	float: left;
+}
+.contents.white-bg .report-btn-list-group li{
+	width: 33.3333%;
+}
+.guest-prof-notification h4{
+	width: 75%;
+}
+.financial-year-title h4.text-right {
+    font-size: 17px !important;
+}
+
+}
+@media only screen and (max-width: 769px){
+.uploadinfo.pull-right{
+	position:absolute;
+	top:35px;right:82px;
+}
+.header-wrapper .navbar-default .top-main-nav{
+	padding:0 !important;
+}
+.header-wrapper .navbar-toggle{
+	margin-top:35px;
+	margin-right:25px ;
+}
+.header-wrapper .top-main-nav .navbar-collapse{
+	position:absolute;
+	width:100.3%;
+	background:#00A9E0;
+	overflow-y:hidden;
+	right:0;
+	left:-1px;
+	z-index:999;
+	border-bottom:1px solid; 
+}
+.header-wrapper.fixed-header-wrapper .top-main-nav .navbar-collapse{
+	top: 75px;
+}
+.header-wrapper.fixed-header-wrapper .uploadinfo{
+	top: 20px;
+}
+.header-wrapper.fixed-header-wrapper .navbar-toggle{
+	margin-top: 20px;
+}
+.service-blocks .small-icon-box{
+	margin-bottom:45px;
+}
+.service-blocks .small-icon-box .set-icon, 
+.service-blocks .small-icon-box .set-content, 
+.service-blocks .small-icon-box .set-button, 
+.package .package-block .package-price-box .set-pack-content {
+	float: none;
+	margin-bottom: 0;
+}
+.service-blocks .set-content p{
+	height: auto !important;
+}	
+.package .package-block .package-price-box .set-pack-content{
+	min-height: auto;
+}
+
+.footers .newslater .subcribers button{
+	right:inherit;
+}
+.footers .newslater .footer-logo,
+footer .newslater .subcribers,
+footer .newslater .subcribers input{
+	float:none;
+}
+.footers .newslater .subcribers{
+	height:auto;
+}
+.footers .footerrs{
+	text-align:center;
+}
+.footers .recentpost li:before{
+	display:none;
+}
+.footers .contactus li{
+	float:none;
+	border-right: 0;
+}
+.footers .newslater .subcribers input{
+	width:65%;
+}
+.footers .newslater .subcribers{
+	width:100%;
+}
+.footers .newslater .subcribers button{
+	position:relative;
+	margin-left:-4px;
+}
+.package .compare-sec{
+	margin-bottom: 30px;
+}
+.team-blocks .small-icon-box .set-icon figure{
+	max-width: 200px;
+}
+.team-section .col-md-2 {
+	width: 100%;
+	float: left;
+}
+.register-frm .details-style .col-md-5 p{
+	text-align:left;
+}
+.package-table{
+	min-width: 720px;
+}
+.package-table-wrapp{
+	overflow-x: scroll;
+}
+.post-feature-img{
+	margin: 10px auto;
+	display: block;
+	float: none;
+}
+.post-content h2.title{
+	text-align: center;
+}
+.post-content .sub{
+	text-align: center;
+}
+.post-feature-img{
+	min-height: auto;
+}
+.online-privacy{
+	font-size: 25px;
+}
+.sliderarea .btn-banner li{
+	padding: 0px 15px 0 0px;
+}
+.sliderarea .btn-banner li .common-btn{
+	padding: 8px 20px;
+}
+.feedback-div .small-icon-box .set-icon figure{
+	margin: 0 auto;
+	display: block;
+	max-width: 300px;
+}
+.feedback-div .small-icon-box .set-content,
+.feedback-div .small-icon-box .set-button{
+	text-align: center;
+}
+.feedback-div .small-icon-box .set-button{
+	margin-bottom: 30px;
+}
+.profile-details .profile-edit-btn a{
+	width:48.50%;
+	margin-bottom: 10px;
+	line-height:20px;
+	float: left;
+	text-align: center;
+}
+.profile-details .profile-edit-btn a:nth-child(2){
+	margin-right: 0;
+}
+.welcome-heading h1, 
+.profile-details .profile-title h1{
+	font-size: 30px;
+}
+.col-md-5.total-rating{
+	width: auto;
+}
+.dlete-profile-section .profile-edit-btn a{
+	float: none;
+}
+.finance-graph .income-graph canvas{
+	max-width: 400px;
+}
+.emp-current-booking-info, .add-new-store-form-wrapp{
+	overflow-x: scroll;
+}
+.emp-current-booking-info .table-striped, .add-new-store-inner-scroll, .oppning-time-append-div{
+	min-width: 700px;
+	overflow: hidden;
+	margin-bottom: 30px;
+}
+.register.user-edit-wrapper .contents>.col-md-12, 
+.register.user-edit-wrapper .contents>.col-md-12>.col-xs-12,
+.register.user-edit-wrapper .contents>.col-md-12>.col-xs-12 .user_question_edit_form>.col-md-12{
+	padding: 0;
+}
+.register.user-edit-wrapper .contents{
+	padding: 15px 0;
+}
+.job-list-div{
+	overflow: auto;
+}
+.job-list-div .job-filter{
+	overflow-x: auto;
+	min-height: 52px;
+}
+.job-filter ul.nav.nav-tabs{
+	min-width: 690px;
+}
+.opening-div-wrapp{
+	overflow-x: scroll;
+	padding-bottom: 5px;
+	width: 100%;
+}
+.opening-div-wrapp .store-timing-div{
+	min-width: 700px;
+}
+.user-store-list, 
+.general-info,
+.fre-info{
+	min-width: 700px;
+	float: left;
+}
+.manage-store-wrapper .manage-store form,
+.job-view-scroll{
+	overflow-x: scroll;
+}
+.user-store-btn-list .col-sm-6{
+	width: 50%;
+	float: left;
+}
+.post-job-content .st-heading h2{
+	font-size: 18px;
+}
+.post-job-content .job-content .col-md-12,
+.sidebar-right-post-padd{
+	padding: 0;
+}
+.sidebar-notifications .notifications{
+	padding: 0px 15px 15px;
+}
+.sidebar-right-post .sidebar-help{
+	padding: 20px 16px;
+	float: left;
+	width: 100%;
+}
+.mar-mins{
+	margin-left: -15px;
+	margin-right: -15px;
+}
+.timeline-text{
+	width: 85%;
+}
+form#mamagejob .timeline-text {
+    width: 90%;
+    float: left;
+    margin-bottom: 15px;
+    margin-left: 0px;
+    padding-left: 10px;
+}
+.timeline-box{
+	width: 10%;
+}
+.post-job-content .job-content .col-md-12.store-note-click{
+	padding: 0 15px;
+}
+.cash_man_chart2 .col-md-12{
+	float: left;
+	width: 100%;
+}
+.cash_man_chart{
+	min-width: 100%;
+}
+.canvas-scroll-wrapp{
+	overflow-x: scroll;
+}
+.add_item .add_item_form{
+	width: 100%;
+}
+.add_item .add_item_form .col-md-12{
+	padding: 0;
+}
+.add_item_form.form-inline .form-group .checkbox label input{
+	position: relative;
+}
+.add_item_form.form-inline .form-group .checkbox label{
+	padding-left: 0;
+}
+.add_item_form.form-inline .form_date{
+	margin-bottom: 20px;
+}
+.manage-private-job-scroll{
+	overflow-x: scroll;
+}
+.mamage-private-jobform{
+	min-width: 800px;
+}
+.financial-year-sec .financial-year-title h4{
+	font-size: 14px;
+	line-height: 30px;
+}
+.table-responsive-scroll .table > tbody > tr > td, 
+.table-responsive-scroll .table > tbody > tr > th, 
+.table-responsive-scroll .table > tfoot > tr > td, 
+.table-responsive-scroll .table > tfoot > tr > th, 
+.table-responsive-scroll .table > thead > tr > td, 
+.table-responsive-scroll .table > thead > tr > th {
+	min-width: 130px;
+}
+.table-responsive-scroll .table > tbody > tr > td .btn-info{
+	float: right;
+	margin-right: 5px;
+}
+.finacedetable .col-md-12{
+	width: 100%;
+	float: left; 
+}
+.select-year-wrapper .financial-year-title{
+	width: 73%;
+	padding: 0;
+}
+.select-year-wrapper .financial-year-select{
+	width: 27%;
+}
+.select-year-wrapper .financial-year-title.bglightgrey{
+	width: 55%;
+}
+.select-year-wrapper .financial-year-select.bglightgrey{
+	width: 45%;
+	
+}
+.select-year-wrapper .financial-year-select.bglightgrey select{
+	max-width: 100%;
+}
+.select-year-wrapper .financial-year-title,
+.select-year-wrapper .financial-year-select{
+	float: left;
+	height: 50px !important;
+}
+.select-year-wrapper .financial-year-title h4{
+	font-size: 17px !important; 
+}
+.income-btn-scroll{
+	overflow-x: scroll;
+	min-height: 52px;
+}
+.income-btn-scroll .blue-tab-scroll{
+	min-width: 100%;
+}
+.income-btn-scroll .blue-tab-scroll .gradient-threeline.incomm{
+	padding:10px 15px;	
+}
+.tra_filter {
+	padding: 0;
+}
+.job-info section .notification.error{
+	width: 100%;
+	font-size: 18px;
+}
+.contents.white-bg .report-btn-list-group li{
+	width: 50%;
+}
+.transaction-see{
+	margin: 25px 0 25px;
+}
+.canvas-scroll-x{
+	overflow-x: scroll
+}
+.moreyearpie .form-group.add_item_form.form-inline{
+	padding-right: 0;
+}
+.moreyearpie .form-group.add_item_form.form-inline select{
+	margin: 5px auto !important;
+	float: none !important;
+}
+.wholeborder .col-md-4.cash_man_chart .form-group.add_item_form.form-inline{
+	padding-right: 0;
+}
+.wholeborder .col-md-4.cash_man_chart .form-group.add_item_form.form-inline select{
+	margin: 5px auto;
+	float: none !important;
+	display: block;
+}
+.wholeborder .col-md-4.cash_man_chart{
+	min-width: 100%;
+}
+.canvas-width-scroll{
+	min-width: 450px;
+}
+/**footer for mobile**/
+.recentpost-mobile,
+.contactus-mobile{
+	width: 50%;
+	float: left;
+}
+#mc_embed_signup .mc-field-group{
+	width: 100% !important;
+}
+.register-frm-next-step .col-md-11{
+	padding: 0;
+	clear: both;
+}
+.register-frm-next-step .col-md-11>.col-md-6{
+	clear: both; 
+}
+.guest-prof-notification h4{
+	width: 100%;
+}
+div#qus_step h3 {
+	font-size: 16px;
+}
+.collapse-heading-title h1{
+	font-size: 28px !important;
+}
+.ans-que-heading h1{
+	font-size: 25px;
+}
+.expense-form-wrapp label{
+	text-align: left;
+	float: left;
+	display: block;
+}
+.expense-form-wrapp{
+	margin: 0 -15px;
+}
+.profile-tab{
+	padding: 10px 0;
+}
+.profile-details .profile-edit span, .profile-details h3 {
+	font-size: 18px;
+}
+.profile-name h2 {
+	font-size: 26px;
+}
+.profile-edit-scroll .profile-edit .col-md-3.col-sm-3:nth-child(2n){
+	background: transparent !important;
+}
+.manage-emp-finance-wrapp .add_item_form.form-inline .form-group, 
+.add-expense .add_item_form.form-inline .form-group{
+	float: left;
+}
+.manage-emp-finance-wrapp .add_item_form.form-inline .form_date{
+	margin-bottom: 0;
+}
+.add_item.send_invoice section.add_item_form.form-inline #template-div div[style*="width: 700px;margin:0 auto;"] .prevboxshadow{
+	min-width: 600px !important;
+	min-height: 410px;
+}
+.add_item.send_invoice section.add_item_form.form-inline #template-div div[style*="width: 700px;margin:0 auto;"]{
+	overflow-x: scroll;
+}
+.add_item.send_invoice section.add_item_form.form-inline #template-div .backsndbtn{
+	padding: 15px 0;
+}
+.register-frm .width-30{
+	width: 100%;
+}
+.add_item .add_item_form .form-group{
+	float: left;
+} 
+.add_item .add_item_form .form-group .form_date{
+	margin-bottom: 0;
+} 
+.contents.white-bg.For-Locums, .contents.white-bg.For-Employers, .contents.white-bg{
+	padding: 15px !important;
+}
+.store_block .store-details #set_user_data > [class*="col-"] {
+	display: inline-block;
+	width: calc(50% - 5px);
+	margin-bottom: 10px;
+	min-width: inherit;
+}
+.store_block .store-details #set_user_data > [class*="col-"].oppning-time-append-div {
+	width: 100%;
+	padding-left: 0px;
+}
+.store-details .oppning-time-append-div > [class*="col-"] {
+    width: 100%;
+    display: inline-block;
+    padding: 0px;
+}
+.store-details .oppning-time-append-div > [class*="col-"] > [class*="col-"] {
+    display: inline-block;
+    width: 100%;
+    padding: 0px;
+    margin: 8px 0;
+}
+.store-details .oppning-time-append-div > [class*="col-"].text-right {
+    text-align: center;
+    margin: 10px 0;
+}
+.store-details .oppning-time-append-div > [class*="col-"].col-md-8 {
+    overflow-y: hidden;
+}
+.store-details .oppning-time-append-div > [class*="col-"].col-md-8 > [class*="col-"] {
+    width: 600px;
+}
+.breadcrum .breadcrum-title .row > [class*="col-"] {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 0 15px !important;
+}
+.breadcrum .breadcrum-title .row > [class*="col-"]:last-child {
+    margin-bottom: 0px;
+}
+.multi_sel_list.multi_sel-ques-padd > [class*="col-"] {
+    width: 100%;
+    display: inline-block;
+}
+.multi_sel_list.multi_sel-ques-padd > [class*="col-"] > [class*="col-"] {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 10px;
+}
+.widget-body .widget-main .user_question_edit_form h3 {
+    font-size: 16px;
+}
+.show-transactions-table .dataTables_wrapper > [class*="dataTables_"] {
+    display: inline-block;
+    text-align: left;
+    padding: 10px;
+}
+.financeform .input-group {
+    display: inline-block;
+}
+.financeform .input-group input {
+    width: 100%;
+}
+.financeform .input-group button{
+	width:auto;
+}
+footer .recentpost li, .footers .contactus li, .socials .socials_links.no-padding-left{padding:0px !important;}
+.breadcrum .breadcrum-sitemap li a, .breadcrum .breadcrum-sitemap li:first-child a {
+    padding: 0 10px;
+    padding-left: 10px;
+}
+.select-year-wrapper, .select-year-wrapper [class*="financial-year-"] {
+    display: inline-block;
+}
+.select-year-wrapper [class*="financial-year-"] > h4 {
+    padding-bottom: 5px;
+}
+.select-year-wrapper [class*="financial-year-"].financial-year-select {
+    padding-bottom: 15px !important;
+}
+.open-inv-canvas .mapdiv canvas{min-width:100% !important;}
+.table-responsive>.table{min-width:650px;}
+.feedback-section .welcome-heading.feedback, .feedback-section .welcome-heading.feedback h1 {
+    display: inline-block;
+}
+
+} 
+
+@media only screen and (max-width:767px){
+.financial-year-title h4.text-right {
+    font-size: 15px !important;
+}
+.finance-blk-wppr .col-md-3.col-xs-6 {
+    width: 100%;
+}
+.feedback-form h3#feedback-msg {
+    padding-top: 120px;
+    font-size: 25px;
+}
+}
+@media only screen and (max-width: 680px) {
+.financial-year-sec .financial-year-title,
+.financial-year-sec .financial-year-select{
+	width: 100%;
+	padding:0;
+	height: auto;
+}
+.financial-year-sec .financial-year-title h4{
+	text-align: center;
+	margin: 0;
+}
+.financial-year-sec .financial-year-select select{
+	margin: 0 auto;
+	display: block;
+	float: none;
+}
+.select-year-wrapper .financial-year-title{
+	width: 100%;
+	padding: 0;
+}
+.select-year-wrapper .financial-year-select{
+	width: 100%;
+}
+.select-year-wrapper .financial-year-title,
+.select-year-wrapper .financial-year-select{
+	float: left;
+	height: auto !important;
+}
+.select-year-wrapper .financial-year-title h4{
+	font-size: 15px !important; 
+	margin: 0;
+	text-align: center;
+}
+.select-year-wrapper .financial-year-title.bglightgrey{
+	width: 100%;
+}
+.select-year-wrapper .financial-year-select.bglightgrey{
+	width: 100%;
+	
+} 
+.select-year-wrapper .financial-year-select select{
+	margin: 0 auto;
+	float: none;
+	display: block;
+	min-width: 200px;
+}
+.finacedetable .read-common-btn.grad_btn {
+    font-size: 14px;
+    padding: 4px 8px;
+}
+form#supplier-form .required-stars {
+    margin-left: 0px;
+}
+.profiles .col-md-6.current-booking {
+    display: none;
+}
+.col-md-6.individual-rating {
+    width: 100%;
+}
+section#Income-tansc .financial-year-title {
+    padding-top: 18px;
+}
+}
+
+@media only screen and (max-width: 476px) {
+.add_item_form .col-xs-9, .add_item_form .col-xs-3{
+	float: left;
+	width: 100%;
+}
+.add_item_form .financial-year-select .form-group{
+	display: block;
+	margin: 0 auto;
+}
+.add_item_form .financial-year-title{
+	height: 30px;padding:0;
+}
+.add_item_form .financial-year-title h4{
+	font-size: 13px;
+}
+.canvas-width-scroll {min-width: 100%;}
+.cash_man_chart .mapdiv{width:100% !important;}
+.contents.white-bg .padl0 {
+    padding: 0 0px 10px !important;
+    display: inline-block;
+}
+.finance-scroller table.dataTable [id*="delete-"] > button.btn {
+    position: relative;
+    top: 0px;
+}
+.all_transection_sc table#example form#delete-in401 button{
+    top: 0px !important;
+}
+section#packages .set-pack-icon {
+    float: left;
+    width: 39%;
+    margin-right: 18px;
+    display: inline-block;
+}
+.package-block .set-pack-content {
+    display: inline-block;
+    width: 55% !important;
+    text-align: left;
+}
+section#packages .set-pack-icon .gradient-cricle-bronze, section#packages .set-pack-icon .gradient-cricle-silver, section#packages .set-pack-icon .gradient-cricle-gold {
+    width: 100px;
+    height: 100px;
+    font-size: 24px !important;
+    line-height: 21px;position: relative;
+    top: 20px;
+}
+section#transaction-see .col-md-3.col-sm-3.padr0 {
+    width: 50%;
+    float: left;
+}
+}
+
+
+@media only screen and (max-width:450px){
+.profile-action-btn .ui-datepicker table {
+    width: 100%;
+    font-size: 12px !important;
+    border-collapse: collapse;
+    margin: 0 0 .4em;
+    padding: 0;
+}
+.profile-action-btn .ui-state-default, .ui-widget-content .ui-state-default {
+    padding: 10px !important;
+}
+.profile-action-btn div#block-dates .ui-datepicker {
+    width: 100% !important;
+}
+.individual-rating .carousel .carousel-control.left, .individual-rating .carousel .carousel-control.right {
+    left: 37% !important;
+    opacity: 0.7;
+}
+.profiles .coloe-info {
+    margin-left: 0;
+}
+.profiles .coloe-info ul li {
+    display: inline-block;
+    padding: 8px 0px 10px 1px;
+    font-weight: 600;
+    font-size: 14px !important;
+}
+.profiles  span.color-box {
+    padding: 3px 10px;
+    margin-right: 5px;
+}
+
+.finance-blk-wppr .col-md-3.col-xs-6 {
+    width: 50%;
+}
+.finance-price {
+    font-size: 20px;
+}
+.finance-txt-css {
+    font-size: 14px;}
+    .finance-blk-wppr {
+    margin: 15px 0px;
+    display: block;
+    width: 100%;
+    float: left;
+}
+.finance-txt-css {font-size: 14px;}
+.contents.white-bg ul {
+    margin: 10px 0 0 0px;
+}
+}
+
+
+@media only screen and (max-width: 440px) {
+.register-section .col-md-12,
+.register-section .col-md-6,
+.step2-personal-info .col-md-11,
+.step2-personal-info .col-md-5,
+.step2-personal-info .col-md-6,
+.mission-vision .col-md-10,
+.contents .mission-vision p{
+	padding: 0;
+}
+.form_settings.register-frm{
+	width: 100%;
+}
+.breadcrum .breadcrum-title h3{
+	font-size: 18px;
+	margin: 15px 0 15px;
+}
+.breadcrum .breadcrum-title .set-icon{
+	margin: 0 15px 0 10px;
+}
+.set-icon.registration-icon{
+	font-size: 25px;
+	width: 50px;
+	height: 50px;
+}
+.welcome-heading h1,
+.profile-details .profile-title h1{
+	font-size:24px;
+}
+article.first.post-content h2.title{
+	font-size: 20px;
+}
+.secondry-title-trad{
+	font-size: 18px;
+}
+.sliderarea .btn-banner li {
+	padding: 0px 5px 0 0px;
+} 
+.profile-details .profile-edit-btn a{
+	width: 100%;
+	margin-right: 0;
+}
+.finance-graph .income-graph{
+	overflow-x: scroll;
+}
+.register.user-edit-wrapper .contents{
+	padding: 15px 0;
+}
+.register.user-edit-wrapper .contents>.col-md-12, 
+.register.user-edit-wrapper .contents>.col-md-12>.col-xs-12{
+	padding: 0;
+}
+.breadcrum .breadcrum-sitemap li a, .breadcrum .breadcrum-sitemap li:first-child a {
+    padding: 0 10px;
+    padding-left: 10px;
+}
+.profile-edit.job-list-table ul.paginator-div li{
+	width: 23px;
+	height: 30px;
+	line-height: 15px;
+	font-size: 13px;
+}
+.finacedetable .read-common-btn.grad_btn{
+	font-size: 14px;
+	padding: 4px 8px;
+}
+.finacedetable .income-chart-div .head_box .col-xs-6{
+	width: 100%;
+}
+.finacedetable .income-chart-div .head_box .col-xs-6 .transaction-section-title{
+	width: 100%;
+}
+.finacedetable .income-chart-div .head_box .col-xs-6 h1{
+	text-align: center;
+}
+.finacedetable .income-chart-div .head_box .col-xs-6 .filter{
+	margin: 0;
+}
+.finacedetable .income-chart-div .head_box .col-xs-6 .filter select{
+	margin: 0 auto;
+	display: block;
+	float: none;
+	width: 60%;
+}
+.contents.job-accept-wrap .welcome-heading h1{
+	width: 185px;
+	font-size: 26px;
+}
+.contents.job-accept-wrap .welcome-heading hr.shadow-line{
+	margin-top: 15px;
+	margin-bottom: 15px;
+}
+.job-accept-wrap .job-info section .notification.error{
+	width: 100%;
+	font-size: 15px;
+}
+.job-accept-wrap .accept-job-div table tr th,
+.job-accept-wrap .accept-job-div table tr td{
+	font-size: 12px;
+}
+.job-accept-wrap .accept-job-div, .freez-job-div{
+	height: 270px;
+}
+.contents.job-offer {
+	background-size: 100% 650px;
+}
+.contents.job-offer{
+	min-height: 650px;
+}
+.accept-job-div table tr th.normal{
+	padding: 10px 5px;
+	width: 125px;
+}
+.contents.white-bg .report-btn-list-group li{
+	width: 100%;
+}
+.finance-page-head{
+	font-size: 28px;
+}
+.register-frm-next-step .col-md-11{
+	padding: 0;
+	margin: 0 -15px;
+}
+.register-frm.register-frm-next-step .col-md-6.multi_sel_list .col-xs-6{
+	width: 100%;
+}
+.collapse-heading-title h1{
+	font-size: 22px !important;
+}
+.expense-form-wrapp>.col-md-12{
+	padding: 0;
+	margin: 0 -15px;
+}
+.add_item.send_invoice section.add_item_form.form-inline #template-div .form-group .col-md-7.padr0,
+.add_item.send_invoice section.add_item_form.form-inline #template-div .form-group .col-md-4.padr0{
+	padding-left: 0;
+	padding-right: 0 !important;
+}
+.add_item.send_invoice section.add_item_form.form-inline #template-div .form-group .col-md-7.padr0 select,
+.add_item.send_invoice section.add_item_form.form-inline #template-div .form-group .col-md-7.padr0 .btn-flat{
+	padding: 6px 4px;
+}
+.finacedetable .read-common-btn.grad_btn {
+    font-size: 13px;
+    padding: 5px 7px;
+}
+.all_transection_sc .action-btn a.read-common-btn {width: 200px;display: block;}
+
+}
+
+@media only screen and (max-width: 399px) {
+/**footer for mobile**/
+.recentpost-mobile,
+.contactus-mobile{
+	width: 100%;
+	float: left;
+}
+.transaction-see .read-common-btn.grad_btn {
+    float: left;
+    font-size: 12px;}
+}
+@media(max-width:380px){
+section#transaction-see .col-md-3.col-sm-3.padr0 {
+    width: 50%;
+    float: left;
+    padding: 0px 5px;
+}
+
+
+}
+

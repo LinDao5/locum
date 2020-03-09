@@ -1,0 +1,765 @@
+<?php
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+        $uid=$_SESSION['user_id'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>"; 
+    }
+    date_default_timezone_set('Europe/London');
+    use GcFrontend\Controller\DbController as DbController;
+    use GcFrontend\Controller\FunctionsController as FunctionsController;
+    use Gc\User\Role\Model;
+    use Gc\User\Professional\Model as Model2;
+    use Gc\User\Package\Model as Model3;
+    use Gc\Db\AbstractTable;
+    use Zend\Db\Sql\Sql;
+    use Zend\Db\TableGateway\TableGateway;
+    use Zend\Db\Sql\Where;
+    use Gc\User\Job\Model as JobModel;
+    $jobModel = new JobModel();
+
+    $dbConfig = new DbController();
+    $functionsController = new FunctionsController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $sql = new Sql($adapter);
+    $update = $sql->update();
+    $select = $sql->select();
+    $select1 = $sql->select();
+    $select2 = $sql->select();
+    $delete = $sql->delete();
+    $result_arr="";
+    $currency=$this->config()->get('site_currency');
+
+    /* enable and disable jobs */
+    if (isset($_POST['action']) && $_POST['action'] == 'enable') {
+        $jobModel->jobStatusUpdate($_POST['j'],1);
+        $this->flashMessenger()->addSuccessMessage('Job status updated as Enable Successfully.');
+    }elseif (isset($_POST['action']) && $_POST['action'] == 'disable') {
+        $jobModel->jobStatusUpdate($_POST['j'],3);
+        $this->flashMessenger()->adderrorMessage('Job status updated as Disable Successfully.');		
+    }
+    /* enable and disable jobs */
+
+
+    /* Filter by post status */
+    $filterJobStatusId = 0;
+    if (isset($_GET['filter']) && $_GET['filter'] != '') {
+        switch ($_GET['filter']) {
+            case 'waiting':
+                $filterJobStatusId = 1;
+                break;
+            case 'close':
+                $filterJobStatusId = 2;
+                break;
+            case 'disable':
+                $filterJobStatusId = 3;
+                break;
+            case 'accepted':
+                $filterJobStatusId = 4;
+                break;
+            case 'completed':
+                $filterJobStatusId = 5;
+                break;
+            case 'freeze':
+                $filterJobStatusId = 6;
+                break;
+            case 'cancel':
+                $filterJobStatusId = 8;
+                break;
+        }
+    }
+
+
+    /* Filter by post status */
+    $sortJob = '';
+    if (isset($_GET['sort_by']) && $_GET['sort_by'] != '' && isset($_GET['order']) && $_GET['order'] != '') {
+        $order = $_GET['order'];
+        $element = $_GET['sort_by'];
+        $sortJob = $functionsController->elementToSort($element,$order);
+    }
+
+    if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){
+        $uid=$_SESSION['user_id']; //user id from session
+        $result_arr="";
+        $select->from('job_post');
+        if ($sortJob != '') {
+            //echo $sortJob;
+            if ($filterJobStatusId &&  $filterJobStatusId != 7) {
+                $select->where( "e_id = $uid AND job_status = $filterJobStatusId ".$sortJob); 
+            }else{
+                $select->where( "e_id = $uid AND job_status != 7  ".$sortJob);
+            }
+        }else{
+            if ($filterJobStatusId &&  $filterJobStatusId != 7) {
+                $select->where( "e_id = $uid AND job_status = $filterJobStatusId order by job_id DESC"); 
+            }else{
+                $select->where( "e_id = $uid AND job_status != 7 order by job_id DESC");
+            }
+        }
+        
+        
+        $statement  = $sql->prepareStatementForSqlObject($select);
+        $results    = $statement->execute();
+        $rows       = $results->getResource()->fetchAll();
+        
+        $paginatorEmp = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($rows));
+        $paginatorEmp->setItemCountPerPage(20);
+        $paginatorEmp->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+        $edit_link="";
+        foreach($paginatorEmp as $resultset){
+            if($resultset['job_type']==1){
+                $job_type="First come first serve";
+                $view_link='/single-job?view='.$resultset['job_id'];
+            }else{
+                $job_type="Build list";
+                $view_link='/build-list?j='.$resultset['job_id'];
+            }
+            if (strtotime(str_replace('/', '-', $resultset['job_date']) ) > strtotime(date('d-m-Y')) || (strtotime(str_replace('/', '-', $resultset['job_date']) ) == strtotime(date('d-m-Y')) && date('G') < 9)) {
+                $cancel_action_link = '<a href="/cancel-job?e='.$resultset['job_id'].'" title="Cancel Job" style="color: #ff0000;"><i class="fa fa-times" aria-hidden="true"></i></a>';
+            }else{
+                $cancel_action_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+            }
+            /*Get freelancer info of job */
+            $freInfo = $functionsController->getFreelancerInfoFromAcceptedJob($resultset["job_id"], $adapter);
+
+                if(!empty($freInfo)){
+                    $freName = $freInfo['firstname'].' '.$freInfo['lastname'];
+                }else{
+                    $privateFreInfo = $functionsController->getPrivateFreelancerInfoFromAcceptedJob($resultset["job_id"], $adapter);
+                    if(!empty($privateFreInfo)){
+                        $freName = $privateFreInfo['p_name'].'<a href="javascript:void(0);" title="Private User" style="color:red"><i class="fa fa-star" aria-hidden="true" style="font-size: 8px;position: absolute;"></i></a>';                  
+                    }else{
+                        $freName = 'N/A';
+                    }
+                }
+             
+                //$disable_enable_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-fw fa-ban" aria-hidden="true"></i></a>';
+         $duplicate_link = '';
+            switch ($resultset['job_status']) {
+                case '1':
+                    //    $del_link='<li><a href="javascript:void(0);" title="Delete Job" onclick=delete_post('.$resultset["job_id"].')><i class="fa fa-trash-o" aria-hidden="true" title="Delete Job" style="color:red;"></i></a></li><li><input type="checkbox" id="del_job_post" class="padding-left" name="del_post[]" value="'.$resultset["job_id"].'"></li>';
+
+                    $del_link='<li><a href="javascript:void(0);" title="Delete Job" onclick=delete_post('.$resultset["job_id"].')><i class="fa fa-trash-o" aria-hidden="true" title="Delete Job" style="color:red;"></i></a></li>';
+                    $jobStatus = '<span style="color:green;font-size: 14px;">Waiting</span>';
+                    $edit_link = '<a href="/managejob?e='.$resultset['job_id'].'" title="Edit Job"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>';
+                    $duplicate_link = '<a href="/managejob?e='.$resultset['job_id'].'&duplicate_job" title="Duplicate Job"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                    //$disable_enable_link = '<a style="color: #ff0000;" href="javascript:void(0);" onclick=update_action('.$resultset["job_id"].',"disable") title="Job Disable"><i class="fa fa-fw fa-ban"  aria-hidden="true"></i></a>';
+                
+                    break;
+                case '2':
+                    $jobStatus = '<span style="color:#000;font-size: 14px;">Expired</span>';
+                    $del_link='<li><a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Delete Disable"><i class="fa fa-trash-o" aria-hidden="true"></i></a></li>';
+                    //$edit_link='<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Disable edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>';
+                    $edit_link = '<a href="/managejob?e='.$resultset['job_id'].'" title="Duplicate Job"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                    $disable_enable_link = $disable_enable_link ;
+                    break;
+                case '3':
+                    $jobStatus = '<span style="color:red;font-size: 14px;">Disable</span>';
+                    $del_link='<li><a href="javascript:void(0);" title="Delete Job" onclick=delete_post('.$resultset["job_id"].')><i class="fa fa-trash-o" aria-hidden="true" title="Delete Job" style="color:red;"></i></a></li>';
+                    //$edit_link='<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Disable edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>';
+                    $edit_link = '<a href="/managejob?e='.$resultset['job_id'].'" title="Duplicate Job"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    $cancel_link = $cancel_action_link;
+                    //$disable_enable_link = '<a style="color: #8dca00;" href="javascript:void(0);" onclick=update_action('.$resultset["job_id"].',"enable") title="Job Enable"><i class="fa fa-fw fa-ban" aria-hidden="true"></i></a>';               
+                    break;
+                case '4':
+                    $jobStatus = '<span style="color:green;font-size: 14px;">Accepted</span>';
+                    $del_link='<li><a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Delete Disable"><i class="fa fa-trash-o" aria-hidden="true"></i></a></li>';              
+                    //$edit_link='<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Disable edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>';
+                    $edit_link = '<a href="/managejob?e='.$resultset['job_id'].'" title="Duplicate Job"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    $cancel_link = $cancel_action_link;
+                    $disable_enable_link = $disable_enable_link ;
+                    break;
+                case '5':
+                    $jobStatus = '<span style="color:#00A9E0;font-size: 14px;">Completed</span>';
+                    $del_link='<li><a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Delete Disable"><i class="fa fa-trash-o" aria-hidden="true"></i></a></li>';
+                    //$edit_link='<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Disable edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></a>';
+                    $edit_link = '<a href="/managejob?e='.$resultset['job_id'].'" title="Duplicate Job"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                   $disable_enable_link = $disable_enable_link ;
+                    break;
+                case '6':
+                    $jobStatus = '<span style="color:#00A9E0;font-size: 14px;">Freeze</span>';
+                    $del_link='<li><a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Delete Disable"><i class="fa fa-trash-o" aria-hidden="true"></i></a></li>';
+                    $edit_link='<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Disable duplicate"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    //$cancel_link = $cancel_action_link;
+                    $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                  $disable_enable_link = $disable_enable_link ;
+                    break;
+                case '8':
+                    $checkWhoCancel = $functionsController->whoCancelJob($resultset['job_id'],$adapter);
+                    if ($checkWhoCancel == 2) {
+                        $whoCancell = '(By locum) cancelled';
+                    }else{
+                        $whoCancell = '(By employer) cancelled';
+                    }
+                    $jobStatus = '<span style="color:#ff0000;font-size: 13px;">'.$whoCancell.'</span>';
+                    $del_link='<li><a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Delete Disable"><i class="fa fa-trash-o" aria-hidden="true"></i></a></li>';
+                    $edit_link = '<a href="/managejob?e='.$resultset['job_id'].'" title="Duplicate Job"><i class="fa fa-files-o" aria-hidden="true"></i></a>';
+                    $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                    $disable_enable_link = $disable_enable_link ;
+                    break;
+            }
+
+            $is_new_date = '';
+            if (strtotime(str_replace('/', '-', $resultset['job_date']) ) < strtotime(date('d-m-Y')) ) {
+                $is_new_date = '';
+                $job_date_html = '<span class="old-date">'.date('d-m-Y',strtotime(str_replace('/', '-', $resultset['job_date']) )).'</span>'; 
+            }else{
+                $is_new_date = 'class="new-date"';
+                $job_date_html = '<span class="new-date">'.date('d-m-Y',strtotime(str_replace('/', '-', $resultset['job_date']) ));
+            }
+
+            
+
+            /*if($resultset['job_status']==1){
+                $del_link='<a href="javascript:void(0);" onclick=delete_post('.$resultset["job_id"].')><i class="fa fa-trash-o" aria-hidden="true"></i></a>';
+                $jobStatus = '<span style="color:green;font-size: 14px;">Waiting</span>';
+            }elseif($resultset['job_status']==2){
+                $jobStatus = '<span style="color:#000;font-size: 14px;">Expired</span>';
+                $del_link='<a href="javascript:void(0);" style="cursor: no-drop;"><i class="fa fa-trash-o" aria-hidden="true"></i></a>';
+            }else{
+                $del_link='<a href="javascript:void(0);" onclick=delete_post('.$resultset["job_id"].')><i class="fa fa-trash-o" aria-hidden="true"></i></a>';
+                $jobStatus = '<span style="color:red;font-size: 14px;">Disable</sapn>';
+            }*/
+            $professionalTable = new Model2();
+            $row2              = $professionalTable->fetchRow($professionalTable->select(array('id' => (int) $resultset['cat_id'])));
+            //print_r($row2);
+            $is_record = 0;
+            if (!empty($row2)) {
+               $is_record = 1;
+            }else{
+               $is_record = 0; 
+            }
+            $job_post_title = strlen($resultset['job_title']) > 20 ? substr($resultset['job_title'],0,20)."..." : $resultset['job_title'];
+            $show_duplicate_link = ($duplicate_link != '') ? '<li>'.$duplicate_link.'</li>' : '';
+            $result_arr.='<tr '.$is_new_date.'><td> <a href="javascript:void()" title="'.$resultset['job_title'].'">'.$job_post_title.'</a></td><td>'.$job_date_html.'</td><td>'.date('d-m-Y',strtotime(str_replace('/', '-', $resultset['job_create_date']) )).'</td><td>'.$currency.number_format($resultset['job_rate'],2).'</td><td>'.$jobStatus.'</td><td>'.$freName.'</td><td class="table-job-info action-btn"><ul><li>'.$edit_link.'</li>'.$show_duplicate_link.'<li><a href="'.$view_link.'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a></li><li>'.$cancel_link.'</li>'.$del_link.'</ul></td></tr>';
+            
+        }
+        
+        if ($filterJobStatusId && $filterJobStatusId != 7) {
+            if(isset($_GET['sort_by']) && isset($_GET['order'])){
+                $result_arr_page="<div class='pagination'>".$this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing?filter='.$_GET['filter'].'&sort_by='.$_GET['sort_by'].'&order='.$_GET['order']))."</div>";
+            }else{
+                $result_arr_page="<div class='pagination'>".$this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing?filter='.$_GET['filter']))."</div>";
+            }
+        }else{
+            if(isset($_GET['sort_by']) && isset($_GET['order'])){
+                $result_arr_page ="<div class='pagination'>".$this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing?sort_by='.$_GET['sort_by'].'&order='.$_GET['order']))."</div>";
+            }else{
+                $result_arr_page ="<div class='pagination'>".$this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing'))."</div>";
+            }
+        }
+        
+    }elseif (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2) {
+        if($filterJobStatusId != ''){
+			$getJobId = array();
+			if ($sortJob != '') {
+				$sqlString_get="SELECT * FROM job_post WHERE  job_status='$filterJobStatusId' AND job_id IN (SELECT job_id FROM job_action WHERE f_id = '$uid' AND (action = 3 OR action = 4 OR action = 6 OR action = 7)) ".$sortJob;
+			}else{
+				$sqlString_get="SELECT * FROM job_post WHERE job_status='$filterJobStatusId' AND job_id IN (SELECT job_id FROM job_action WHERE f_id = '$uid' AND (action = 3 OR action = 4 OR action = 6 OR action = 7 )) ";
+			}
+		}else{
+			$sqlString_get="SELECT * FROM job_post WHERE (job_status = 4 OR job_status = 5 OR job_status = 8) AND job_id IN (SELECT job_id FROM job_action WHERE f_id = '$uid' AND (action = 3 OR action = 4 OR action = 6 OR action = 7)) ".$sortJob;
+		}
+        $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+        //print_r($results0);
+        $getJobId = $results0->toArray();
+        
+        /*$rows2 = array();
+        foreach ($getJobId as $key => $value) {
+            $job_identifire = $value['job_id'];
+            $sqlString_get="SELECT * FROM job_post WHERE job_id = '$job_identifire'";
+            $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+            //print_r($results0);
+            $rows2[] = (array)$results0->current();
+        }*/
+        $rows2new = $getJobId;
+        /*echo "<pre>";
+        print_r($rows2);
+        echo "</pre>";*/
+        
+        //exit();
+        $paginatorFre = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($rows2new));
+        $paginatorFre->setItemCountPerPage(20);
+        $paginatorFre->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+        foreach($paginatorFre as $resultset){
+            if ( ( strtotime(str_replace('/', '-', $resultset['job_date']) ) > strtotime(date('d-m-Y')) ) || ( strtotime(str_replace('/', '-', $resultset['job_date']) ) == strtotime(date('d-m-Y')) && date('G') < 9 )) {
+                $cancel_action_link = '<a href="/cancel-job?e='.$resultset['job_id'].'" title="Cancel Job" style="color: #ff0000;"><i class="fa fa-times" aria-hidden="true"></i></a>';
+            }else{
+                $cancel_action_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+            }
+            
+            if($resultset['job_status']==4){
+                $view_link='<a href="/single-job?view='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                $cancel_link = $cancel_action_link;
+                $del_link='<!-- <a href="javascript:void(0);" onclick=delete_post('.$resultset["job_id"].')>--><i class="fa fa-trash-o" aria-hidden="true"></i><!-- </a> -->';
+                $jobStatus = '<span style="color:green;font-size: 14px;">Accepted</span>';
+                if($resultset['job_type']==1){
+                    $job_type="First come first serve";
+                    $view_link='<a href="/single-job?view='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                }else{
+                    $job_type="Build list";
+                    $view_link='<a href="/build-list?j='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                }
+            }elseif($resultset['job_status']==5){
+                $jobStatus = '<span style="color:#00A9E0;font-size: 14px;">Completed</span>';
+                $view_link='<a href="/single-job?view='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                $del_link='<li style="cursor: no-drop;color: lightgray;"><i class="fa fa-trash-o" aria-hidden="true"></i></li>';
+                if($resultset['job_type']==1){
+                    $job_type="First come first serve";
+                    $view_link='<a href="/single-job?view='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                }else{
+                    $job_type="Build list";
+                    $view_link='<a href="/build-list?j='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                }
+            }elseif($resultset['job_status']==8 || $resultset['job_status']==1){
+
+                $sql_fre_cancel_job = "SELECT action FROM job_action WHERE f_id = '$uid' AND (action = 6 OR action = 7) AND job_id = '".$resultset['job_id']."'";
+                $fre_cancel_job = $adapter->query($sql_fre_cancel_job, $adapter::QUERY_MODE_EXECUTE);
+                $fre_cancel_job_obj = $fre_cancel_job->current();
+                if($fre_cancel_job_obj->action == 6){
+                       $jobStatus = '<span style="color:#ff0000;font-size: 14px;">(By locum) cancelled</span>';
+                }else{
+                       $jobStatus = '<span style="color:#ff0000;font-size: 14px;">(By employer) cancelled</span>';
+                }
+
+                $view_link='<a href="/single-job?view='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                $del_link='<li style="cursor: no-drop;color: lightgray;"><i class="fa fa-trash-o" aria-hidden="true"></i></li>';
+                if($resultset['job_type']==1){
+                    $job_type="First come first serve";
+                    $view_link='<a href="/single-job?view='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                }else{
+                    $job_type="Build list";
+                    $view_link='<a href="/build-list?j='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+                }
+            }else{
+                
+                $jobStatus = '<span style="color:red;font-size: 14px;">Disable</sapn>';
+                $del_link = '<li><i class="fa fa-trash-o" aria-hidden="true" style="cursor: no-drop;color: lightgray;"></i></li>';
+                $cancel_link = '<a href="javascript:void(0);" style="cursor: no-drop;color: lightgray;" title="Cancel Job"><i class="fa fa-times" aria-hidden="true"></i></a>';
+                $view_link='<a href="/build-list?j='.$resultset['job_id'].'" title="View Job"><i class="fa fa-eye" aria-hidden="true"></i></a>';
+            }
+            $professionalTable = new Model2();
+            $row2= $professionalTable->fetchRow($professionalTable->select(array('id' => (int)$resultset['cat_id'])));
+
+            $is_record = 0;
+            if (!empty($row2)) {
+               $is_record = 1;
+            }else{
+               $is_record = 0; 
+            }
+            $new_date=str_replace('/','-',$resultset['job_date']);
+            $job_post_title = strlen($resultset['job_title']) > 25 ? substr($resultset['job_title'],0,25)."..." : $resultset['job_title'];
+
+            /* Store info */
+
+            $sql_storeInfo = "SELECT emp_store_name,emp_store_address,emp_store_region,emp_store_zip FROM employer_store_list WHERE emp_st_id = ".$resultset['store_id'];
+            $storeInfoData = $adapter->query($sql_storeInfo, $adapter::QUERY_MODE_EXECUTE);            
+            $storeInfoArray = (array)$storeInfoData->current();
+            $storeAddress = substr($storeInfoArray['emp_store_address'],0,15)."..." ;
+            //print_r($storeInfoArray);
+            $is_new_date = '';
+            if (strtotime($new_date) < strtotime(date('d-m-Y')) ) {
+                $is_new_date = '';
+                $job_date_html = '<span class="old-date">'.date('d/m/Y',strtotime ($new_date)).'</span>';
+            }else{
+                $is_new_date = 'class="new-date"';
+                $job_date_html = '<span class="new-date">'.date('d/m/Y',strtotime ($new_date));
+            }            
+
+            $result_arr.='<tr '.$is_new_date.'><td>'.$job_date_html .'</td><td>'.$currency.number_format($resultset['job_rate'],2).'</td><td>'.$storeInfoArray['emp_store_name'] .'</td><td>'.$storeAddress.'</td><td>N/A</td><td>'.$jobStatus.'</td><td class="table-job-info action-btn "><ul><li>'.$view_link.'</li><li>'.$cancel_link.'</li></ul></td></tr>';
+            
+        }
+        if ($filterJobStatusId && $filterJobStatusId != 6) {
+            if(isset($_GET['sort_by']) && isset($_GET['order'])){
+                $result_arr_page="<div class='pagination'>".$this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing?filter='.$_GET['filter'].'&sort_by='.$_GET['sort_by'].'&order='.$_GET['order']))."</div>";
+            }else{
+                $result_arr_page="<div class='pagination'>".$this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing?filter='.$_GET['filter']))."</div>";
+            }
+            
+        }else{
+           	if(isset($_GET['sort_by']) && isset($_GET['order'])){
+            	$result_arr_page="<div class='pagination'>".$this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing?sort_by='.$_GET['sort_by'].'&order='.$_GET['order']))."</div>";
+			}else{
+				$result_arr_page="<div class='pagination'>".$this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/job-listing'))."</div>";	
+			}
+        }
+    } // check for session
+
+    if(isset($_POST['job_id']) && $_POST['job_id']!=''){
+        $job_id=$_POST['job_id'];
+        //$sql_del3="delete from job_post where job_id='$job_id'";
+        $sql_del3="update job_post set job_status='7' where job_id='$job_id'";
+        $results3 = $adapter->query($sql_del3, $adapter::QUERY_MODE_EXECUTE);
+    }
+    if(isset($_POST['job_id_list']) && $_POST['job_id_list']!=''){
+        $job_id_list=explode(',',$_POST['job_id_list']);
+        foreach($job_id_list as $job_id){
+        echo $sql_del33="update job_post set job_status='7' where job_id='$job_id'";
+        $results33 = $adapter->query($sql_del33, $adapter::QUERY_MODE_EXECUTE);
+        }
+    }
+ 
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="/job-listing">JOB MANAGEMENT</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>List Page</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+    <div class="container">
+        <div class="row">
+            <div class="contents gray-gradient">
+                <div class="welcome-heading">
+                    <h1><span>JOB MANAGEMENT</span></h1>
+                    <hr class="shadow-line">
+                </div>
+                <div class="profile-details">
+                    <?php echo $this->partial('flash-messages'); ?>
+                    <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3) { ?>
+                        <div class="row">
+                            <div class="col-md-12" align="right"> 
+                                <div class="profile-edit-btn listing-page">
+                                    <a href="/managejob" class="gradient-threeline post-new-job-btn" >Post new job</a> <a href="/manage-block-freelancer" class="gradient-threeline-orange post-new-job-btn manage-block-list" >Manage blocked locum(s)</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="job-list-div">
+                            <div class="job-filter">
+                                <ul class="nav nav-tabs">
+                                    <?php $filterBseUrl = $this->serverUrl().'/job-listing'; ?>
+                                    <li <?php if( $filterJobStatusId == 0){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>">All</a></li>
+                                    <li <?php if( $filterJobStatusId == 1){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=waiting&sort_by=job_date&order=DESC">Waiting</a></li>
+                                    <li <?php if( $filterJobStatusId == 4){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=accepted&sort_by=job_date&order=DESC">Accepted</a></li>
+                                    <li <?php if( $filterJobStatusId == 5){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=completed&sort_by=job_date&order=DESC">Completed</a></li>
+                                    <!--<li <?php if( $filterJobStatusId == 3){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=disable&sort_by=job_date&order=DESC">Disable</a></li>-->
+                                    <li <?php if( $filterJobStatusId == 6){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=freeze&sort_by=job_date&order=DESC">Frozen</a></li>
+                                    <li <?php if( $filterJobStatusId == 8){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=cancel&sort_by=job_date&order=DESC">Cancelled</a></li>
+                                    <!-- <li <?php if( $filterJobStatusId == 3){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=disable">Disabled</a></li> -->
+                                    <li <?php if( $filterJobStatusId == 2){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=close&sort_by=job_date&order=DESC">Expired</a></li>
+                                </ul>
+                            </div>
+                            <div class="profile-edit job-list-table">
+                                <div class="row list-head">
+                                    <table class="table table-hover">
+                                        <col width="15%">
+                                        <col width="11%">
+                                        <col width="11%">
+                                        <col width="10%">
+                                        <col width="16%">
+                                        <col width="14%">
+                                        <col width="14%">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    <?php 
+                                                        $order = isset($_GET['order'])&&$_GET['order']=='DESC' ? "ASC" : "DESC";
+                                                        $sortIcon = isset($_GET['order'])&&$_GET['order']=='DESC' ? '<i class="fa fa-caret-down" aria-hidden="true"></i>' : '<i class="fa fa-caret-up" aria-hidden="true"></i>';
+                                                        if (isset($_GET['filter']) ) {
+                                                            $filter = $_GET['filter'];
+                                                            $titleSort = $functionsController->elementToSortUrl($filter,'job_title',$order);
+                                                        }else{
+                                                            $titleSort = $functionsController->elementToSortUrl('','job_title',$order);
+                                                        }
+                                                        
+                                                    ?>
+                                                    <a href=" <?php echo $titleSort; ?> ">Job Title <?php echo isset($_GET['sort_by']) && $_GET['sort_by'] == 'job_title'  ? $sortIcon : ''; ?></a>
+                                                </th>
+                                                <th>
+                                                    <?php                                         
+                                                        if (isset($_GET['filter']) ) {
+                                                            $filter = $_GET['filter'];
+                                                            $jobDateSort = $functionsController->elementToSortUrl($filter,'job_date',$order);
+                                                        }else{
+                                                            $jobDateSort = $functionsController->elementToSortUrl('','job_date',$order);
+                                                        }
+                                                        
+                                                    ?>
+                                                    <a href=" <?php echo $jobDateSort; ?> ">Job Date<?php echo  isset($_GET['sort_by']) && $_GET['sort_by'] == 'job_date' ? $sortIcon : ''; ?></a>
+                                                </th>
+                                                <th>
+                                                    <?php                              
+                                                        if (isset($_GET['filter']) ) {
+                                                            $filter = $_GET['filter'];
+                                                            $postDateSort = $functionsController->elementToSortUrl($filter,'job_create_date',$order);
+                                                        }else{
+                                                            $postDateSort = $functionsController->elementToSortUrl('','job_create_date',$order);
+                                                        }
+                                                        
+                                                    ?>
+                                                    <a href=" <?php echo $postDateSort; ?> ">Date Posted <?php echo isset($_GET['sort_by']) && $_GET['sort_by'] == 'job_create_date' ? $sortIcon : ''; ?></a>
+                                                </th>
+                                                <th>
+                                                    <?php                           
+                                                        if (isset($_GET['filter']) ) {
+                                                            $filter = $_GET['filter'];
+                                                            $rateSort = $functionsController->elementToSortUrl($filter,'job_rate',$order);
+                                                        }else{
+                                                            $rateSort = $functionsController->elementToSortUrl('','job_rate',$order);
+                                                        }
+                                                        
+                                                    ?>
+                                                    <a href=" <?php echo $rateSort; ?> ">Job Rate <?php echo isset($_GET['sort_by']) && $_GET['sort_by'] == 'job_rate' ? $sortIcon : ''; ?></a>
+                                                </th>
+                                                <th>
+                                                    Job Status
+                                                </th>
+                                                <th>
+                                                    Locums Name
+                                                </th>
+                                                <th>
+                                                    Action <span class="action-note">(edit/view/cancel/delete)</span><br/>
+                                                    <!--<span><font size="-1"><a href="javascript:void(0);" onClick="delete_all_post();" id="delete-all-title">Delete Selected Job</a></font> <input type="checkbox" name="checkdelete[]" onclick="checkAll(this);" value="0" id="delete-all-check"></span>-->
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if($is_record == 1){ echo $result_arr;}?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <?php if($is_record == 1){ echo $result_arr_page; }else{ echo "<h4 class='record_not_found'>No records were found.</h4>"; } ?>
+                            </div>
+                        </div>
+                    <?php }elseif (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2) {
+                    ?>
+                        <div class="row">
+                                <div class="col-md-12" align="right"> 
+                                    <div class="profile-edit-btn" style="padding-top: 0;">
+                                        <a href="/private-job" class="gradient-threeline post-new-job-btn" >Manage Private Job(s)</a>
+                                    </div>
+                                </div>
+                            </div>
+                   		<div class="job-list-div">
+                        <div class="job-filter">
+                            <ul class="nav nav-tabs">
+                                <?php $filterBseUrl = $this->serverUrl().'/job-listing'; ?>
+                                <li <?php if( $filterJobStatusId == 0){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>">All</a></li>
+                                
+                                <li <?php if( $filterJobStatusId == 4){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=accepted&sort_by=job_date&order=DESC">Accepted</a></li>
+                                <li <?php if( $filterJobStatusId == 5){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=completed&sort_by=job_date&order=DESC">Completed</a></li>
+                                <li <?php if( $filterJobStatusId == 8){ ?> class="active" <?php } ?>><a href="<?php echo $filterBseUrl;?>?filter=cancel&sort_by=job_date&order=DESC">Cancelled</a></li>
+                                
+                            </ul>
+                        </div>
+                        <div class="profile-edit job-list-table">                            
+                            <div class="row list-head">
+                                <table class="table table-hover">
+                                    <col width="11%">
+                                    <col width="11%">
+                                    <col width="15%">
+                                    <col width="20%">
+                                    <col width="11%">
+                                    <col width="18%">
+                                    <col width="10%">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <?php 
+                                                    $order = isset($_GET['order'])&&$_GET['order']=='DESC' ? "ASC" : "DESC";
+                                                    $sortIcon = isset($_GET['order'])&&$_GET['order']=='DESC' ? '<i class="fa fa-caret-down" aria-hidden="true"></i>' : '<i class="fa fa-caret-up" aria-hidden="true"></i>';
+                                                    if (isset($_GET['filter']) ) {
+                                                        $filter = $_GET['filter'];
+                                                        $jobDateSort = $functionsController->elementToSortUrl($filter,'job_date',$order);
+                                                    }else{
+                                                        $jobDateSort = $functionsController->elementToSortUrl('','job_date',$order);
+                                                    }
+                                                    
+                                                ?>
+                                                <a href="<?php echo $jobDateSort; ?>">Job date <?php echo isset($_GET['sort_by']) && $_GET['sort_by'] == 'job_date' ? $sortIcon : ''; ?></a>
+                                            </th>
+                                            <th>
+                                            	 <?php                                         
+														if (isset($_GET['filter']) ) {
+															$filter = $_GET['filter'];
+															$jobRateSort = $functionsController->elementToSortUrl($filter,'job_rate',$order);
+														}else{
+															$jobRateSort = $functionsController->elementToSortUrl('','job_rate',$order);
+														}
+														
+													?>
+													<a href="<?php echo $jobRateSort; ?>">Rate <?php echo isset($_GET['sort_by']) && $_GET['sort_by'] == 'job_rate' ? $sortIcon : ''; ?></a>
+                                            </th>
+                                            <th>Store Name</th>
+                                            <th>Location</th>
+                                            <th>Feedback</th>
+                                            <th>Status</th>
+                                            <th>Action<br><font size="-1">(view)</font></th>
+                                         </tr>
+                                    </thead>
+                                    <tbody>
+										<?php if($is_record == 1){ echo $result_arr;}?>
+                                    </tbody>
+                                </table>
+                                                        
+                            </div>
+                            <?php if($is_record == 1 ){ echo $result_arr_page;}else{ echo "<h4 class='record_not_found'>No records were found.</h4>"; }?>
+                        </div>
+                     </div>
+                    <?php } ?>
+             </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    /*  function delete_post(id){
+    var result = confirm("Do you really want to delete this job?");
+        
+    if(result){ //alert('inside');
+        $("#loader-div").show();
+        $.ajax({
+          'url'   :'/job-listing',
+          'type'  :'POST',
+          'data'  : {job_id : id},
+          'success':function(result){ 
+            alert("Job post deleted.");
+            location.reload();
+          }
+        });
+    }
+  }*/
+
+  function delete_post(id){
+    //  event.preventDefault();
+      $('div#alert-confirm-modal #alert-message').html('Do you really want to delete this job?');
+      $('div#alert-confirm-modal').addClass('in');
+      $('div#alert-confirm-modal').css('display','block');
+      $('div#alert-confirm-modal #confirm').click(function(){
+          $("#loader-div").show();
+          $.ajax({
+              'url'   :'/job-listing',
+              'type'  :'POST',
+              'data'  : {job_id : id},
+              'success':function(result){
+		$("#loader-div").hide();
+		$('div#alert-confirm-modal').removeClass('in');
+		$('div#alert-confirm-modal').css('display','none');
+		messageBoxOpen("Job is deleted.");
+                //location.reload();
+              }
+          });
+          messageBoxClose();
+      });
+    }
+
+
+
+
+
+  function update_action(id , action){
+    //  event.preventDefault();
+      $('div#alert-confirm-modal #alert-message').html('Are you sure you want to '+action+' posting?');
+      $('div#alert-confirm-modal').addClass('in');
+      $('div#alert-confirm-modal').css('display','block');
+      $('div#alert-confirm-modal #confirm').click(function(){
+          $("#loader-div").show();
+          $.ajax({
+              'url'   :'/job-listing',
+              'type'  :'POST',
+              'data'  : {j : id , action : action },
+              'success':function(result){
+ location.reload();
+              }
+          });
+          messageBoxClose();
+      });
+    }
+
+
+
+
+  function delete_all_post(){
+    var result = confirm("Do you really want to delete post?");
+    var checked_inpt = $("#del_job_post:checked").length;
+    var result22='';
+    if(result===true && checked_inpt >0){ 
+
+     var checkboxes = document.getElementsByTagName('input');
+     if (checkboxes) {
+        $("#loader-div").show();
+         for (var i = 1; i < checkboxes.length; i++) {
+             if (checkboxes[i].type == 'checkbox') {
+                 //checkboxes[i].checked = true; 
+                 if(checkboxes[i].checked == true && checkboxes[i].value!=""){
+                    checkedValue = parseInt(checkboxes[i].value);
+                    result22+=checkedValue+',';
+                 }
+             }
+         }
+     } 
+     //alert(result22);
+         $.ajax({
+              'url'   :'/job-listing',
+              'type'  :'POST',
+              'data'  : {job_id_list : result22},
+              'success':function(result){  
+                alert("Job post deleted.");
+                location.reload();
+              }
+          });
+    }if(result===false && checked_inpt >0){
+        $("#loader-div").hide();
+    }
+  }
+   /*$(function() {
+    $("#datepicker").datepicker({
+            changeMonth: true,
+            changeYear: true,
+            showButtonPanel: true,
+            dateFormat: "yy/mm/dd",
+            yearRange: '2016:2017'});
+  });*/
+  function checkAll(ele) {
+    if(document.getElementById('delete-all-check').checked) {
+        $('#delete-all-title').text('Delete All');
+    } else {
+        $('#delete-all-title').text('Delete Selected Job');
+    }
+    
+     var checkboxes = document.getElementsByTagName('input');
+     if (ele.checked) {
+         for (var i = 0; i < checkboxes.length; i++) {
+             if (checkboxes[i].type == 'checkbox') {
+                 checkboxes[i].checked = true;
+             }
+         }
+     } else {
+         for (var i = 0; i < checkboxes.length; i++) {
+             console.log(i)
+             if (checkboxes[i].type == 'checkbox') {
+                 checkboxes[i].checked = false;
+             }
+         }
+     }
+ }
+
+var url = window.location.href;    
+if (url.indexOf('?') == -1){
+   url += '?sort_by=job_date&order=DESC';
+   window.location.href = url;
+}
+
+</script>

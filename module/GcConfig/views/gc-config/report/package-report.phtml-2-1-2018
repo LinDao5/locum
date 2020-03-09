@@ -1,0 +1,279 @@
+<?php
+use Gc\User\Package\Collection as PackageCollection;
+use GcConfig\Controller\ReportController as ReportController;
+$reportController = new ReportController();
+$userCollection = new Gc\User\Collection();
+$userProfessional = new Gc\User\Professional\Collection();
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($userCollection->getFreelancerUsers()));
+$paginator->setItemCountPerPage(10);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$allUserByPkg = $userCollection->getFreelancerUsers();
+$pkg = 'gold';
+if (isset($_GET['pkg']) && $_GET['pkg'] == 'silver') {
+    $pkg = 'silver';
+}elseif(isset($_GET['pkg']) && $_GET['pkg'] == 'bronze'){
+    $pkg = 'bronze';
+}
+
+?>
+<form id="filter" action="/report" method="GET">
+    <div class="row">
+        <div class="col-md-3">
+            <select name="package_name" id="pkg_option">
+                <option value="">Please Select Package</option>
+                <?php 
+                    $packageCollection = new PackageCollection();
+                    $packagesList      = $packageCollection->getPackages();
+                    foreach ($packagesList as $packagesModel) {?>
+                    <option value="<?php echo $packagesModel->getId(); ?>"><?php echo $packagesModel->getName(); ?></option>
+                    <?php }
+                ?>
+            </select>
+        </div>        
+        <div class="col-md-2">
+            <input type="hidden"  name="type" value="Package_User">
+            <input id="user_record" type="submit" value="export" style="  margin-top: 0px; float:right;  border: 1px solid #ccc;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px">
+        </div>
+    </div>
+</form>
+<?php 
+    if (isset($_GET['user_record']) && $_GET['user_record']) {
+       echo "<script>alert('No record were found.')</script>";
+    }
+?>
+<hr/>
+<div id="tabs">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($pkg == 'gold') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/report/package-report?pkg=gold">Gold</a></li>
+            <li class="<?php if ($pkg == 'silver') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/report/package-report?pkg=silver">Silver</a></li>
+            <li class="<?php if ($pkg == 'bronze') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/report/package-report?pkg=bronze">Bronze</a></li>
+        </ul>
+    </div>
+    <?php if ($pkg == 'gold') {?>
+        <div id="emp-tab">
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+                    <col width="10%">
+                    <col width="15%">
+                    <col width="15%">
+                    <col width="23%">        
+                    <col width="12%">        
+                    <col width="12%">        
+                    <col width="13%">        
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Package')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('First Name')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Last Name')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('User Type')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Activation Date')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($allUserByPkg as $user): 
+                        $activationDateArray = $reportController->getPkgActivationDateFre($user->getId());
+                            if ($user->getUserAclPackageId() == 1) {
+                    ?>
+                        <tr>
+                            <?php 
+                                foreach ($packagesList as $packagesModel) {
+                                    if ($packagesModel->getId() == $user->getUserAclPackageId()) { ?>
+                                       <td><?php echo $this->escapeHtml($packagesModel->getName()); ?></td>
+                            <?php   }
+                                }
+                            ?>                
+                            <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                            <?php 
+                                if ($user->getUserAclProfessionId() != '') {
+                                    $profInfo = $userProfessional->getProfessionalById($user->getUserAclProfessionId());
+                                    foreach ($profInfo as $key => $profInfo) {
+                                        $profName = $profInfo->getName();
+                                    }
+                                }
+                            ?>
+                            <td><?php echo $this->escapeHtml($profName); ?></td>
+                            <?php 
+                                if($user->getUserAclRoleId() == 2){
+                                    $userType = 'Freelancer';
+                                }elseif ($user->getUserAclRoleId() == 3) {
+                                    $userType = 'Employer';
+                                } 
+                            ?>
+                            <td><?php echo $this->escapeHtml($userType); ?></td>
+                            <td><?php echo $this->escapeHtml($activationDateArray['package_active_date']); ?></td>
+                        </tr>
+                    <?php } endforeach; ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php //echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/package-report'));?>
+            </div>
+            <script type="text/javascript">
+                $("#pkg_option").val(1);
+            </script>
+        </div>
+        <?php }elseif($pkg == 'silver'){ ?>
+            <div id="fre-tab">
+                <table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <col width="10%">
+                        <col width="15%">
+                        <col width="15%">
+                        <col width="23%">        
+                        <col width="12%">        
+                        <col width="12%">        
+                        <col width="13%">            
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th><?php echo $this->escapeHtml($this->translate('Package')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('First Name')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Last Name')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('User Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Activation Date')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                            foreach ($allUserByPkg as $user): 
+                                $activationDateArray = $reportController->getPkgActivationDateFre($user->getId());
+                                if ($user->getUserAclPackageId() == 2) {
+                        ?>
+                            <tr>
+                                <?php 
+                                    foreach ($packagesList as $packagesModel) {
+                                        if ($packagesModel->getId() == $user->getUserAclPackageId()) { ?>
+                                           <td><?php echo $this->escapeHtml($packagesModel->getName()); ?></td>
+                                <?php   }
+                                    }
+                                ?>                
+                                <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                                <?php 
+                                    if ($user->getUserAclProfessionId() != '') {
+                                        $profInfo = $userProfessional->getProfessionalById($user->getUserAclProfessionId());
+                                        foreach ($profInfo as $key => $profInfo) {
+                                            $profName = $profInfo->getName();
+                                        }
+                                    }
+                                ?>
+                                <td><?php echo $this->escapeHtml($profName); ?></td>
+                                <?php 
+                                    if($user->getUserAclRoleId() == 2){
+                                        $userType = 'Freelancer';
+                                    }elseif ($user->getUserAclRoleId() == 3) {
+                                        $userType = 'Employer';
+                                    } 
+                                ?>
+                                <td><?php echo $this->escapeHtml($userType); ?></td>
+                                <td><?php echo $this->escapeHtml($activationDateArray['package_active_date']); ?></td>
+                            </tr>
+                        <?php } endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php //echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/package-report'));?>
+                </div>
+                <script type="text/javascript">
+                    $("#pkg_option").val(2);
+                </script>
+            </div>
+        <?php }elseif($pkg == 'bronze'){ ?>
+            <div id="fre-tab">
+                <table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <col width="10%">
+                        <col width="15%">
+                        <col width="15%">
+                        <col width="23%">        
+                        <col width="12%">        
+                        <col width="12%">        
+                        <col width="13%">        
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th><?php echo $this->escapeHtml($this->translate('Package')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('First Name')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Last Name')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('User Type')); ?></th>
+                            <th><?php echo $this->escapeHtml($this->translate('Activation Date')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                            foreach ($allUserByPkg as $user):
+                                $activationDateArray = $reportController->getPkgActivationDateFre($user->getId()); 
+                                if ($user->getUserAclPackageId() == 3) {
+                        ?>
+                            <tr>
+                                <?php 
+                                    foreach ($packagesList as $packagesModel) {
+                                        if ($packagesModel->getId() == $user->getUserAclPackageId()) { ?>
+                                           <td><?php echo $this->escapeHtml($packagesModel->getName()); ?></td>
+                                <?php   }
+                                    }
+                                ?>                
+                                <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                                <?php 
+                                    if ($user->getUserAclProfessionId() != '') {
+                                        $profInfo = $userProfessional->getProfessionalById($user->getUserAclProfessionId());
+                                        foreach ($profInfo as $key => $profInfo) {
+                                            $profName = $profInfo->getName();
+                                        }
+                                    }
+                                ?>
+                                <td><?php echo $this->escapeHtml($profName); ?></td>
+                                <?php 
+                                    if($user->getUserAclRoleId() == 2){
+                                        $userType = 'Freelancer';
+                                    }elseif ($user->getUserAclRoleId() == 3) {
+                                        $userType = 'Employer';
+                                    } 
+                                ?>
+                                <td><?php echo $this->escapeHtml($userType); ?></td>
+                                <td><?php echo $this->escapeHtml($activationDateArray['package_active_date']); ?></td>
+                            </tr>
+                        <?php } endforeach; ?>
+                    </tbody>
+                </table>
+                <div class="pagination">
+                     <?php //echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/package-report'));?>
+                </div>
+                <script type="text/javascript">
+                    $("#pkg_option").val(3);
+                </script>
+            </div>
+        <?php } ?>
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+<style type="text/css">
+    select {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+    form#filter {
+        background: #f0f0f0;
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid;
+    }
+</style>
+

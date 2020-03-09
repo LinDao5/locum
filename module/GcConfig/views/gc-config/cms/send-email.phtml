@@ -1,0 +1,163 @@
+<?php
+/**
+ * Design & develop by Suraj Wasnik (suraj.wasnik0126@gmail.com) at Fudugo Solutions
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<script type="text/javascript" src="/backend/assets/datatypes/textrich/ckeditor.js"></script>
+<script type="text/javascript" src="/backend/assets/datatypes/textrich/ckeditor-adapters-jquery.js"></script>   
+<?php echo $this->form()->openTag($this->form); ?>
+    <?php if($this->form->getFieldsets()){ $fieldsets = $this->form->getFieldsets(); ?>
+
+    <div id="accordion">
+        <?php $j=1;  foreach ($fieldsets as $fieldset): ?>
+            <h3><?php echo $this->escapeHtml($this->translate($fieldset->getLabel())); ?></h3>
+            <div>
+                <?php
+                    $i=1; 
+                    foreach ($fieldset->getElements() as $element): ?>
+                    <div class="form-group ">
+                        <?php echo $this->formLabel($element); ?>
+
+                        <div class="col-lg-10 <?php if($i == 1 && ($j ==1 || $j == 2 )){ echo "email-box";} ?>">
+                            <?php if($i == 1 && $fieldset->getLabel() == 'Email Manager Site user'){ ?>
+                                
+                                <select id="filter_by_user_type" class="form-control" onchange="fetchUser(this.value);">
+                                <option value="0">All</option>
+                                    <?php foreach ($this->professions as $profession) { ?>
+                                    <option value='{"pro":<?php echo $profession->getId() ;?>,"role":0}'> <?php echo $profnm = $profession->getName() ?> All</option>
+                                    <?php } ?>
+                                <?php foreach ($this->professions as $profession) { // freelancer ?>
+                                    <option value='{"pro":<?php echo $profession->getId() ;?>,"role":2}'> <?php echo $profnm = $profession->getName() ?> Freelancers All</option>
+                                <?php } ?>
+                                <?php foreach ($this->professions as $profession) { // Employer ?>
+                                    <option value='{"pro":<?php echo $profession->getId() ;?>,"role":3}'> <?php echo $profnm = $profession->getName() ?> Employers All</option>
+                                <?php } ?>
+                            </select>
+                                
+                               <!--- <select id="filter_by_user_type" class="form-control" onchange="fetchUser(this.value);">
+                                    <option value="0">All</option>
+                                    <option value="1">Opticians ALL</option>
+                                    <option value="2">Pharmacist All</option>
+                                    <option value="3">Dentist All</option>
+                                    <option value="4">Opticians employers All</option>
+                                    <option value="5">Opticians freelancers All</option>
+                                    <option value="6">Dentist employers All</option>
+                                    <option value="7">Dentist freelancers All</option>
+                                    <option value="8">Pharmacist employers All</option>
+                                    <option value="9">Pharmacist freelancers All</option>
+                                </select>--->
+                                
+                                
+                                <label class="required control-label col-lg-2 email-list" style="    color: #00a9e0;cursor: pointer;"><input type="checkbox" id="select_all_user_email" class="form-control" >Select All</label>
+                            <?php }elseif($i == 1 && $fieldset->getLabel() == 'Email Manager Subscibe user'){ ?>                                
+                                <label class="required control-label col-lg-2 email-list" style="    color: #00a9e0;cursor: pointer;"><input type="checkbox" id="select_all_subscriber_email" class="form-control" >Select All</label>
+                            <?php } ?>
+                            <?php 
+                                $email_finder1 = $element->getAttributes();                                
+                                $email_finder = $email_finder1['name'];                                
+                                if ($email_finder == 'email') {
+                                    //use Gc\User\Collection as UserCollection;
+                                    $userCollection = new Gc\User\Mailchimp\Collection();
+                                    $userList = $userCollection->getSubscribeUsers();
+                                    foreach ($userList as $userModel) {
+                                ?>
+                                        <label class="required control-label col-lg-2 email-list"><input type="checkbox" name="email[]" id="email" class="form-control checkBoxClassSubscriber" value="<?php echo $userModel->getEmail(); ?>"><?php echo $userModel->getEmail(); ?></label>                                        
+                                <?php  }  ?>
+                            <?php  }elseif($email_finder == 'email_user'){
+                                    $userCollection = new Gc\User\Collection();
+                                    $userList = $userCollection->getUsers();
+                                    echo "<div id='all_u_email'>";
+                                    foreach ($userList as $userModel) {  ?>
+                                        <label class="required control-label col-lg-2 email-list"><input type="checkbox" name="email[]" id="email" class="form-control checkBoxClassUser" value="<?php echo $userModel->getEmail(); ?>"><?php echo $userModel->getEmail(); ?></label>
+                                <?php  
+                                    }  
+                                    echo "</div>";
+                                ?>
+                            <?php  }else{  ?>
+                                <?php echo $this->formElement($element); ?>
+                                <?php echo $this->formElementErrors($element, array('class' => 'text-danger')); ?>
+                            <?php } ?>
+                        </div>
+                    </div>
+                <?php $i++; endforeach; ?>
+                <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Send')); ?>" name="submit" style="margin-top:10px;">
+            </div>
+        <?php $j++;  endforeach; ?>
+        
+        
+    </div>
+    
+    
+<?php echo $this->form()->closeTag($this->form); } ?>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    $('#accordion').accordion({
+        heightStyle: "content",
+        collapsible: true
+    });
+});
+</script>
+ <script type="text/javascript">
+$(function () {
+    var config = {
+        skin: "moono",
+        toolbar: [['Source', 'Save', 'NewPage', 'DocProps', 'Preview', 'Print', 'Templates'], ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', 'Undo', 'Redo'], ['Find', 'Replace', 'SelectAll', 'SpellChecker', 'Scayt'], ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField'], ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', 'RemoveFormat'], ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote', 'CreateDiv', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', 'BidiLtr', 'BidiRtl'], ['Link', 'Unlink', 'Anchor'], ['Image', 'Flash', 'Table', 'HorizontalRule', 'Smiley', 'SpecialChar', 'PageBreak', 'Iframe'], ['Styles', 'Format', 'Font', 'FontSize'], ['TextColor', 'BGColor'], ['Maximize', 'ShowBlocks', 'About'],],
+        allowedContent: true
+    };
+
+    $("#mail_message").ckeditor(config)
+    .ckeditor(function () {
+        this.addCommand("saveDocument",
+        {
+            exec : function (editor, data) {
+                $("#input-save").click();
+            }
+        });
+        this.keystrokeHandler.keystrokes[CKEDITOR.CTRL + 83 /* S */] =  "saveDocument";
+    });
+    $("textarea#marketing_mail_message").ckeditor(config)
+    .ckeditor(function () {
+        this.addCommand("saveDocument",
+        {
+            exec : function (editor, data) {
+                $("#input-save").click();
+            }
+        });
+        this.keystrokeHandler.keystrokes[CKEDITOR.CTRL + 83 /* S */] =  "saveDocument";
+    });
+});
+</script>
+<script type="text/javascript">
+    function fetchUser(filter_id){
+        $("div#all_u_email").html('');
+        $("div#all_u_email").html('<h3 style="text-align:center;"><img src="/public/frontend/images/loader.gif"> Please wait... </h3>');
+        $.ajax({            
+            'url'   :'/admin/config/email-filter',
+            'type'  :'POST',
+            'data'  :{'filter_id':filter_id},
+            'success':function(result){    
+                $("#select_all_email").prop('checked',false);
+                $("div#all_u_email").html('');             
+                $("div#all_u_email").html(result);
+            }
+        });
+    }
+    $(document).ready(function () {
+        $("#select_all_subscriber_email").click(function () {            
+            $(".checkBoxClassSubscriber").prop('checked', $(this).prop('checked'));
+        });
+        $("#select_all_user_email").click(function () {            
+            $(".checkBoxClassUser").prop('checked', $(this).prop('checked'));
+        });
+    });
+</script>
+<style type="text/css">
+    div#all_u_email{
+        display: block;
+        float: left;
+    }
+</style>

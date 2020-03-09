@@ -1,0 +1,222 @@
+<?php
+/**
+ * Develop By Suraj Wasnik( suraj.wasnik0126@gmail.com ) at FuduGo Solutions
+ */
+
+namespace GcConfig\Form;
+
+use Gc\Form\AbstractForm;
+use Zend\Form\Element;
+use Zend\InputFilter\Factory as InputFilterFactory;
+
+/**
+ * FinanceTax form
+ *
+ * @category   Gc_Application
+ * @FinanceTax    GcConfig
+ * @subFinanceTax Form
+ */
+class FinanceTax extends AbstractForm
+{
+    /**
+     * Initialize FinanceTax form
+     *
+     * @return void
+     */
+    public function init()
+    {
+        $inputFilterFactory = new InputFilterFactory();
+        $inputFilter        = $inputFilterFactory->createInputFilter(
+            array(
+                'finance_year' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),
+                'personal_allowance_rate' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'personal_allowance_rate_tax' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'basic_rate' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'basic_rate_tax' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'higher_rate' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'higher_rate_tax' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'additional_rate' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'additional_rate_tax' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),  
+                'company_limited_tax' => array(
+                    'required' => true,
+                    'validators' => array(
+                        array('name' => 'not_empty'),
+                    ),
+                ),       
+            )
+        );
+
+        $this->setInputFilter($inputFilter);
+
+        $finance_year = new Element\Select('finance_year');
+        $finance_year->setLabel('Financial Year')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',                    
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'finance_year');
+        $currentYear = date('Y');
+        $finance_year_option = array(
+                $currentYear.'-'.($currentYear+1) => $currentYear.'-'.($currentYear+1), 
+                ($currentYear+1).'-'.($currentYear+2) => ($currentYear+1).'-'.($currentYear+2) 
+            );
+        $finance_year->setValueOptions($finance_year_option);
+        $this->add($finance_year);
+
+        $personal_allowance_rate = new Element\Text('personal_allowance_rate');
+        $personal_allowance_rate->setLabel('Personal Allowance')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Max rate')
+            ->setAttribute('id', 'personal_allowance_rate');
+        $this->add($personal_allowance_rate);
+
+        $personal_allowance_rate_tax = new Element\Text('personal_allowance_rate_tax');
+        $personal_allowance_rate_tax->setLabel('Personal Allowance Tax %')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Tax %')
+            ->setAttribute('id', 'personal_allowance_rate_tax');
+        $this->add($personal_allowance_rate_tax);
+
+        $basic_rate_rate = new Element\Text('basic_rate');
+        $basic_rate_rate->setLabel('Basic Rate')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Max rate')
+            ->setAttribute('id', 'basic_rate');
+        $this->add($basic_rate_rate);
+
+        $basic_rate_rate_tax = new Element\Text('basic_rate_tax');
+        $basic_rate_rate_tax->setLabel('Basic Rate Tax %')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Tax %')
+            ->setAttribute('id', 'basic_rate_tax');
+        $this->add($basic_rate_rate_tax);
+
+        $higher_rate_rate = new Element\Text('higher_rate');
+        $higher_rate_rate->setLabel('Higher Rate')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Max rate')
+            ->setAttribute('id', 'higher_rate');
+        $this->add($higher_rate_rate);
+
+        $higher_rate_rate_tax = new Element\Text('higher_rate_tax');
+        $higher_rate_rate_tax->setLabel('Higher Rate Tax %')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Tax %')
+            ->setAttribute('id', 'higher_rate_tax');
+        $this->add($higher_rate_rate_tax);
+
+        $additional_rate = new Element\Text('additional_rate');
+        $additional_rate->setLabel('Additional Rate')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Over min rate')
+            ->setAttribute('id', 'additional_rate');
+        $this->add($additional_rate);
+
+        $additional_rate_tax = new Element\Text('additional_rate_tax');
+        $additional_rate_tax->setLabel('Additional Rate Tax %')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('placeholder', 'Tax %')
+            ->setAttribute('id', 'additional_rate_tax');
+        $this->add($additional_rate_tax);
+
+        $company_limited_tax = new Element\Text('company_limited_tax');
+        $company_limited_tax->setLabel('Company Limited Tax %')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'company_limited_tax');
+        $this->add($company_limited_tax);
+    }
+
+    
+}

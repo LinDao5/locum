@@ -1,0 +1,221 @@
+    <div class="col-md-9" style="padding-right: 15px;padding-bottom: 25px;" >
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="add_item text-left pb30">
+                    <div class="col-md-12 pad0">
+                        <div class="text-center finance-page-head" style="font-size:20pt">DAY TO DAY PRACTICE MATTERS
+
+                        </div>
+                    </div>
+                    <div class="col-md-12 pad0">
+                        <div  class="add_item_form form-inline">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="practice_name" style="padding-top: 6px;">Practice name</label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="practice_name" id="practice_name" placeholder="Please enter practice name" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12 no_field">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="date">Date</label>
+                                        <i class="fa fa-asterisk required-stars" aria-hidden="true"></i></div>
+                                    <div class="col-md-7">
+                                        <div class="input-group date
+                                                form_date" data-date="" data-date-format="dd MM
+                                                yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                                            <span class="input-group-addon"><span
+                                                        class="glyphicon
+                                                        glyphicon-calendar"></span></span>
+                                            <input class="form-control
+                                                    readonly hasDatepicker" size="10" type="date" value="" name="date" id="date" placeholder="dd/mm/yyyy" maxlength="4" autocomplete="off" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="issue">Issue</label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="issue" id="issue" placeholder="Please type the matter of concern">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;"><label for="notes">Notes</label></div>
+                                    <div class="col-md-7"><input type="text" class="form-control" name="notes" id="notes" placeholder="Please enter additonal notes here"></div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;"><label for="notes">Action Required</label></div>
+                                    <div class="col-md-7"><input type="text" class="form-control" name="action_required" id="action_required" placeholder="Please enter action Required"></div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4"></div>
+                                    <div class="col-md-7">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input name="reminder_check"
+                                                        id="reminder_check"
+                                                        value="1"
+                                                        type="checkbox">
+                                                    Reminder needed
+                                                </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 new_bank_date no_field" style="display: none" id="reminder_datebox">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="reminder_date" >Reminder Needed Date</label>
+                                        <i class="fa fa-asterisk required-stars" style="padding-top: 6px;" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group date
+                                                form_date" data-date="" data-date-format="dd MM
+                                                yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                                            <input class="form-control readonly hasDatepicker"  type="date" value="" name="reminder_date" id="reminder_date" placeholder="dd/mm/yyyy" required="" maxlength="10" autocomplete="off" style="text-align: center">
+                                        </div>
+                                        <input type="hidden" id="dtp_input2" value="">
+                                        <br>
+                                    </div>
+                                    <div class="col-md-1" style="padding-top: 6px;">
+                                        <label for="reminder_time" style="margin-left: 10px;">Time</label>
+                                        <i class="fa fa-asterisk required-stars" style="padding-top: 6px;right: -2px;" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group date form_date" >
+                                            <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+                                            <input class="form-control"  type="time" name="reminder_time" id="reminder_time" autocomplete="off" style="text-align: center">
+                                        </div>
+                                        <br>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="checkbox col-md-4" style="padding-top: 6px;">
+                                        <label style="float: right;">
+                                                Completed
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7" style="padding-top: 3px">
+                                         <input name="completed_tick"
+                                                    id="completed_tick"
+                                                    type="checkbox" >
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+
+                            <div class="col-md-12" style="padding-top: 20px;">
+                                <div class="form-group text-center">
+                                    <button id="submit" class="read-common-btn grad_btn" style="display: inline">Submit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+        <script type="text/javascript">
+            $('#reminder_check').click(function(){
+                if (!$('#reminder_check')[0].checked){
+
+                    $('#reminder_datebox').css('display', 'none');
+                }
+                else{
+                    $('#reminder_datebox').css('display', 'block');
+                }
+            })
+            
+
+            $('#submit').click(function(){
+                if ($('date').val() == "") return;
+                var postdata = {
+                    'practice_name' : $('#practice_name').val(),
+                    'date' : $('#date').val(),
+                    'issue' : $('#issue').val(),
+                    'notes' : $('#notes').val(),
+                    'action_required' : $('#action_required').val(),
+                    'reminder_date' : $('#reminder_check')[0].checked ? $('#reminder_date').val() + ' ' + $('#reminder_time').val() : '',
+                    'completed_tick' : $('#completed_tick')[0].checked ? 1 : 0
+                }
+
+                $.ajax({
+                    url : '<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/add3post',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    async: true,
+                    data: {'data': postdata},
+                    beforeSend : function() {
+                        /* Logic before ajax request sent */
+                    },
+                    success: function(data){
+                        if (data.success && data.success == 1) window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list3');
+                        else confirm('error');
+                    },
+                    error : function(xhr, textStatus, errorThrown) {
+                        if (xhr.status === 0) {
+                            alert('Not connect.\n Verify Network.');
+                        } else if (xhr.status == 404) {
+                            alert('Requested page not found. [404]');
+                        } else if (xhr.status == 500) {
+                            alert('Server Error [500].');
+                        } else if (errorThrown === 'parsererror') {
+                            alert('Requested JSON parse failed.');
+                        } else if (errorThrown === 'timeout') {
+                            alert('Time out error.');
+                        } else if (errorThrown === 'abort') {
+                            alert('Ajax request aborted.');
+                        } else {
+                            alert('There was some error. Try again.');
+                        }
+                    }
+                });
+            });
+
+            $(document).ready(function() {
+                $('#questionaire1_listbtn').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list1');
+                });
+                $('#practice_matters').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list2');
+                });
+                $('#daytoday_practice').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list3');
+                });
+                $('#localarea_protocols').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list4');
+                });
+                $('#practice_checklist').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/1');
+                });
+                $('#follow_up').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list6');
+                });
+            })
+
+        </script>
+
+</html>

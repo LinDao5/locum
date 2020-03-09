@@ -1,0 +1,194 @@
+<style>
+    td{
+        padding: 10px;
+        font-size: 14px;
+    }
+</style>
+<?php
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$currency = $this->config()->get('site_currency'); ?>
+
+
+                        
+<div class="page-content">
+<div class="col-md-1 col-sm-1"></div>
+    <div class="col-md-10 col-sm-10 finproloss">
+        <form id="profitlossform" method="post">
+                                                                                        
+        <table width="50%" border="1" cellspacing="0" cellpadding="0" id="table_wrapper" align="center">
+        <tr>
+            <td colspan="2" align="center" class="col-md-12"><h3 class="mar0">PROFIT AND LOSS</h3></td>
+        </tr>
+                
+        <tr><td colspan="2" class="pad0">
+            
+            <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+            <tbody>
+            <tr>
+                <td class="col-md-3" align="center">Year: <?php echo $year ; ?></td>
+                <td class="col-md-3" align="center">User No. <?php echo $userData->getId() ; ?></td>
+                <td class="col-md-3" align="center"><?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?></td> 
+                <td class="col-md-3" align="center"><?php echo $userData->getEmail() ; ?></td>
+            </tbody>
+            </table>
+            
+        </tr>
+                    
+        <?php if($revenue1 == ''){ ?>
+            <tr>
+                <td colspan="2" align="center" class="col-md-12">Data Not Available</td>
+            </tr>
+        <?php }else { ?>
+        
+        
+        
+        
+
+        
+            <tr>
+                <td class="col-md-6">Revenue</td>
+                <td class="col-md-6"><?php  $revenue = $revenue1;
+                    echo $currency.$financeHelper->setPriceFormate($revenue);  ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Cost of Sales</td>
+                <td class="col-md-6"><?php $cos = $cos1;  echo $currency.$financeHelper->setPriceFormate($cos);?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Gross Profit</td>
+                <td class="col-md-6"><?php $gross = $revenue - $cos ; echo $currency.$financeHelper->setPriceFormate($gross); ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">GP %</td>
+                <td class="col-md-6"><?php $grossper = $gross/$revenue ;  echo $currency.$financeHelper->setPriceFormate($grossper); ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Administrative expenses</td>
+                <td class="col-md-6"><?php $othercost = $othercost1;  echo $currency.$financeHelper->setPriceFormate($othercost); ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Profit from operations</td>
+                <td class="col-md-6"><?php $pfo = $gross-$othercost ;  echo $currency.$financeHelper->setPriceFormate($pfo);  ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">OP %</td>
+                <td class="col-md-6"><?php $op = $pfo/$revenue ; echo $currency.$financeHelper->setPriceFormate($op); ?></td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Interest income</td>
+                <td class="col-md-6" id="inin">
+                   <div class="input-group">
+                        <span class="input-group-addon">£</span>
+                        <input id="interestincome" name="interestincome" type="number" value="<?php echo @$interest_income ? $interest_income : '' ?>" placeholder="Interest Income" class="form-control" required>
+                   </div>
+                </td>
+            </tr>
+            <tr>
+               <td class="col-md-6">Profit before taxs</td>
+                <td class="col-md-6" id="pbt">N/A
+                </td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Income tax</td>
+                <td class="col-md-6"><?php  echo $currency.$financeHelper->setPriceFormate(htmlentities($totaltax));?>  </td>
+            </tr>
+            <tr>
+                <td class="col-md-6">Profit after tax</td>
+                <td class="col-md-6" id="pat">N/A</td>
+            </tr>
+        <?php } ?>
+    </table>
+            <div class="form-group">
+                <input type="hidden" value="<?php echo $revenue1;?>" name="revenue"/>
+                <input type="hidden" value="<?php echo $totaltax;?>" name="totaltax"/>
+                <input type="hidden" value="<?php echo $year;?>" name="year"/>
+                <input type="hidden" value="<?php echo $userData->getId() ; ?>" name="fre_id"/>
+                <input type="hidden" value="<?php echo $cos1;?>" name="cos"/>
+                <input type="hidden" value="<?php echo $othercost1;?>" name="othercost"/>
+                <div class="col-md-12 mart15 marb15 text-right pad0">
+                        <?php if($post1 == 1) { ?>
+                            <button type="button"  id="btnExport"  class="btn btn-info">Export to xls</button>
+                            <!--<button type="button"  id="cmd" class="btn btn-info">generate PDF</button>-->
+                        <?php }else { ?>
+                            <button type="submit" onclick=" return confirm('Are You Sure ?')" class="btn btn-info "><?php echo @$interest_income ? 'Update' : 'Save' ; ?>  & Continue</button>
+                        <?php } ?>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-1 col-sm-1"></div>
+</div>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jspdf/0.9.0rc1/jspdf.min.js"></script>
+    <script>
+        $( document ).ready(function() {
+            <?php if(isset($interest_income)){ ?> gaeval1();  <?php } ?>
+            <?php if($post1 == 1){ ?> aftersave(); <?php } ?>
+            $("#interestincome").keyup(function(){  gaeval1();   });
+
+            function gaeval1(){
+                var totaltax =  '<?php echo $totaltax ;?>';
+                var pfo =  '<?php echo $pfo ;?>';
+                var inin =  $("#interestincome").val();
+                if(inin == ''){
+                    $("#pbt,#pat").html('N/A');
+                }else{
+                    var income = parseFloat(pfo) + parseFloat(inin);
+                    var pat = parseFloat(income) + parseFloat(totaltax);
+                    $("#pbt").html('£'+ parseFloat(income).toFixed(2));
+                    $("#pat").html('£'+ parseFloat(pat).toFixed(2));
+                }
+            }
+            function aftersave(){
+                var inin =  $("#interestincome").val();
+                $("#inin").html('£'+inin);
+                $("#interestincome").remove();
+            }
+            $(document).ready(function() {
+                $("#btnExport").click(function(e) {
+                    e.preventDefault();
+
+                    //getting data from our table
+                    var data_type = 'data:application/vnd.ms-excel';
+                    var table_div = document.getElementById('table_wrapper');
+                    var table_html = table_div.outerHTML.replace(/ /g, '%20');
+
+                    var a = document.createElement('a');
+                    a.href = data_type + ', ' + table_html;
+                    a.download = 'exported_table_' + Math.floor((Math.random() * 9999999) + 1000000) + '.xls';
+                    a.click();
+                });
+            });
+
+            var doc = new jsPDF();
+            var specialElementHandlers = {
+                '#editor': function (element, renderer) {
+                    return true;
+                }
+            };
+
+            $('#cmd').click(function () {
+                doc.fromHTML($('#table_wrapper').html(), 15, 15, {
+                    'width': 170,
+                    'elementHandlers': specialElementHandlers
+                });
+                doc.save('sample-file.pdf');
+            });
+        });
+
+    </script>
+<style>
+.mar0 { margin:0;}
+.pad0 { padding:0;}
+.mart15 { margin-top:15px;}
+.marb15 { margin-bottom:15px;}
+.finproloss table { width:100% !important;}
+/*.finproloss table:first-child {
+	border: 1px solid;
+	border-bottom:0;
+}
+.finproloss table:first-child tr:first-child{
+  border-bottom: 1px solid;
+}
+*/</style>

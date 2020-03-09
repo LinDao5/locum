@@ -1,0 +1,122 @@
+<?php
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2){
+        $uid=$_SESSION['user_id'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>";
+    }
+    $currency = $this->config()->get('site_currency');
+    $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+    $filter = isset($_GET['weekly-transaction-filter']) ? $_GET['weekly-transaction-filter'] : 'year';
+    $cyear[] = $financeHelper->getMonthFinancialYear($uid , $financialYear);
+    if($filter == 'year'){ $cyear = $financeHelper->Getlast3year($uid,$financialYear); }
+
+    $cyear=array_reverse($cyear);
+    foreach($cyear as $year){
+
+    	/* $expenseWeekdata = $financeHelper->chartGetTransWeekly($uid,$year,'expense');
+        $expenseWeekchart[] = $expenseWeekdata['chart'];
+        $expenseWeek[] = $expenseWeekdata['data'];*/
+
+        $incomeWeekdata = $financeHelper->chartGetTransWeekly($uid,$year,'income');
+        $incomeWeekchart[] = $incomeWeekdata['chart'];
+        $incomeWeek[] = $incomeWeekdata['data'];
+    }
+    $m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+?>
+<div class="pad0 marb20 canvas-scroll-x">
+    <div class=" cash_man_chart canvas-scroll-x">
+        <div style="border:1px solid #dedede;height:315px">
+            <canvas id="myChart" height="200" class="well"></canvas>
+            <div id="myChart-legend" class="chart-legend"></div>
+        </div>
+    </div>
+    <!-- <div class="col-md-6 cash_man_chart">
+        <div style="border:1px solid #dedede;height:315px">
+            <canvas id="myChart2" height="200" class="well"></canvas>
+            <div id="myChart2-legend" class="chart-legend"></div>
+        </div>
+    </div> -->
+</div>
+<div class="cash_table">
+    <div class="table-responsive table-responsive-scroll">                 
+        <table class="table table-striped income_sum_table" id="example">
+            <thead>
+                <tr>
+                    <th class="col-md-1">&nbsp;</th>
+                    <?php   if (!empty($incomeWeek)) :
+                    foreach($incomeWeek[0] as $income){ ?>
+                    <th><?php echo substr($income['day'],0,1); ?></th>
+                    <?php   }
+                    endif; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $j = 0 ;  foreach($cyear as $year){ ?>
+                    <tr>
+                        <td><b><?php echo $year ; ?></b></td>
+                        <?php   if (!empty($incomeWeek)) :
+                            foreach($incomeWeek[$j] as $income){ ?>
+                                <td><?php echo $currency.$financeHelper->setPriceFormate($income['bank_yes']); ?></td>
+                            <?php   }
+                        endif; ?>
+                    </tr>
+                <?php   $j++;  }  ?>
+            </tbody>
+        </table>
+        <?php  if (empty($incomeWeek)) {  echo '<h4 class="no-finance-record">Data Not Found</h4>';  } ?>
+    </div>
+</div>
+
+
+<script>
+    function detailDescription(description) {
+        $('#detail-description .modal-body').html('<p>'+description+'</p>');
+        $('#detail-description').modal('show');
+    }
+    $(document).ready(function() {
+        $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+            var data_x = <?php echo json_encode($incomeWeekchart[0][0]) ?>;
+            <?php $j = 0 ;  foreach($cyear as $year){ ?>
+            var paidincome<?php echo $j;?> = <?php echo json_encode($incomeWeekchart[$j][1]) ?>;
+            <?php   $j++;  }  ?>
+            var data = {
+                labels : data_x,
+                datasets : [
+                    <?php $j = 0 ;  foreach($cyear as $year){
+    $colour = ''; if($j == 0){ $colour ='#4F81BD'; }elseif($j == 1){ $colour ='#C0504D'; }elseif($j == 2){ $colour ='#50B948'; } ?>
+                    {
+                        label: "<?php echo $year ;?>",
+                        fillColor : "<?php echo $colour ;?>",
+                        strokeColor : "<?php echo $colour ;?>",
+                        pointColor : "<?php echo $colour ;?>",
+                        pointStrokeColor : "<?php echo $colour ;?>",
+                        data : paidincome<?php echo $j ; ?>
+                    },
+                    <?php   $j++;  }  ?>
+                ]
+            };
+
+            var options = {
+                animation: true,
+                datasetFill: false,
+                pointDot: true,
+                multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+                bezierCurve: false,
+                tooltipTemplate: "<%= label %> : <?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+                /* barValueSpacing: 15*/
+            };
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart").getContext("2d");
+            var myChart = new Chart(ctx).Bar(data,options);
+            document.getElementById('myChart-legend').innerHTML = myChart.generateLegend();
+        })
+    });
+
+</script>
+
+

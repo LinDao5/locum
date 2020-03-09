@@ -1,0 +1,110 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+use Gc\User\Package\Collection as PackageCollection;
+$userCollection = new Gc\User\Collection();
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($userCollection->getFreelancerUsers()));
+$paginator->setItemCountPerPage(10);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+?>
+<form id="filter" action="/report" method="GET">
+    <div class="row">
+        <div class="col-md-3">
+            <select name="package_name">
+                <option value="">Please Select Package</option>
+                <?php 
+                    $packageCollection = new PackageCollection();
+                    $packagesList      = $packageCollection->getPackages();
+                    foreach ($packagesList as $packagesModel) {?>
+                    <option value="<?php echo $packagesModel->getId(); ?>"><?php echo $packagesModel->getName(); ?></option>
+                    <?php }
+                ?>
+            </select>
+        </div>        
+        <div class="col-md-2">
+            <input type="hidden"  name="type" value="Package_User">
+            <input id="user_record" type="submit" value="export" style="  margin-top: 0px; float:right;  border: 1px solid #ccc;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px">
+        </div>
+    </div>
+</form>
+<?php 
+    if (isset($_GET['user_record']) && $_GET['user_record']) {
+       echo "<script>alert('No record were found.')</script>";
+    }
+?>
+<hr/>
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="15%">
+        <col width="25%">
+        <col width="25%">
+        <col width="25%">        
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('Package')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('First Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Last Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php           
+            
+            foreach ($paginator as $user): ?>
+            <tr>
+                <?php 
+                    foreach ($packagesList as $packagesModel) {
+                        if ($packagesModel->getId() == $user->getUserAclPackageId()) { ?>
+                           <td><?php echo $this->escapeHtml($packagesModel->getName()); ?></td>
+                <?php   }
+                    }
+                ?>                
+                <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/package-report'));?>
+</div>
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+<style type="text/css">
+    select {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+</style>
+

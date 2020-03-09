@@ -1,0 +1,92 @@
+<?php if ($this->pageCount): ?>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+    <p class="clearfix">
+        <ul class="paginator-div">
+            <?php 
+                $param = 0;
+                $actual_link = "$_SERVER[REQUEST_URI]";
+                if ((strpos($actual_link,'?') !== false) && !isset($_GET['page'])) {    
+                    $param = 1;
+                } elseif((strpos($actual_link,'&') !== false) && isset($_GET['page'])) {
+                    $param = 1;
+                }else{
+                    $param = 0;
+                }
+               
+            ?>
+            <?php if (isset($this->previous)): 
+                $currentPage = 1;
+                if (isset($_GET['page'])){
+                    $currentPage = $_GET['page'];
+                }
+            ?>           
+            
+               <li class="prev">
+                    <a class="button float right" href="<?php echo $this->escapeHtml($this->path); ?><?php if($param){ echo "&";}else{ echo "?";}?>page=<?php echo $this->first; ?>">
+                        <i class="fa fa-angle-double-left" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <?php if($this->first!=($currentPage-1)): ?>
+                <li class="prev">
+                    <a class="button float right" href="<?php echo $this->escapeHtml($this->path); ?><?php if($param){ echo "&";}else{ echo "?";}?>page=<?php echo $this->previous; ?>">
+                        <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <?php endif; ?>
+            <?php endif; ?>
+        
+            <?php
+            if (isset($this->previous) || isset($this->next)):
+                $currentPage = 1;
+                if (isset($_GET['page'])){
+                    $currentPage = $_GET['page'];
+                }
+                $i= 1;
+                $j= 1;
+                while ($this->pageCount >= $i) {
+                    
+                    if ($i == $currentPage ) {
+                        echo '<li class="active">'.$i.'</li> ';
+                    }else{
+                        
+                        if(($i>=$currentPage) && $j<5){         
+
+                        ?>
+                        <li>
+                            <a class="button float" href="<?php echo $this->escapeHtml($this->path); ?><?php if($param || $param1){ echo "&";}else{ echo "?";}?>page=<?php echo $i; ?>">
+                                <?php echo $i ; ?>
+                            </a>
+                        </li>
+                    <?php
+                    //continue;
+                    $j++;
+                    }else{
+                    //break;
+                   }
+                
+                    }                
+                    
+                    
+                   $i++;
+                }
+            endif;
+            ?>
+            <?php if (isset($this->next)): ?>
+
+                <li class="next">
+                    <a class="button float" href="<?php echo $this->escapeHtml($this->path); ?><?php if ($param || $param1){ echo "&";}else{ echo "?";}?>page=<?php echo $this->next; ?>">
+                        <i class="fa fa-angle-right" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <?php if($this->last!=($currentPage+1)): ?>
+                <li class="next">
+                    <a class="button float" href="<?php echo $this->escapeHtml($this->path); ?><?php if ($param || $param1){ echo "&";}else{ echo "?";}?>page=<?php echo $this->last; ?>">
+                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <?php endif; ?>
+            <?php endif; ?>
+        </ul>
+        
+    </p>
+<?php endif; ?>

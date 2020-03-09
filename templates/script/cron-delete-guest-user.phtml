@@ -1,0 +1,50 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Zend\Db\Sql\Sql;
+	use Gc\Registry;
+    use Gc\User\Model as UserModel;
+	use GcFrontend\Controller\JobmailController as MailController;
+	$mailController = new MailController();
+    
+use GcFrontend\Controller\DbController as DbController;
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+
+    $currentDate = date("Y-m-d");
+    
+	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	/* Get User who are guest from last 1-week */
+	$sqlGetGuestUser = "SELECT id,created_at,lastname,firstname,email from user WHERE active='3'";	
+    $getGuestUser = $adapter->query($sqlGetGuestUser, $adapter::QUERY_MODE_EXECUTE);
+    $guestUsers = $getGuestUser->toArray();
+
+    foreach ($guestUsers as $key => $value) {
+        $createdDate = strtotime($value['created_at']);
+        $Fid = $value['id'];
+        $lastname = $value['lastname'];
+        $firstname = $value['firstname'];
+        $email = $value['email'];
+        $limitDate = date('Y-m-d', strtotime("+8 day", $createdDate));
+    	$notifyDate = date('Y-m-d', strtotime("+7 day", $createdDate));
+        if ($limitDate <= $currentDate && date('G') == '9') {
+            
+            /*Delete record from user table*/
+            $sqlDeleteUser = "DELETE FROM user WHERE id = '$Fid'";  
+            $deleteUser = $adapter->query($sqlDeleteUser, $adapter::QUERY_MODE_EXECUTE);
+
+            /* Delete record from user extra table */
+            $sqlDeleteUserExtra = "DELETE FROM user_extra_info WHERE uid = '$Fid'";  
+            $deleteUserExtra = $adapter->query($sqlDeleteUserExtra, $adapter::QUERY_MODE_EXECUTE);
+
+            /* Delete record from user answer table */
+            $sqlDeleteUserQusAns = "DELETE FROM user_answer WHERE user_id = '$Fid' ";  
+            $deleteUserQusAns = $adapter->query($sqlDeleteUserQusAns, $adapter::QUERY_MODE_EXECUTE);
+            $mailController->sendProfileSuspendNotificationToFreelancer($Fid,$firstname,$lastname,$email,$serverUrl);
+        }
+        
+        if ($notifyDate == $currentDate && date('G') == '9') {
+            $mailController->sendUpdateProfileNotificationToFreelancer($Fid,$firstname,$lastname,$email,$serverUrl );
+        }
+    	
+        //$onDayModule->notificationStatusUpdate($onDayId);
+    }

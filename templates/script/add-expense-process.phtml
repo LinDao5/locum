@@ -1,0 +1,96 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\Expense\Model as ExpenseModel; 
+	use Gc\User\Finance\Model as FinanceModel; 
+	use GcFrontend\Controller\PackagePrivilegesController;
+	$packagePrivilegesController    = new PackagePrivilegesController();
+	$expenseModel = new ExpenseModel();
+	$financeModel = new FinanceModel();
+
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+		$uid=$_SESSION['user_id'];
+	}else{ 
+		$actual_link = $_SERVER[REQUEST_URI];
+		$_SESSION['action_url'] = $actual_link; 
+		$this->redirect()->toUrl('/login-form');
+	}
+
+	$request = $this->getRequest();
+    $post = $request->getPost();
+
+	if($request->isPost() && $post['expense_submit'] == 'expense_submit')
+	{
+	    $post 			= $request->getPost();
+	    $jobId 			= $post->get('ex_job_id');
+	   $jobType 		= $post->get('ex_job_type');
+	    $jobDate 		= $post->get('ex_job_date');
+	    $exCost 		= $post->get('ex_job_cost');
+	    $description 	= $post->get('ex_job_description');
+	    $type 			= $post->get('ex_category');
+	    $isBank 		= $post->get('ex_bank') == 'on' ? 1 : 0;
+	    $bankDate 		= $post->get('ex_bank_date');
+	    $jobDate 		= $jobDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-', $jobDate))) : null;
+	    $bankDate 		= $bankDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-',$bankDate))) : null;
+	    $entryyear = date('Y', strtotime(str_replace('/', '-', $jobDate))) ;  
+	    $expenseData = array(
+	    		'job_id' 		=> $jobId, 
+			'job_type' 		=> $jobType,
+	    		'fre_id' 		=> $uid, 
+	    		'cost' 			=> trim($exCost), 
+	    		'job_date' 		=> $jobDate, 
+	    		'expense_type_id'=> $type, 
+	    		'description' 	=> trim($description), 
+	    		'bank' 			=> $isBank, 
+	    		'bank_date' 	=> $bankDate, 
+	    	);
+	    /*echo "<pre>";
+	    print_r($expenseData);
+	    echo "</pre>";*/
+	    $lastId = $expenseModel->save($expenseData);
+	    $transactionArray = array(
+	    		'trans_type_id' => $lastId,
+	    		'trans_type' => 2,	    		
+	    	);
+	    $financeModel->save($transactionArray);
+	    $this->flashMessenger()->addSuccessMessage('Added successfully');
+	    
+	    if($entryyear != date('Y') && $entryyear!=null){
+    		$this->redirect()->toUrl('/finance-detail?year='.$entryyear);
+    		}else{
+    		$this->redirect()->toUrl('/finance-detail');
+    		}
+	    	    
+	}
+
+
+//use for update
+	if($request->isPost() && $post['expense_submit'] == 'expense_update')
+	{
+	    $post 			= $request->getPost();
+	    $id 		= $post->get('edit_id');
+	    $jobDate 		= $post->get('ex_job_date');
+	    $exCost 		= $post->get('ex_job_cost');
+	    $description 	= $post->get('ex_job_description');
+	    $type 			= $post->get('ex_category');
+	    $isBank 		= $post->get('ex_bank') == 'on' ? 1 : 0;
+	    $bankDate 		= $post->get('ex_bank_date');
+	    $jobDate 		= $jobDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-', $jobDate))) : null;
+	    $bankDate 		= $bankDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-',$bankDate))) : null;
+	    $expenseData = array(
+                'id' => $id ,
+	    		'fre_id' 		=> $uid,
+	    		'cost' 			=> trim($exCost),
+	    		'job_date' 		=> $jobDate,
+	    		'expense_type_id'=> $type,
+	    		'description' 	=> trim($description),
+	    		'bank' 			=> $isBank,
+	    		'bank_date' 	=> $bankDate,
+	    	);
+        $expenseModel->save($expenseData);
+	    $this->flashMessenger()->addSuccessMessage('Updated successfully');
+	//    $this->redirect()->toUrl('/finance-detail');	
+       $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+        return TRUE;
+	}
+
+?>

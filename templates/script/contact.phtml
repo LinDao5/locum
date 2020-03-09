@@ -1,0 +1,29 @@
+<?php
+    date_default_timezone_set('Europe/London');
+$request = $this->getRequest();
+if($request->isPost())
+{
+    $post = $request->getPost();
+    $name = $post->get('name');
+    $email = $post->get('email');
+    echo $message = $post->get('message');
+exit();
+    $answer_hash = $post->get('answer_hash');
+    $answer = substr(sha1($post->get('answer')), 5, 10);
+
+    if($answer != $answer_hash or empty($name) or empty($email) or empty($message))
+    {
+        return array('name' => $name, 'email' => $email, 'message' => $message, 'error_message' => 'Please fill all fields');
+    }
+    else
+    {
+        $mail = new \Gc\Mail('utf-8', $message);
+        $mail->setSubject('Contact details');
+        $mail->setFrom($email, $name);
+        $mail->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'));
+        $mail->send();
+        $this->flashMessenger()->addSuccessMessage('Many thanks for your query. We aim to reply to your query within the next 24-28 hours');
+        $this->redirect()->toUrl('/contact');
+        return true;
+    }
+}

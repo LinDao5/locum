@@ -1,0 +1,104 @@
+ 
+<!-- Alert Message Modal -->
+<div id="alert-modal" class=" alert-modal modal fade" >
+    <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+        <div class="modal-header">
+            <!--<button type="button" class="close hide-pop-up" data-dismiss="modal">&times;</button>-->
+            <h4 class="modal-title">Locumkit</h4>
+        </div>
+        <div class="modal-body" >
+            <h3 id="alert-message"></h3>
+        </div>
+        <div class="modal-footer">
+            <button type="button"  class="close-alert btn btn-default" data-dismiss="modal" onClick="window.location.reload()">Ok</button>
+        </div>
+    </div>
+
+    </div>
+</div> 
+<!-- Alert Message Modal -->
+<div id="alert-confirm-modal" class=" alert-modal modal fade" >
+    <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+        <div class="modal-header">
+            <!-- <button type="button" class="close close-alert" data-dismiss="modal" onClick="window.location.reload()">&times;</button> -->
+            <h4 class="modal-title">Locumkit</h4>
+        </div>
+        <div class="modal-body" >
+            <h3 id="alert-message"></h3>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="confirm">Yes</button>
+            <button type="button" class="close-alert btn btn-default" >No</button>
+        </div>
+    </div>
+
+    </div>
+</div> 
+
+<!-- Modal Manage income bank-->
+<div id="manage-bank-income" class="modal fade financepopup" role="dialog">
+<div class="modal-dialog">
+<form action="" method="post">
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><!--Manage Income Bank Status-->Locumkit</h4>
+    </div>
+    <div class="modal-body">
+        <div class="col-md-12 pad0 financeform">        
+            <div class="form-group" id="bank_date">
+                <div class="pull-left" style="display: none;">
+                    <input name="in_bank" id="modal-in_bank" value="1" type="hidden">  
+                </div>
+                <div class="input-group" id="for-display" style="display: block;">
+                    <p>Please enter the date the transaction hit the bank</p>
+                    <input type="hidden" name="in_bankid" id="in_bankid">
+                    <input type="text" class="form-control financein_bankdate readonly" name="in_bankdate" id="in_bankdate" placeholder="dd/mm/yyyy" required>
+                    <button type="submit" class="btn btn-info" name="income-bank-btn" value="income-bank-btn" id="income-bank-btn" >Submit</button>
+                    </div>
+                </div>  
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>
+                                                
+<!-- Modal Manage expense bank-->
+<div id="manage-bank-expense" class="modal fade financepopup" role="dialog">
+<div class="modal-dialog">
+<form action="" method="post">
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Locumkit</h4>
+    </div>
+    <div class="modal-body">
+        <div class="col-md-12 pad0 financeform">        
+            <div class="form-group" id="bank_date">
+                <div class="pull-left" style="display:none">
+                    <input name="ex_bank" id="modal-ex_bank" value="1" type="hidden">
+                </div>
+                <div class="input-group" id="for-displayex" style="display:block">
+                    <p>Please enter the date the transaction hit the bank</p>
+                    <input type="hidden" name="ex_bankid" id="ex_bankid">                  
+                    <input type="text" class="form-control financeex_bankdate readonly" name="ex_bankdate" id="ex_bankdate" placeholder="dd/mm/yyyy" required>
+                    <button type="submit" class="btn btn-info" id="expense-bank-btn" name="expense-bank-btn" value="expense-bank-btn">Submit</button>
+                    </div>
+                </div>  
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>

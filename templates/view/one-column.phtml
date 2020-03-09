@@ -1,0 +1,58 @@
+<!-- Page Title -->
+<section class="innerhead">
+    <div class="container-fluid">
+        <div class="container">
+            <div class="row">  
+                <div class="col-md-12 col-sm-12 col-xs-12 bannercont animate text-center" data-anim-type="zoomIn" data-anim-delay="800">
+                    <!--<h1>Work the way you want. <br> Find opportunities around you.</h1>-->
+                    <div class="center">
+                        <h1><?php echo $this->escapeHtml($this->translate($this->title)); ?></h1>
+                    </div>
+                    <div class="breadcrum-sitemap">
+                        <ul>          
+                                <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+		                        <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- .Page Title -->
+
+<!--<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+		    <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>-->
+<section class="innerlayout">
+    <div class="container">
+        <div class="row bgwhite inbox terms-page">
+                <div id="primary-content" class="main-content termscondition">
+                   <div class="container">
+                        <div class="row">
+                            <div class="contents white-bg <?php echo str_replace(' ','-',$this->escapeHtml($this->translate($this->title))) ?>">
+                                <section class="terms_para">
+                                    <!--<div class="welcome-heading">
+                                        <h1><span><?php echo $this->escapeHtml($this->translate($this->title)); ?></span></h1>
+                                        <hr class="shadow-line">
+                                    </div>--> 
+                                    <div class="terms_contents animate fadeInUp">
+                                      <?php echo $this->content; ?>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+        </div>
+    </div>
+</section>

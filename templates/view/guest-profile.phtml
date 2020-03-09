@@ -1,0 +1,254 @@
+<?php
+	date_default_timezone_set('Europe/London');
+	use GcFrontend\Controller\DbController as DbController;
+	use Gc\User\Role\Model;
+	use Gc\User\Role\Collection as RoleCollection;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	$sql = new Sql($adapter);
+	$update = $sql->update();
+	$select = $sql->select();
+	
+	//$return = $this->script('user-edit-process');
+	
+	$number_1 = mt_rand(1, 9);
+	$number_2 = mt_rand(1, 9);
+	$answer = substr(sha1($number_1+$number_2),5,10);
+	if(!empty($_SESSION['user_email']) && $_SESSION['user_email']!=''){
+		$uid=$_SESSION['user_email'];
+	}else{
+		$url= $this->serverUrl().'/login-form';echo "<script type='text/javascript'>window.location='".$url."'</script>";
+	}
+	
+	/*echo "<pre>";
+	print_r($_SESSION);
+	echo "</pre>";*/
+
+
+	$sqlString_data="select u.* from user u where u.email='$uid'";	
+	$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	$result_data = $results_get->current();
+	//print_r($result_data);
+  
+	/*if ($result_data['active'] == 1) {
+		session_unset();
+		$url= $this->serverUrl().'/login-form';
+		echo "<script type='text/javascript'>window.location='".$url."'</script>";
+	}*/
+	if($result_data['email']!=''){
+		// user extra info
+		$sqlString_data22="select ux.* from user_extra_info ux where ux.uid='".$result_data['id']."'";	
+		$results_get22 = $adapter->query($sqlString_data22, $adapter::QUERY_MODE_EXECUTE);
+		$result_data22 = $results_get22->current();
+		
+		
+		$payment_data22="SELECT pid FROM `user_payment_info` WHERE payment_status='1' and uid ='".$result_data['id']."'";	
+		$payment_data2= $adapter->query($payment_data22, $adapter::QUERY_MODE_EXECUTE);
+		$payment_data = $payment_data2->current();
+				
+	}
+	/////
+	$roleTable = new Model();
+  $row       = $roleTable->fetchRow($roleTable->select(array('id' => (int) $result_data['user_acl_role_id'])));
+
+  $professionalTable = new Model2();
+  $row2       = $professionalTable->fetchRow($professionalTable->select(array('id' => (int) $result_data['user_acl_profession_id'])));
+    
+	$packageTable = new Model3();
+	$row3   = $packageTable->fetchRow($packageTable->select(array('id' => (int) $result_data['user_acl_package_id'])));
+
+	
+?>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+					          <li><a href="/user-profile">My Dashbord</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>My Dashbord</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+    <div class="container">
+        <div class="row">
+            <div class="contents gray-gradient">
+                <div class="welcome-heading">
+                    <h1>Welcome To <span>Locumkit</span></h1>
+                    <hr class="shadow-line">
+                </div>
+                <div class="email_success"></div>
+                <div class="profile-details">
+                    <div class="guest-prof-notification">
+
+                      <?php
+                      if (isset($_SESSION['is_guest']) && empty($payment_data)) { ?>
+                        <h4> Please complete your registration for full access to the website. <a href="/register?profile=guest">Click here</a> to complete your registration. </h4>
+                      <?php }else if(isset($_SESSION['is_guest'])  && !empty($payment_data)) { ?>
+
+                           <?php if(isset($_SESSION['renew_membership'])){ ?>
+                                <h4>Your membership is expired. Please renew your membership to access website. <a href="/register?profile=guest&membership=renew">Click here</a> to renew the membership.</h4>
+                           <?php }else{ ?>
+                                <h4> Please complete the email verification process to complete registration. <a href="javascript:void(0)" id="resend-mail">Click here</a> to resend email.</h4>
+                           <?php } ?>
+                     
+                     
+  <div id="resend-mail-div" style="display:none">
+  <form action="<?php echo $this->escapeHtml($this->document('guest-profile')->getUrl()); ?>" method="post">
+	<div class="col-md-12">
+		<div class="form-group">
+			<div class="col-md-1"></div>
+			<div class="col-md-3"><label for="exampleInputPassword1">Resend Email Varification Mail</label></div>
+			<div class="col-md-7">
+				<div class="input-group margin">
+				<input type="text" class="form-control" placeholder="Email" id="resend-email" name="resend-email">				
+					<div class="input-group-btn" id="mngbtn">
+						<button type="button" class="btn btn-danger">Send</button>
+					</div>
+				</div>
+				<div id="error_div" class="css_error"></div>
+			</div>
+		</div>		
+	</div>
+	</form>
+  </div>
+                     
+                     
+                      <?php } if (isset($_SESSION['un_verified_user'])) { ?>
+                        <h4> Your profile is under verification process and it will take around 48 hours from the time of registration. Please  <a href="/contact">click here</a> to contact us. </h4>
+                      <?php } ?>
+                    </div>
+                    <div class="profile-title">
+                        <h1>Profile</h1>
+                    </div>
+                    <?php $return = $this->script('user-delete');?>
+                    <div class="profile-edit">
+                        <div class="col-sm-3 col-md-3">
+                            <div class="margin-bottom prof-img" style="display:none;">
+                                  <?php if($result_data22['profile_image']!=''){?>
+                                  <img src="<?php echo $result_data22['profile_image'];?>" class="img-responsive">
+                                  <?php } else{?>
+                                  <img src="<?php echo $this->cdn('/frontend/locumkit-template/img/no-photo-icon.png');?>" width="200" class="img-responsive">
+                                  <?php }?>
+                            </div>
+                            <div class="profile-name profile-tab">
+                                <h2><?php echo $result_data['firstname'];?> <?php echo $result_data['lastname'];?></h2>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-md-3">
+                            <div class="profile-tab">
+                                <h3>Membership ID</h3>
+                                <span><?php echo $result_data['id'] ?></span>
+                            </div>
+                        </div>                        
+                        <div class="col-sm-3 col-md-3">
+                            <div class="profile-tab">
+                                <h3>Membership  Since</h3>
+                                <span><?php echo date('d-m-Y',strtotime($result_data['created_at']));?></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-md-3">
+                            <div class="profile-tab">
+                                <h3>Membership  Experience</h3>
+                                <?php 
+                                  $currentDate = date('Y-m-d H:i:s');
+                                  $result_data['created_at'];
+                                  $datetime1 = new DateTime($result_data['created_at']);
+                                  $datetime2 = new DateTime($currentDate);
+                                  $interval = $datetime1->diff($datetime2);
+                                ?>
+                                <span><?php echo $interval->format('%y yr - %m m - %d days'); ?></span>
+                            </div> 
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+       <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script>
+
+
+$("#resend-mail").click(function(){
+    $("#resend-mail-div").toggle(500);
+});
+
+  var remail = '<?php echo $uid ; ?>';
+  
+$('#resend-email').on('keyup', function() { 
+   
+    var regex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+    var email_val = $('#resend-email').val();
+    if(!regex.test(email_val)) {
+        $('#error_div').html('Please enter valid email address.');
+        $('#mngbtn').html('<button type="button" class="btn btn-danger">Send</button>');
+        $("#email").focus();
+        return false;
+    }else if(email_val != remail) {
+    $('#error_div').html('Please enter registered email address.');
+    $('#mngbtn').html('<button type="button" class="btn btn-danger">Send</button>');
+        $("#email").focus();
+        return false;
+    }else{
+    $('#mngbtn').html('<button type="button" class="btn btn-success" name="remail_submit" id="remail_submit">Send</button>');
+     $('#error_div').html('');
+    }
+});
+
+
+$(document).on('click', '#remail_submit', function(e) {
+
+var email_val = $('#resend-email').val();
+var userid = <?php echo $result_data['id'] ?>;
+
+if(email_val != remail) {
+    $('#error_div').html('Please enter registered email address.');
+        $("#email").focus();
+        return false;
+    }else{
+  
+      $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'email_resend':'resendemail','email':email_val,'userid':userid},
+            'success':function(result){ //alert(result);
+                console.log(result);
+                if(result=="1"){
+    $('.email_success').html('<div class="note"><div class="alert alert-success"><span>Verification email sent successfully.<span></span></span></div>');
+     $("#resend-mail-div").hide(500);
+     $("#resend-email").val('');
+     $('#mngbtn').html('<button type="button" class="btn btn-danger">Send</button>');
+                }
+            }
+        });
+  
+    }
+
+});
+
+
+</script>

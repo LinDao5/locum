@@ -1,0 +1,254 @@
+<?php
+    date_default_timezone_set('Europe/London');
+
+        use GcFrontend\Controller\DbController as DbController;
+    use Gc\User\Role\Model;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	$dbController 	= new DbController();
+$adapter 		= $dbController->locumkitDbConfig();
+    $sql = new Sql($adapter);
+    $update = $sql->update();
+    $select = $sql->select();
+	$helper = new Zend\View\Helper\ServerUrl();
+	$url = $helper->__invoke(true);
+	
+    $result_arr="";
+	$allow_job_count="";
+	$notification_count="";
+    use GcFrontend\Controller\DistancecalculateController as Distancecal;
+    $distancecal = new Distancecal();
+    // Job email controller
+    use GcFrontend\Controller\JobmailController as MailController;
+	$mailController = new MailController();
+	$header = $mailController->mailHeader();
+	$footer = $mailController->mailFooter();
+	$today_date = date('d/m/Y');
+	//get Job Details
+	$sql_job="select jp.* from job_post jp ,job_post_timeline jpt where job_date<'$today_date' and jp.job_status=1 and jpt.job_id=jp.job_id"; 
+	// job_status=1 open and check for timeline set this job
+	$rows_job = $adapter->query($sql_job, $adapter::QUERY_MODE_EXECUTE);
+	$result_job_count =$rows_job->count();
+	$result_job = $rows_job->toArray();
+	if($result_job_count>0){
+	// get array of question answer
+	foreach($result_job as $result_job_data){
+		$job_type=$result_job_data['job_type'];
+		$parant_job_id=$result_job_data['job_id'];
+		$emp_id=$result_job_data['e_id'];
+		$job_date=$result_job_data['job_date'];
+		$job_zip=$result_job_data['job_zip'];
+		$job_title=$result_job_data['job_title'];
+		$job_rate=$result_job_data['job_rate'];
+		$job_address=$result_job_data['job_address'];
+		$job_post_desc=$result_job_data['job_post_desc'];
+		$today_hrs  = date("H");
+		
+		// get array of question answer
+		$sqlString_ans="select * from user_answer where user_id='$emp_id'";	
+    	$results_ans = $adapter->query($sqlString_ans, $adapter::QUERY_MODE_EXECUTE);
+		$result_data_ans = $results_ans->toArray(); 
+		foreach($result_data_ans as $res_qu){
+			$questions[]=$res_qu['question_id'];
+			$answers[$res_qu['question_id']]=$res_qu['type_value'];
+		}
+		// fetch from job timeline to check whether timeline set or not
+		$sql_job_time="select * from job_post_timeline where job_id='".$parant_job_id."' and job_date_new='$today_date' and job_timeline_hrs='$today_hrs' and job_timeline_status=1";
+		$rows_job_time = $adapter->query($sql_job_time, $adapter::QUERY_MODE_EXECUTE);
+		$result_job_time = $rows_job_time->current();
+		$job_time_count = $rows_job_time->count();
+		$job_date_new=$result_job_time['job_date_new'];
+		if($job_time_count>0){
+			if($job_type==1){
+			// select list of invited user
+			$sql_job_invi="select jinv.*,invu.email,invu.firstname,invux.zip,invux.max_distance,invux.minimum_rate from job_invited_user jinv,user invu,user_extra_info invux where jid='".$parant_job_id."' and jinv.uid=invu.id and invu.id=invux.uid";
+			$rows_job_invi = $adapter->query($sql_job_invi, $adapter::QUERY_MODE_EXECUTE);
+			$result_job_invi = $rows_job_invi->toArray();
+			foreach($result_job_invi as $invited_user){
+				$invited_user_id=$invited_user['uid'];
+				$invited_user_zip=$invited_user['zip'];
+				$invited_user_max_distance=$invited_user['max_distance'];
+				$invited_user_minimum_rate=$invited_user['minimum_rate'];
+				$invited_user_fname=$invited_user['firstname'];
+				$invited_user_email=$invited_user['email'];
+				
+				//get package -resourses
+				$sql_pack="select * from user_acl_package where id='$search_pack_id'";
+				$results_pack = $adapter->query($sql_pack, $adapter::QUERY_MODE_EXECUTE); 
+				$result_data_pack = $results_pack->current();
+				$search_user_package = strtolower($result_data_pack['name']); // for gold=unlimited,silver=20 and bronze=10
+				$pack_resource=unserialize($result_data_pack['user_acl_package_resources_id']);
+				foreach($pack_resource as $pack_arr){
+					$sql_pack_res="select * from user_acl_package_resources where id='$pack_arr' and allow_count!=0";
+				    $results_pack_res = $adapter->query($sql_pack_res, $adapter::QUERY_MODE_EXECUTE);
+					$results_pack_get = $results_pack_res->toArray(); print_r($results_pack_get);
+					//resource_key=10_notification,15_notification,10_jobs,20_jobs,100_jobs
+					if($results_pack_get['resource_key']=="10_notification"){
+						$notification_count=$results_pack_get['allow_count'];
+					}
+					if($results_pack_get['resource_key']=="15_notification"){
+						$notification_count=$results_pack_get['allow_count'];
+					}
+					if($results_pack_get['resource_key']=="10_jobs"){
+						$allow_job_count=$results_pack_get['allow_count'];
+					}
+					if($results_pack_get['resource_key']=="20_jobs"){
+						$allow_job_count=$results_pack_get['allow_count'];
+					}
+					if($results_pack_get['resource_key']=="100_jobs"){
+						$allow_job_count=$results_pack_get['allow_count'];
+					}
+					
+				}
+				
+				// get user job done and there count
+				$sql_accept="select ja.* from job_action ja where ja.f_id='$invited_user_id' and ja.action=3"; // job accepted count 
+				$results_accept = $adapter->query($sql_accept, $adapter::QUERY_MODE_EXECUTE); 
+				$result_data_accept = $results_accept->current();
+				$count_accept = $results_accept->count();
+				
+				if(isset($count_accept) && $count_accept!=""){
+					if($search_user_package=="bronze" && $count_accept>$notification_count){$valid_job="0";}				
+					if($search_user_package=="silver" && $count_accept>$notification_count){$valid_job="0";}
+					if($search_user_package=="gold" && $count_accept>$notification_count){$valid_job="";}
+				}
+				
+				// get list of block user by employer
+				$sql_block_user="select * from block_user where emp_id='".$emp_id."' and frelan_id='".$invited_user_id."' ";
+				$rows_block_user = $adapter->query($sql_block_user, $adapter::QUERY_MODE_EXECUTE);
+				$result_block_user = $rows_block_user->toArray();
+				$block_user_count = $rows_block_user->count();
+				
+				if($block_user_count==0){// not block user by employer
+				// get block dates
+				$sqlString_block="select * from user_block_date where uid='".$invited_user_id."' and 'block_date' LIKE '%".$job_date."%'";	
+				$results_block = $adapter->query($sqlString_block, $adapter::QUERY_MODE_EXECUTE); 
+				$result_data_block = $results_block->current(); 
+				$count_block_date = $results_block->count();
+				
+				// get user membership expire date
+				$sqlString_expire="select * from user_package_details where user_id='".$invited_user_id."' and package_status=0";	
+				$results_expire = $adapter->query($sqlString_expire, $adapter::QUERY_MODE_EXECUTE); 
+				$count_expire = $results_expire->count();
+				
+				//search calculate criteria for distance
+				$distance22 = round($distancecal->getDistance($job_zip,$invited_user_zip,'N'));
+				
+				if($distance22<=$invited_user_max_distance){ // check for distance
+						$distance_match=1;
+				} 
+				// question/answer match
+				foreach ($answers as $key => $value) {
+					$sqlString_ans2="select * from user_answer where question_id='".$key."' and user_id='".$invited_user_id."' and type_value LIKE '%$value%' ";	
+					$results_ans2 = $adapter->query($sqlString_ans2, $adapter::QUERY_MODE_EXECUTE);
+					$result_ans2_count = $results_ans2->count();
+				}
+				//search with different condition and send email
+					if($distance_match==1 && $result_ans2_count>0 && $count_block_date==0 && $valid_job=="" && $count_expire==0){
+					// send email to no of user
+			        $link ='<a href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($parant_job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($invited_user_id).'" style=" background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;">Accept</a> OR &nbsp;<a href="'.$host.'/freeze-job?j='.$endecrypt->encryptIt($parant_job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($invited_user_id).'" style=" background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;">Freez Job</a>';
+			        $message= $header.'
+					<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+					<p>Hello <b>'.$invited_user_fname.'</b>,</p>
+					<p>New Job notification to matching to your profile,if intrested in job accept using below link. </p>
+					<h3>Job Information</h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr style="background-color: #f2f2f2;">
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_title.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Minimum Rate</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_rate.'</td>
+					  </tr>
+					  <tr style="background-color: #f2f2f2;">
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Joining Date</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_date.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Location</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_address.'</td>
+					  </tr>
+					  <tr style="background-color: #f2f2f2;">
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_post_desc.'</td>
+					  </tr>
+					</table>
+					<br/>
+					<p>'.$link.'<p>
+					</div>'.$footer;
+					$txt_message="Invitation Send.";
+					$send=1;
+					$mail = new \Gc\Mail('utf-8', $message);
+					$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+					$mail->setSubject('Job Invitation');
+					$mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'));
+					$mail->addTo($invited_user_email,$invited_user_fname);
+					$mail->send();
+					}
+				}
+			}
+		}// if job_type==1 end
+		// job_type=2--buildlist
+		if($job_type==2){
+			
+			$sql_private="select pu.*from private_user pu,private_user_job_action pua where pu.emp_id='$emp_id' and pua.emp_id=pu.emp_id and pua.jid='$parant_job_id' and pua.status=1";
+			$results_private = $adapter->query($sql_private, $adapter::QUERY_MODE_EXECUTE);
+			$result_count=$results_private->count();
+			$result=$results_private->toArray();
+			if($result_count>0){
+				foreach($result as $result_private){
+				$id2=$result_private['p_uid'];
+				$name2=$result_private['p_name'];
+				$email2=$result_private['p_email'];
+				$link2 ='<a href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($parant_job_id).'&jtype='.$endecrypt->encryptIt('2').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($id2).'" style=" background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;">Accept Job</a>';
+				// send email to no of user
+			    $message2=$header.'
+					   <div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+					  <p>Hello <b>'.$name2.'</b>,</p>
+					   <p>New Job notification to matching to your profile,if intrested in job accept using below link. </p>
+					   <h3>Job Information</h3>
+					  <table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_title.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Minimum Rate</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_rate.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Joining Date</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_date.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Location</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_address.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_post_desc.'</td>
+					  </tr>
+					</table><br/>
+					<p>'.$link2.'<p>
+					</div>'.$footer;
+					$txt_message="Invitation Send.";
+					$send=1;
+					$mail = new \Gc\Mail('utf-8', $message2);
+					$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+					$mail->setSubject('Job Invitation');
+					$mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'));
+					$mail->addTo($email2,$name2);
+					$mail->send();
+				}//foreach end
+			}
+	    }// job_type=2 end
+	  }
+	}// first foreach end
+	
+  }// not empty row
+?>

@@ -1,0 +1,214 @@
+<div id="primary-content" class="main-content about">
+<div class="container">
+    <div class="row">
+        <div class="contents white-bg">
+            <section id="suplier-add" class="suplier-add">
+                <div class="container" id="content_profitloss">
+                    <div class="row">
+                        <div class="col-md-10 col-sm-10">
+                            <table width="80%" border="1" cellspacing="0" cellpadding="0" id="table_wrapper" align="center">
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="col-sm-12" style=" font-size: 16px;">
+                                            <div class="col-md-4" title="User No.">User No. <?php echo $userData->getId() ; ?></div>
+                                            <div class="col-md-4"><?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?></div>
+                                            <div class="col-md-4"><?php echo $userData->getEmail() ; ?></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3"><h3>BALANCE SHEET</h3></td>
+                                </tr>
+                                <?php if($revenue1 == ''){ ?>
+                                    <tr>
+                                        <td colspan="3" align="center">Data Not Available</td>
+                                    </tr>
+                                <?php }else { ?>
+                                    <tr>
+                                        <td>Non-current assets</td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Property, plant and equipment</td>
+                                        <td></td>
+                                        <td class="put1"><input id="put1" name="put1" type="number" value="" placeholder="Enter" class="form-control" ></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3">Current assets</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Trade and other receivables </td>
+                                        <td class="put2"><input id="put2" name="put2" type="number" value="" placeholder="Enter" class="form-control" ></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cash and cash equivalents</td>
+                                        <td class="put3"><input id="put3" name="put3" type="number" value="" placeholder="Enter" class="form-control" ></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td id="put2_put3">N/A</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td id="put1_td">N/A</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3">Non-current liabilities</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Current liabilities</td>
+                                        <td  class="put4"><input id="put4" name="put4" type="number" value="" placeholder="Enter" class="form-control" ></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Taxation</td>
+                                        <td><?php echo htmlentities($totaltax) ; ?></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td id="put4_html">N/A</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>Net Assets / Liabilities</td>
+                                        <td></td>
+                                        <td id="put1_td_put4">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3">Equity</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Equity</td>
+                                        <td  class="put6">
+                                            <input id="put6" name="put6" type="number" value="" placeholder="Enter" class="form-control" >
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Retained earnings </td>
+                                        <td class="put7">
+                                            <input id="put7" name="put7" type="number" value="" placeholder="Enter" class="form-control" >
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                <?php } ?>
+                            </table>
+                            <p>&nbsp;</p>
+                            <div class="form-group">
+                                <div class="col-md-12">
+                                    <div class="pull-right">
+                                        <button type="button" id="freeze" class="btn btn-info">Freeze</button>
+                                        <button onclick="location.reload();" id="reset"  class="btn btn-info" style="display:none">Reset</button>
+                                        <button id="btnExport"  class="btn btn-info" style="display:none">Export to xls</button>
+                                        <button id="cmd" class="btn btn-info" style="display:none">Generate PDF</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jspdf/0.9.0rc1/jspdf.min.js"></script>
+<script>
+    $("#put2 , #put3 , #put1").keyup(function(){
+        var totaltax =  '<?php echo $totaltax ;?>';
+        var put2 =  $("#put2").val();
+        var put3 =  $("#put3").val();
+
+        if(put2 != '' && put3 != ''){
+            var put2put3 = parseFloat(put2) + parseFloat(put3);
+            $("#put2_put3").html(put2put3);
+        }else{
+            $("#put2_put3").html('N/A');
+        }
+        var put2_put3 =  $("#put2_put3").html();
+        var put1 =  $("#put1").val();
+        if(put1 != null && put2 != '' && put3 != ''){
+            var put1_td = parseFloat(put2_put3) + parseFloat(put1);
+            $("#put1_td").html(put1_td);
+        }else{
+            $("#put1_td").html('N/A');
+        }
+
+
+    });
+    $("#put4").keyup(function(){
+        var totaltax =  '<?php echo $totaltax ;?>';
+        var put4 =  $("#put4").val();
+        if(put4 != ''){
+            var put4_html = parseFloat(totaltax) + parseFloat(put4);
+            $("#put4_html").html(put4_html);
+            var put1_td = $("#put1_td").html();
+            var put1_td_put4 = parseFloat(put1_td) - parseFloat(put4_html);
+            $("#put1_td_put4").html(put1_td_put4);
+        }else{
+            $("#put4_html").html('N/A');
+            $("#put1_td_put4").html('N/A');
+        }
+    });
+
+    $("#freeze").click(function(){
+        var check =  confirm('Are You Sure ?');
+        if(check == true){
+            $(".put1").html($("#put1").val());
+            $(".put2").html($("#put2").val());
+            $(".put3").html($("#put3").val());
+            $(".put4").html($("#put4").val());
+            $(".put6").html($("#put6").val());
+            $(".put7").html($("#put7").val());
+            $("#put1,#put2,#put3,#put4,#put6,#put7").remove();
+            $("#btnExport,#cmd,#reset").show();
+            $("#freeze").hide();
+        }
+    });
+
+    $(document).ready(function() {
+        $("#btnExport").click(function(e) {
+            e.preventDefault();
+
+            //getting data from our table
+            var data_type = 'data:application/vnd.ms-excel';
+            var table_div = document.getElementById('table_wrapper');
+            var table_html = table_div.outerHTML.replace(/ /g, '%20');
+
+            var a = document.createElement('a');
+            a.href = data_type + ', ' + table_html;
+            a.download = 'exported_table_' + Math.floor((Math.random() * 9999999) + 1000000) + '.xls';
+            a.click();
+        });
+    });
+
+    var doc = new jsPDF();
+    var specialElementHandlers = {
+        '#editor': function (element, renderer) {
+            return true;
+        }
+    };
+
+    $('#cmd').click(function () {
+        doc.fromHTML($('#table_wrapper').html(), 15, 15, {
+            'width': 170,
+            'elementHandlers': specialElementHandlers
+        });
+        doc.save('sample-file.pdf');
+    });
+
+
+</script>
+<style>
+    td{
+        padding: 10px;
+        font-size: 14px;
+    }
+</style>

@@ -1,0 +1,103 @@
+<?php
+    /*if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+	$uid=$_SESSION['user_id'];
+    }else{ 	echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>";}*/
+	    
+    $return = $this->script('resend-email-verify');
+	use GcFrontend\Controller\EndecryptController as Endecrypt;
+    $endecrypt = new Endecrypt();
+	
+	//$helper = new Zend\View\Helper\ServerUrl();
+	//$url = $helper->__invoke(true);
+	//echo $url; //full url
+	if(isset($_GET['e'])){
+		$get_email=$endecrypt->decryptIt($_GET['e']); // email 
+		$get_resend=$endecrypt->decryptIt($_GET['re']); // resend =1
+		$get_id=$endecrypt->decryptIt($_GET['eu']);
+	}
+?>
+	<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+					<li><a href="/resend-email-verify">Resend Verification Email</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-log-in" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Resend Verification Email</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content register">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg" style="text-align:center;">
+                    <div class="col-md-12">
+					<?php echo $this->partial('flash-messages'); ?>
+                    <div class="one-page-box visible widget-box no-border col-xs-12">
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <h4 class="header">
+                                   Resend Verification Email
+                                </h4>
+                    
+                                <form id="one-page-form" action="/resend-email-verify<?php if(!empty($return['key'])){echo $this->escapeHtml($return['key']); }?>" method="post">
+                                 <?php if(!empty($return['error_message'])): ?>
+                                        <div class="notification error"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                                    <?php endif; ?>
+                                    <?php if(isset($_GET['e'])){?>
+                                    <input type="hidden" name="get_email" value="<?php echo $get_email;?>">
+                                    <input type="hidden" name="get_resend" value="<?php echo $get_resend;?>">
+                                    <input type="hidden" name="get_id" value="<?php echo $get_id;?>">
+                                    <?php }else{?>
+                                    <input type="hidden" name="resend_email_verify" value="1">
+                                    <?php }?>
+                                    <fieldset class="has-warning">
+                                        <span class="block input-glyphicon input-glyphicon-right margin-bottom">
+											<?php if(isset($_GET['e'])){?>
+                                            <input name="email" type="text" class="form-control margin-bottom" value="<?php echo $get_email;?>" readonly autofocus required />
+											<?php } else{?>
+											<input name="email" type="text" class="form-control margin-bottom" placeholder="Enter email address" autofocus required />
+											<?php }?>
+										</span>
+                    
+                                        <div class="clearfix buttons">
+                                            <button class="btn btn-small btn-warning">
+                                                <i class="glyphicon glyphicon-log-in"></i>
+                                                Verify Email 
+                                            </button>
+                                        </div>
+                                    </fieldset>
+                                </form>
+                            </div>
+                    
+                            <div class="footer clearfix text-right">
+                               
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- col-md-6 end -->
+            </div>
+        </div>
+   	</div>
+</div>
+<style type="text/css">
+    @media(min-width: 761px){
+        form#one-page-form {
+            width: 50%;
+            margin: 0 auto;
+        }
+    }
+</style>

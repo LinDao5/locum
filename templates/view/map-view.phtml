@@ -1,0 +1,71 @@
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+   <div class="container">
+    	<div class="row">
+            <div class="contents white-bg <?php echo str_replace(' ','-',$this->escapeHtml($this->translate($this->title))) ?>">
+                <section>
+                    <div class="welcome-heading">
+                        <h1><span><?php echo $this->escapeHtml($this->translate($this->title)); ?></span></h1>
+                        <hr class="shadow-line">
+                    </div>
+                    <?php echo $this->content; ?>
+                    
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Pop up -->
+<div class="modal fade" id="map-dialog" role="dialog">
+    <div class="modal-dialog" style="width: 90% !important; height: 80vh !important;">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center; max-height: 80vh">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.contents.white-bg.<?php echo str_replace(' ','-',$this->escapeHtml($this->translate($this->title))) ?> {
+    padding: 15px 50px;
+}
+</style>
+
+<script>
+    $(document).ready(function() {
+        var ukmap = $('#uk-map').attr('src');
+        var londonmap = $('#london-map').attr('src');
+
+        $('#uk-map').click(function(){
+            showModalMap(ukmap);
+        });
+
+        $('#london-map').click(function(){
+            showModalMap(londonmap);
+        });
+    });
+
+    function showModalMap(map_url) {
+        var available_html = '';
+        available_html += '<img src="'+map_url+'" alt="receipt" style="width: 100%">';
+        $('#map-dialog .modal-body').html(available_html);
+        // $('#map-dialog .modal-title').html(map_url);
+        $('#map-dialog').modal('show');
+    }
+</script>

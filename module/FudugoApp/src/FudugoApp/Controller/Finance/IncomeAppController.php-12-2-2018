@@ -1,0 +1,287 @@
+<?php
+	/**
+	* Develop by SURAJ WASNIK (suraj.wasnik0126@gmail.com)
+	*/
+	namespace FudugoApp\Controller\Finance;
+	use GcFrontend\Controller\DbController as DbController;
+	use GcFrontend\Helper\FinanceHelper as FinanceHelper; 
+	use FudugoApp\Controller\Helper\HelperController as HelperController;
+	use FudugoApp\Controller\Job\JobController as JobController;
+	use Gc\User\Finance\Income\Model as IncomeModel;
+	use Gc\User\Finance\Expense\Model as ExpenseModel; 
+	use Gc\User\Finance\Expense\Model as AddSupplier; 
+	use Gc\User\Finance\Expense\CategoryCollection as CategoryCollection;
+	use GcConfig\Controller\FinanceController as FinanceController;
+	use Gc\User\Finance\Model as FinanceModel;
+	use Gc\User\Finance\Employertrans\Model as EmployertransModel;
+	use Gc\User\Collection;
+
+	Class IncomeAppController{
+		public function manage_income($user_data)
+		{
+			$dbConfig 	= new DbController();
+   			$adapter 	= $dbConfig->locumkitDbConfig();
+   			$page_id 	= $user_data['page_id'];
+			
+			$finance_records = array();		
+			switch ($page_id) {
+				case 'getJobbyId':					
+					$job_id = $user_data['formInfo']['job_id'];
+					$finance_records = $this->get_job_details_by_id($job_id, $adapter);
+
+					break;
+				case 'update-transaction':
+					
+					$trans_id 	= $user_data['trans_id'];
+					$trans_date = $user_data['trans_date'];
+					$trans_type = $user_data['trans_type'];
+					$show 		= $user_data['show_type'];		
+					$user_data  = $user_data['formInfo'];			
+					$action 	= isset($user_data['action']) ? $user_data['action'] : '';					
+					$this->updateTransaction($trans_id,$trans_date,$trans_type, $adapter);
+					if ($action=="income-by-area") {						
+						$finance_records = $this->get_income_by_area($user_id);	
+					}else{
+						$finance_records = $this->getAllTransaction($user_id, $cat=null, $show, $adapter);
+					}					
+					break;	
+				case 'insert-income':	
+				    $trans_type = $user_data['trans_type'];	
+				    $user_data  = $user_data['formInfo'];	
+					$finance_records = $this->insertTransaction($user_data,$trans_type, $adapter);	
+					break;
+				case 'insert-cost':	
+				    $trans_type = $user_data['trans_type'];	
+				    $user_data  = $user_data['formInfo'];	
+					$finance_records = $this->insertCostTransaction($user_data,$trans_type, $adapter);	
+					break;
+				case 'manage-supplier':	
+				    $trans_type = $user_data['trans_type'];	
+				    $user_data=$user_data['formInfo'];
+					$finance_records = $this->manageSupplier($user_data,$trans_type, $adapter);	
+					break;
+				case 'delete-income-expense':
+					$filter_cat = isset($user_data['filter_cat']) ? $user_data['filter_cat'] : '';					
+					//$finance_records = $this->get_income_by_category($user_id, $filter_cat);
+					break;				
+			}
+			return json_encode($finance_records);
+		}
+
+		/***Update income /expenses  ***/
+		public function updateTransaction($trans_id,$trans_date,$trans_type, $adapter)
+		{
+			$incomeModel 	= new IncomeModel();
+			$expenseModel 	= new ExpenseModel(); 
+			if ($trans_type == 1 || $trans_type == 'Income' ){
+				# Income
+				$incomeData = array(
+		    		'bank' 			=> 1, 
+		    		'bank_date' 	=> $trans_date, 
+		    	);
+		   		$incomeModel->inupdate_bank($trans_id,$incomeData);
+			}elseif ($trans_type == 2 || $trans_type == 'Expense'){
+				#Expense
+				$incomeData = array(
+		    		'bank' 			=> 1, 
+		    		'bank_date' 	=> $trans_date, 
+		    	);
+		    	$expenseModel->exupdate_bank($trans_id,$incomeData);	
+			}			
+		}
+
+		public function insertTransaction($income_data,$trans_type, $adapter)
+		{
+			$incomeModel 	= new IncomeModel();
+			$expenseModel 	= new ExpenseModel(); 
+			$trans_ation = new FinanceModel();
+			if ($trans_type == 1 || $trans_type == 'Income' ){
+				$income_array = array(		
+					'job_type' 	=> $income_data['in_job_type'] ,
+					'job_id' 	=> trim($income_data['in_jobno']) ,
+					'fre_id'	=> $income_data['uid'],
+					'emp_id' 	=>  $income_data['in_emp_id'],
+					'job_rate' 	=>  trim($income_data['in_rate']),
+					'job_date' 	=> 	$income_data['in_date'] ? date('Y-m-d',strtotime(str_replace('/', '-', $income_data['in_date'])))  : null,
+					'income_type' 	=> trim($income_data['in_category']) ,
+					'bank' 		=> 	$income_data['in_bank'] ,
+					'bank_date' 	=>  $income_data['in_bankdate'] ? date('Y-m-d', strtotime(str_replace('/', '-', $income_data['in_bankdate']))) : null ,
+					'store' 	=> 	trim($income_data['in_store']) ,
+					'location' 	=> 	trim($income_data['in_location']) ,
+					'supplier' 	=> 	trim($income_data['in_supplier']) ,
+					'status' 	=>  1,
+					'invoice_id' => 0 
+				);
+				
+		   		$results = $incomeModel->save($income_array);
+				if($results){			
+				$finance_trans = array(		
+					'trans_type_id' => $results ,
+					'trans_type' 	=> '1' 
+				);
+				$res1 =	$trans_ation->save($finance_trans);
+			   }
+			}elseif ($trans_type == 2 || $trans_type == 'Expense'){
+				$income_array = array(		
+				'job_type' 	=> $income_data['in_job_type'] ,
+				'job_id' 	=> trim($income_data['in_jobno']) ,
+				'fre_id'	=>  $income_data['uid'] ,
+				'cost' 	=>  trim($income_data['in_rate']),
+				'job_date' 	=> 	$income_data['in_date'] ? date('Y-m-d',strtotime(str_replace('/', '-', $income_data['in_date'])))  : null,
+				'expense_type_id' 	=> trim($income_data['in_category']) ,
+				'bank' 		=> 	$income_data['in_bank'] ,
+				'bank_date' 	=>  $income_data['in_bankdate'] ? date('Y-m-d', strtotime(str_replace('/', '-', $income_data['in_bankdate']))) : null ,
+				'description' 	=> 	trim($income_data['in_description']) 
+				);
+		    	$results=$expenseModel->save($income_array);	
+		    	if($results){			
+				$finance_trans = array(		
+					'trans_type_id' => $results ,
+					'trans_type' 	=> '2' 
+				);
+				$res1 =	$trans_ation->save($finance_trans);
+			   }
+			}		
+
+			return $results;	
+		}
+
+		public function insertCostTransaction($user_data,$trans_type, $adapter)
+		{
+			$action = new EmployertransModel();
+			$farray = array(
+		        'job_id' 	=> 	$user_data['in_jobno'] ,
+		        'emp_id' 	=> 	$user_data['uid'] ,
+		        'fre_id'	=>  trim($user_data['in_locum']),
+		        'fre_type' 	=>  $user_data['locum_type'] ,
+		        'job_date' 	=>  $user_data['in_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $user_data['in_date']))) : null  ,
+		        'job_rate' 	=>  trim($user_data['in_rate']),
+		        'bonus' 	=> 	isset($user_data['in_bonus']) ? trim($user_data['in_bonus']) : null ,
+		        'paid' 		=> 	isset($user_data['in_paid']) ? $user_data['in_paid'] : null ,
+		        'paid_date' =>  isset($user_data['in_paiddate']) ? date('Y-m-d', strtotime(str_replace('/', '-', $user_data['in_paiddate']))) : null  ,
+		    );
+		   
+			
+			$res = $action->save($farray);
+		    if($res){
+		        return 1;
+		    } else{
+		    	return 0;
+		    }			
+		}
+		
+		public function manageSupplier($post_data,$trans_type, $adapter){
+
+			 if($trans_type=='add' && $trans_type!=''){
+			 	$supplier_records = $this->insertSupplier($post_data, $adapter);
+			 }
+			 if($trans_type=='edit' && $trans_type!=''){
+			 	$supplier_records = $this->updateSupplier($post_data, $adapter);
+			 }
+			 if($trans_type=='delete' && $trans_type!=''){
+			 	$supplier_records = $this->deleteSupplier($post_data['supid'], $adapter);
+			 }
+			 if($trans_type=='list' && $trans_type!=''){
+			 	$supplier_records = $this->allSupplier($post_data['uid'], $adapter);
+			 }
+			 if($trans_type=='getlist' && $trans_type!=''){
+			 	$supplier_records = $this->getSupplierById($post_data['supid'], $adapter);
+			 }
+			 return $supplier_records;
+			
+		}
+		/*****Insert Supplier ***/
+		public function insertSupplier($user_data, $adapter){
+			$supid = isset($user_data['supid']) ? $user_data['supid'] : '';	
+			$cname = isset($user_data['cname']) ? $user_data['cname'] : '';	
+			$sname = isset($user_data['sname']) ? $user_data['sname'] : '';	
+			$address = isset($user_data['address']) ? $user_data['address'] : '';	
+			$address2 = isset($user_data['address2']) ? $user_data['address2'] : '';	
+			$town = isset($user_data['town']) ? $user_data['town'] : '';	
+			$county = isset($user_data['county']) ? $user_data['county'] : '';
+			$postcode = isset($user_data['postcode']) ? $user_data['postcode'] : '';	
+			$email = isset($user_data['email']) ? $user_data['email'] : '';	
+			$contact_no = isset($user_data['contact_no']) ? $user_data['contact_no'] : '';	
+			$uid = isset($user_data['uid']) ? $user_data['uid'] : '';	
+			$actom = 'No';
+	    	$sql_paypal = "INSERT INTO add_supplier (name,store_name,address,addresssec,town,country,postcode,email,automaticinvoice,contact_no,created_by) values('$cname','$sname','$address','$address2','$town','$county','$postcode','$email','$actom','$contact_no','$uid')";
+			$results = $adapter->query($sql_paypal, $adapter::QUERY_MODE_EXECUTE);
+	    	return $results;
+		}
+		/*****Update Supplier ***/
+		public function updateSupplier($user_data, $adapter){		
+			$supid 		= isset($user_data['supid']) ? $user_data['supid'] : '';	
+			$cname 		= isset($user_data['cname']) ? trim($user_data['cname']) : '';	
+			$sname 		= isset($user_data['sname']) ? trim($user_data['sname']) : '';	
+			$address 	= isset($user_data['address']) ? trim($user_data['address']) : '';
+			$address2 	= isset($user_data['address2']) ? trim($user_data['address2']) : '';	
+			$town 		= isset($user_data['town']) ? $user_data['town'] : '';	
+			$county 	= isset($user_data['county']) ? $user_data['county'] : '';
+			$postcode 	= isset($user_data['postcode']) ? $user_data['postcode'] : '';	
+			$email 		= isset($user_data['email']) ? $user_data['email'] : '';	
+			$contact_no = isset($user_data['contact_no']) ? $user_data['contact_no'] : '';	
+			$uid 		= isset($user_data['uid']) ? $user_data['uid'] : '';	
+			$sql_user 	= "UPDATE add_supplier SET name='$cname',store_name='$sname',address='$address',addresssec='$address2',town='$town',country='$county',postcode='$postcode',email='$email',contact_no='$contact_no' WHERE supplier_id='$supid'";
+			$insert_user_data = $adapter->query($sql_user, $adapter::QUERY_MODE_EXECUTE);
+	        return $getRecord2;
+		}
+		/*****delete Supplier ***/
+		public function deleteSupplier($supid, $adapter){
+			$sqlGetRecord="DELETE FROM add_supplier  WHERE supplier_id='$supid'"; 
+			$getRecord2 = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+	        return $getRecord2;
+		}
+		/*****All Supplier List***/
+		public function allSupplier($uid, $adapter){
+						/*****get all records of blocked FREELANCER/LOCUMS ***/
+			$sqlGetRecord="SELECT * FROM add_supplier WHERE  created_by='$uid'"; 
+		  	$getRecord = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+		  	$getvalues= $getRecord->toArray();
+		    return $getvalues;
+		}
+		/***** get Supplier Data By Id***/
+		public function getSupplierById($supid, $adapter){
+						/*****get all records of blocked FREELANCER/LOCUMS ***/
+			$sqlGetRecord="SELECT * FROM add_supplier WHERE  supplier_id='$supid'"; 
+		  	$getRecord = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+		  	$getvalues= $getRecord->toArray();
+		    return $getvalues[0];
+		}
+		//get store information and user infomation by job id
+		public function get_job_details_by_id($job_id, $adapter){
+			$job_info = new JobController();			
+			$finance_records = $job_info->get_job_info_by_id($job_id, $adapter);
+			//if($finance_records!=''){
+			$userData = $this->getUserByIdApp($finance_records['e_id'],$adapter);
+			
+			if(count($userData)==0){
+				$userData=null;
+			}else{
+				$userDataStore = $this->employerStoreByID($finance_records['store_id'],$adapter);
+				$userData['store_details']=$userDataStore['emp_store_name'];
+				$userData['job_date']=date('d/m/Y',strtotime($finance_records['job_date']));
+				$userData['job_rate']=$finance_records['job_rate'];
+				$userData['locations']=$finance_records['job_address'];
+			}
+		    //}
+		    return $userData;
+			
+		}	
+
+		/***** get Supplier Data By Id***/
+		public function getUserByIdApp($user_id,$adapter){
+						/*****get all records of blocked FREELANCER/LOCUMS ***/
+			$sqlGetRecord="SELECT * FROM user WHERE  id='$user_id'"; 
+		  	$getRecord = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+		  	$getvalues= $getRecord->toArray();
+		    return $getvalues[0];
+		}
+		/***** get Supplier Data By Id***/
+		public function employerStoreByID($store_id,$adapter){
+			/*****get all records of blocked FREELANCER/LOCUMS ***/
+			$sqlGetRecord="SELECT * FROM employer_store_list WHERE  emp_st_id='$store_id'"; 
+		  	$getRecord = $adapter->query($sqlGetRecord, $adapter::QUERY_MODE_EXECUTE);
+		  	$getvalues= $getRecord->toArray();
+		    return $getvalues[0];
+		}
+	}

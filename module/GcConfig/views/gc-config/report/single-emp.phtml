@@ -1,0 +1,139 @@
+<?php
+/**
+ * Design and develop by SURAJ WASNIK at FUDUGO.
+ * PHP Version >=5.3
+ *
+ * @category    Fudugo
+ * @package     Config
+ * @subpackage  Design
+ * @author      SURAJ WASNIK <suraj.wasnik0126@gmail.com>
+ * @link        http://www.fudugo.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+
+
+if (isset($_GET['emp_year'])) {
+    $current_year = $_GET['emp_year'];
+}
+
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->allRecord['record']));
+$paginator->setItemCountPerPage(20);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<div class="row">
+    <div class="col-md-12">
+        <h3 class="title-report">Employer : <?php echo $this->empName ?></h3>
+    </div>
+</div>
+<form id="filter" action="" method="GET">
+    <div class="row">
+        <div class="col-md-2">
+            <h4>Select Year :</h4>
+        </div>
+        <div class="col-md-3">
+            <select name="emp_year" id="year_option">
+                <option value="">--Select Year--</option>
+                <?php 
+                    foreach ($this->allRecord['allyear'] as $key => $year) {
+                        if ($current_year == $year) {
+                            echo "<option value='".$year."' selected>".$year."</option>";
+                        }else{
+                            echo "<option value='".$year."'>".$year."</option>";
+                        }
+                    }
+                    /*for ($i=2015; $i <= date('Y'); $i++) { 
+                        echo "<option value='".$i."'>".$i."</option>";
+                    }*/
+                ?>
+            </select>
+            <input type="hidden" id="current_year" value="<?php echo date('Y'); ?>">
+        </div>        
+        <div class="col-md-2">
+            <input type="hidden"  name="type" value="single_emp_job">
+            <input id="user_record" type="submit" value="export" style="margin-top: 0px; float:left;  border: 1px solid #0a9aca;  padding: 5px 10px;  text-decoration: none;  background: #00a9e0;  color: #fff;  font-size: 16px; margin-right: 10px; border-radius: 3px;">
+            <?php  if (isset($_GET['emp_year']) && !isset($_GET['downloaded'])) { ?>
+                <a href="<?php echo $this->serverUrl().'/admin/config/report/emp-job-report/single-emp/'.$this->empId; ?>"  style="  margin-top: 0px; float:left;  border: 1px solid #b5b3b3;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px; border-radius: 3px;">Clear</a>
+            <?php } ?>
+        </div>
+    </div>
+</form>
+<?php 
+    if (isset($_GET['user_record']) && $_GET['user_record']) {
+       echo "<script>alert('No record were found.')</script>";
+    }
+    if (isset($_GET['emp_year']) && !isset($_GET['downloaded'])) {
+        echo '<iframe src="'.$this->serverUrl().'/report?emp_year='.$_GET['emp_year'].'&type=single_emp_job&downloaded=1" style="display:none;"></iframe> ';
+    }
+?>
+<hr/>
+
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="15%">
+        <col width="15%">
+        <col width="10%">
+        <col width="10%">
+        <col width="10%">
+        <col width="15%">        
+        <col width="22%"> 
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('Month')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Year')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Jobs listed')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Jobs accepted')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Success rate')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Cancel rate')); ?></th>
+            <th style="text-align:center"><?php echo $this->escapeHtml($this->translate('Number of private job requests sent')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($paginator as $key => $value): ?>
+            <tr>
+                <td><?php echo $this->escapeHtml($value['month']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['year']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_list']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['job_accepted']); ?></td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['success_rate']); ?>%</td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['cancellation_rate']); ?>%</td>
+                <td style="text-align:center"><?php echo $this->escapeHtml($value['private_user_req']); ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/emp-job-report/single-emp/'.$value['emp_id']));?>
+</div>
+
+</div>
+        
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+    /*var current_yr = $("#current_year").val();
+    $("#year_option").val(current_yr);*/
+</script>
+<style type="text/css">
+    select {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+    form#filter {
+        background: #f0f0f0;
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid;
+    }
+    .title-report{
+        margin: 0;
+        padding: 10px;
+        margin-bottom: 5px;
+        background: #ccc;
+        border-bottom: 1px solid;
+    }
+</style>
+

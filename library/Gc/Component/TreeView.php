@@ -1,0 +1,139 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage Component
+ * @author     Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.got-cms.com
+ */
+
+namespace Gc\Component;
+
+use Gc\Registry;
+
+/**
+ * Create xml for jQuery treeview
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage Component
+ */
+class TreeView
+{
+    /**
+     * Render treeview html
+     *
+     * @param array   $treeviewData Contains data as array
+     * @param boolean $init         Initialize
+     *
+     * @return string
+     */
+    public static function render(array $treeviewData = array(), $init = true)
+    {
+        $html = '';
+        if ($init) {
+            $html .= '<div id="browser">';
+        }
+
+        $html .= '<ul>';
+
+        foreach ($treeviewData as $iterator) {
+            if (!$iterator instanceof IterableInterface) {
+                continue;
+            }
+
+            $children    = $iterator->getChildren();
+            $hasChildren = !empty($children);
+            $html       .= '<li id="' . $iterator->getIterableId() . '"';
+
+            if ($hasChildren) {
+                $rel            = ' class="folder"';
+                $ins            = '<ins class="jstree-icon">&nbsp;</ins>';
+                $renderChildren = self::render($children, false);
+            } else {
+                $renderChildren = '';
+                $rel            = ' class="default"';
+                $ins            = '';
+                $requestUri     = Registry::get('Application')->getRequest()->getUri()->getPath();
+                if ($requestUri == $iterator->getEditUrl()) {
+                    $rel = ' class="default active"';
+                }
+            }
+
+            $html .= $rel . '>' . $ins;
+            $html .= self::renderLink($iterator);
+            $html .= self::renderIcon($iterator);
+            $html .= $iterator->getName() . '</a>';
+            $html .= $renderChildren;
+            $html .= '</li>';
+        }
+
+        $html .= '</ul>';
+
+        if ($init) {
+            $html .= '</div>';
+        }
+
+        return $html;
+    }
+
+    /**
+     * Render Icon
+     *
+     * @param IterableInterface $iterator Document
+     *
+     * @return string
+     */
+    protected static function renderIcon(IterableInterface $iterator)
+    {
+        if ($iterator->getIcon() == 'folder') {
+            $html = '<ins
+                style="background:url(/public/media/icons/folder.gif) no-repeat scroll 0 0;"
+                class="jstree-icon">&nbsp;</ins>';
+        } else {
+            $html = '<ins
+                style="background:url(/public' . $iterator->getIcon() . ') no-repeat scroll 0 0;"
+                class="jstree-icon">&nbsp;</ins>';
+        }
+
+        return $html;
+    }
+
+    /**
+     * Render Icon
+     *
+     * @param IterableInterface $iterator Document
+     *
+     * @return string
+     */
+    protected static function renderLink(IterableInterface $iterator)
+    {
+        $id          = $iterator->getId();
+        $isPublished = null;
+        if (method_exists($iterator, 'isPublished')) {
+            $isPublished = $iterator->isPublished();
+        }
+
+        return '<a ' . (!empty($id) ?  'id="' . $id . '" ' : '')
+            . 'href="' . $iterator->getEditUrl() . '"'
+            . ($isPublished === false ? ' class="not-published"' : '') . '>';
+    }
+}

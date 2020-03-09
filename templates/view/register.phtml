@@ -1,0 +1,2431 @@
+<!-- Page Title -->
+<section class="innerhead">
+    <div class="container-fluid">
+        <div class="container">
+            <div class="row">  
+                <div class="col-md-12 col-sm-12 col-xs-12 bannercont animate text-center" data-anim-type="zoomIn" data-anim-delay="300">
+                    <div class="center">
+                        <h1>Register</h1>
+                    </div>
+                    <div class="breadcrum-sitemap">
+                        <ul>          
+                            <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                            <li><a href="javascript:void(0);">Register</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- .Page Title -->
+
+<section class="innerlayout">
+    <div class="container">
+        <div class="row bgwhite inbox register-page">
+            <?php echo $this->partial('flash-messages'); ?>
+            <?php
+                $return = $this->script('register');
+                $number_1 = mt_rand(1, 9);
+                $number_2 = mt_rand(1, 9);
+                $answer = substr(sha1($number_1+$number_2),5,10);
+                //user_acl_role
+                use GcFrontend\Controller\DbController as DbController;
+                use Zend\Serializer\Serializer;
+                use Zend\Db\Sql\Sql;
+                use Zend\Db\TableGateway\TableGateway;
+                use Gc\User\Packageresource\Model;
+                $dbConfig = new DbController();
+                $adapter = $dbConfig->locumkitDbConfig();
+                $sql = new Sql($adapter);
+                $select = $sql->select();
+                $sqlString_role="select * from user_acl_role where id!='1' and (id = 2 OR id = 3 )";
+                $results_role = $adapter->query($sqlString_role, $adapter::QUERY_MODE_EXECUTE);
+                $returnArray = $results_role->toArray();
+                /* Check and Get all guest data */
+                if (isset($_SESSION['user_email']) && $_SESSION['user_email'] != '' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) {
+                    $guest_email = $_SESSION['user_email'];
+                    $allGuestData = array();
+                    /* Guest user main data */
+                    $sqlGetGusetData = "SELECT * FROM  user WHERE email = '$guest_email'";    
+                    $getGusetData = $adapter->query($sqlGetGusetData, $adapter::QUERY_MODE_EXECUTE);
+                    $gusetData = $getGusetData->toArray();
+                    
+                    /* Guest user password data */
+                    $sqlGetGusetDataTemp = "SELECT upassword FROM  temporary_user_data WHERE uemail = '$guest_email'";    
+                    $getGusetDataTemp = $adapter->query($sqlGetGusetDataTemp, $adapter::QUERY_MODE_EXECUTE);
+                    $gusetDataTemp = $getGusetDataTemp->current();
+                    $user_temp_password=$gusetDataTemp['upassword'];
+                    
+                    /* Guest user extra info */
+                    $sqlGetGusetExtraData = "SELECT * FROM  user_extra_info WHERE uid IN ( SELECT id FROM  user WHERE email = '$guest_email')";    
+                    $getGusetExtraData = $adapter->query($sqlGetGusetExtraData, $adapter::QUERY_MODE_EXECUTE);
+                    $gusetExtraData = $getGusetExtraData->toArray();
+                    foreach ($gusetData as $key => $value) {
+                        $allGuestData[] = $value;
+                    }
+                    foreach ($gusetExtraData as $key => $value) {
+                        $allGuestData[] = $value;
+                    }
+                    /*echo "<pre>";
+                    print_r($allGuestData);
+                    echo "</pre>";*/
+                    $store_id   = explode(',',$allGuestData[1]['store_id']);
+                    $store_data = explode(',',$allGuestData[1]['data']);
+                    $field_disabled = "disabled";
+                    if(isset($allGuestData[1]['minimum_rate'])){
+                        $minimum_rate = unserialize($allGuestData[1]['minimum_rate']);
+                    }
+                }else{
+                    $allGuestData = array(
+                        0 => array(
+                                'lastname' => '',
+                                'firstname' => '',
+                                'email' => '',
+                                'login' => '',
+                                'user_acl_role_id'=>'',
+                                'user_acl_profession_id'=>'',
+                            ),
+                        1 => array(
+                                'gender' => '',
+                                'dob' => '',
+                                'mobile' => '',
+                                'address' => '',
+                                'city' => '',
+                                'zip' => '',
+                                'telephone' => '',
+                                'company' => '',
+                                'aoc_id' => '',
+                                'max_distance' => '',
+                                'minimum_rate' => '',
+                                'cet' => '',
+                                'goc' => '',
+                                'aop' => '',
+                                'inshurance_company' => '',
+                                'inshurance_no' => '',
+                                'inshurance_renewal_date' => '',
+                                'store_id' => '',
+                                'store_data' => '',
+                            ),
+                        );
+                    $gusetDataTemp="";
+                    $user_temp_password="";
+                    $store_id="";
+                    $store_data="";
+                    $field_disabled="";
+                }
+                /* Town list  */
+                $sqlstorelist = "SELECT * FROM site_town_table WHERE Lat != '' AND Lon != ''";    
+                $storeDetails = $adapter->query($sqlstorelist, $adapter::QUERY_MODE_EXECUTE); //print_r($storeDetails);
+                $storeResultset = $storeDetails->toArray();
+                $townListString = '';
+                foreach ($storeResultset as $key => $town) {        
+                    $townListString .= '"'.$town['Town'].'",';
+                }
+               
+            ?>
+
+            <form name="register_frm" id="register" action="<?php echo $this->escapeHtml($this->document('register')->getUrl()); ?>" method="post"  enctype="multipart/form-data">
+                <?php if (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) { ?>
+                    <input type="hidden" name="form_id" id="formID" value="<?php echo $allGuestData[1]['form_id'];?>">
+                <?php }else{ ?>
+                    <input type="hidden" name="form_id" id="formID" value="<?php echo rand(5, 15);?>">
+                <?php } ?>
+                
+                <?php if(!empty($return['error_message'])): ?>
+                    <div class="notification error alert alert-danger"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                <?php endif; ?> 
+
+                <!--  STEP 1 START -->
+
+                <div id="step1" class="col-md-12 col-sm-12 col-xs-12 regstepform formlft animate " data-anim-type="zoomIn" data-anim-delay="300">                    
+                    <div class="form-group">
+                        <div class="col-md-5 col-sm-5 col-xs-12 lft text-right">
+                            <label for="name">Who are you?<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                        </div>
+                        <div class="col-md-7 col-sm-7 col-xs-12 rgt">
+                            <?php
+                                $returnArray2 = "";
+                                $returnRole = "";                                
+                                foreach ($returnArray as $result) {
+                                    if($result['id'] == $allGuestData[0]['user_acl_role_id']){
+                                        $returnArray2 .="<option value='".$result['id']."'selected>I am ". $result['name']."</option>";
+                                        if($result['id']!='3'){
+                                            $returnRole.="<input type='hidden' name='role_pack' id='role_pack' value='".$result['id']."' >";
+                                        }else{
+                                            $returnRole.="<input type='hidden' name='no_role_pack' id='no_role_pack' value='".$result['id']."'>";
+                                        }
+                                    }else{
+                                        $returnArray2 .="<option value='".$result['id']."'>I am ". $result['name']."</option>";
+                                        if($result['id']!='3'){
+                                            $returnRole.="<input type='hidden' name='role_pack' id='role_pack' value='".$result['id']."' >";
+                                        }else{
+                                            $returnRole.="<input type='hidden' name='no_role_pack' id='no_role_pack' value='".$result['id']."'>";
+                                        }
+                                    }
+                                    
+                                }
+                                // package section
+                                $returnArray_pro=""; $questionsarr=""; $question_type=""; $arr=array();
+                                $select->from('user_acl_professional');
+                                $statement = $sql->prepareStatementForSqlObject($select);
+                                $results2 = $statement->execute();
+                                $data_pro=$results2->getResource()->fetchAll();
+                                $enableProfession = [];
+                                foreach ($data_pro as $result) {
+                                    if($result['id'] == $allGuestData[0]['user_acl_profession_id']){
+                                        $returnArray_pro .="<option value='".$result['id']."'selected >". $result['name']."</option>";
+                                    }else{
+                                        $returnArray_pro .="<option value='".$result['id']."'>". $result['name']."</option>";
+                                    } 
+
+                                    if($result['id'] == 3 || $result['id'] == 10){
+                                        $enableProfession[] = $result;
+                                    }
+
+                                }
+                            
+                            ?>
+                            <?php echo $returnRole;?>
+                            <select name="role" class="form-control input-text width-100" id="user_type" <?php echo $field_disabled;?>>
+                                <option value="">Select</option>
+                                <?php echo $returnArray2;?>
+                            </select>
+                            <div id="user_error" class="css_error"></div>
+                        </div>
+                    </div> 
+                    <div class="form-group">
+                        <div class="col-md-5 col-sm-7 col-xs-12 lft text-right">
+                            <label for="name">Please select your profession?<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                        </div>
+                        <div class="col-md-7 col-sm-7 col-xs-12 rgt">
+                            <select class="form-control input-text width-100" name="profession" id="profession_type" <?php echo $field_disabled;?> onChange="getval(this.value);">
+                                <option value="">Select</option>
+                                <?php 
+                                    if(!empty($enableProfession)){ 
+                                        foreach ($enableProfession as $key => $profession) {
+                                            if($allGuestData[0]['user_acl_profession_id'] == $profession['id']){
+                                                echo '<option value="'.$profession['id'].'" selected>'.$profession['name'].'</option>';
+                                            }else{
+                                                echo '<option value="'.$profession['id'].'" >'.$profession['name'].'</option>';
+                                            }                                            
+                                        }
+                                    }
+                                ?>
+                            </select>
+                            <div id="profession_error" class="css_error"></div>
+                        </div>
+                    </div>
+                    <div class="form-group text-right">
+                        <button type="button" class="btn btn-default btn-1 lkbtn" id="personal_info"><span>Next</span></button>
+                    </div> 
+                    <div id="qus_ans_div"></div>              
+                </div>
+
+                <div class="col-md-12 col-sm-12 col-xs-12 pad0 regsc2 info-benifit-section" id="info-benifit-section">
+                    <div class="col-md-6 col-sm-6 col-xs-12 lft">
+                        <article class="animate " data-anim-type="zoomIn" data-anim-delay="800">
+                            <h3><?php echo $this->subtitle1; ?></h3>
+                            <?php echo $this->subcontent1; ?>
+                            <ul class="list-inline">
+                                <a href="/locums" type="button" class="btn btn-default btn-1 lkbtn"><span>Learn More</span></a>
+                            </ul>                                        
+                            <h3><?php echo $this->subtitle2; ?></h3>
+                            <?php echo $this->subcontent2; ?>
+                            <ul class="list-inline">
+                                <a href="/employer" type="button" class="btn btn-default btn-1 lkbtn"><span>Learn More</span></a>
+                            </ul>
+                        </article>
+                    </div>
+                    <div class="col-md-6 col-sm-6 col-xs-12 rgt animate" data-anim-type="fadeInRight" data-anim-delay="800">
+                        <h3><?php echo $this->subtitle3; ?></h3>
+                        <?php echo $this->subcontent3; ?>                        
+                        <a href="/benefits" type="button" class="btn btn-default btn-1 lkbtn"><span>Learn More</span></a>
+                    </div>
+                </div>
+
+                <!--<div class="col-md-12 col-sm-12 col-xs-12 regsc3 animate" data-anim-type="fadeInUp" data-anim-delay="800" id="screen-section">
+                    <?php $screenshot2 = $this->screenshot2; ?>
+                    <div id="regCarousel" class="carousel slide" data-ride="carousel">   
+                        <div class="carousel-inner">
+                            <?php 
+                                $i = 1;
+                                while ($i <= 2) {
+                                    $varImg = 'screenshot'.$i;
+                                    $screenshot = $this->$varImg;
+                            ?>
+                                    <div class="item <?php if($i <= 1){ echo 'active'; } ?>">
+                                        <img src="/public/<?php echo $screenshot['original']['value']; ?>" alt="Locumkit Info" style="width:100%;">
+                                    </div>
+                            <?php $i++; } ?>
+                        </div>                        
+                        <ol class="carousel-indicators">
+                            <?php 
+                                $i = 1;
+                                while ($i <= 2) {
+                            ?>
+                                <li data-target="#regCarousel" data-slide-to="<?php echo $i; ?>" class="<?php if($i <= 1){ echo 'active'; } ?>"></li>
+                            <?php $i++; } ?>
+                        </ol>
+                    </div>
+                </div> -->
+
+
+
+                <div class="col-md-12 col-sm-12 col-xs-12 regsc3 animate register-slider" data-anim-type="fadeInUp" data-anim-delay="800" id="screen-section">
+                        <?php $screenshot2 = $this->screenshot2; ?>
+                        <div id="myCarousel" class="carousel slide" data-ride="carousel">
+                            <div class="carousel-inner" role="listbox">
+                                <?php 
+                                    $i = 1;
+                                    while ($i <= 6) {
+                                        $varImg = 'screenshot'.$i;
+                                        $screenshot = $this->$varImg;
+                                ?>
+                                <div class="item <?php if($i <= 2){ echo 'active'; } ?>">
+                                    <div class="row">
+                                        <div class="col-md-6 col-sm-6 col-xs-6"><img src="/public/<?php echo $screenshot['original']['value']; ?>" alt="screen1" title="screen1" width="500px"></div>
+                                     <?php 
+                                        $i++;
+                                        $varImg = 'screenshot'.$i;
+                                        $screenshot = $this->$varImg;
+                                     ?>
+                                        <div class="col-md-6 col-sm-6 col-xs-6"><img src="/public/<?php echo $screenshot['original']['value']; ?>" alt="screen2" title="screen2" width="500px"></div>
+                                    </div>
+                                </div>
+                                <?php $i++; } ?>                                                            
+                            </div>
+                            <!-- Left and right controls -->
+                            <a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
+                                <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                                <span class="sr-only">Previous</span>
+                            </a>
+                            <a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
+                                <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                                <span class="sr-only">Next</span>
+                            </a>
+                        </div>
+                </div>
+
+                <!--  STEP 1 END -->
+
+
+                <!--  STEP 2 STAT -->
+                <div id="step2" class="details-style step2-personal-info" style="display:none;">
+                    <div class="col-md-12"> <h2 class="text-center reg-step-title"><span>Personal information</span></h2> </div>
+                    <div class="col-md-12 pad0 form-group">                        
+                        <div class="col-md-6 col-sm-6">
+                            <label for="email">First name<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="text" name="fname" id="fname" autocomplete="off" value="<?php echo $allGuestData[0]['firstname']; ?>">
+                            <input type="hidden" name="" id="fname_valid">
+                            <div class="css_error" id="fname_error"></div>
+                        </div>
+                        <div class="col-md-6 col-sm-6">   
+                            <label for="lname">Last name<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="text" name="lname" id="lname" autocomplete="off" value="<?php echo $allGuestData[0]['lastname']; ?>">
+                            <input type="hidden" name="" id="lname_valid">
+                            <div class="css_error" id="lname_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 pad0 form-group">
+                        <div class="col-md-6 col-sm-6">
+                            <label for="email">Your email<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input type="hidden" id="user_type" value="<?php if($allGuestData[0]['user_acl_role_id']){ echo $allGuestData[0]['user_acl_role_id']; }?>">    
+                            <input class="form-control input-text width-100" type="text" name="email" id="email" autocomplete="off" value="<?php echo $allGuestData[0]['email']; ?>" <?php if($allGuestData[0]['email']){ echo "readonly"; }?>>
+                            <input type="hidden" name="email_exists" id="email_exists" value="1">
+                            <input type="hidden" name="email_valid" id="email_valid">
+                            <div class="css_error" id="email_error"></div>  
+                        </div>
+                        <div class="col-md-6 col-sm-6"> 
+                            <label for="login">Username<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="text" name="login" id="login" autocomplete="off" value="<?php echo $allGuestData[0]['login']; ?>" <?php if($allGuestData[0]['login']){ echo "readonly"; }?>>
+                            <input type="hidden" name="login_exists" id="login_exists">
+                            <input type="hidden" name="" id="login_valid">
+                            <div class="css_error" id="login_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 pad0 form-group">
+                        <div class="col-md-6 col-sm-6">
+                            <label for="login">Password<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="password" name="upassword" id="upassword" <?php if(isset($gusetDataTemp) && $gusetDataTemp!=""){?> value="<?php echo $user_temp_password;?>" readonly <?php }?>>
+                            <input type="hidden" name="" id="upassword_valid">
+                            <div class="css_error" id="upassword_error"></div>
+                        </div>
+                        <div class="col-md-6 col-sm-6"> 
+                            <label for="login">Confirm password<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="password" name="cpassword" id="cpassword" <?php if(isset($gusetDataTemp) && $gusetDataTemp!=""){?> value="<?php echo $user_temp_password;?>" readonly <?php }?>>
+                            <input type="hidden" name="" id="cpassword_valid">
+                            <div class="css_error" id="cpassword_error"></div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-md-12 pad0 form-group">                        
+                        <div class="col-md-6 col-sm-6">
+                            <label for="conpany" id="company_txt">Company name&nbsp;<a href="javascript:void(0);" data-toggle="tooltip" title="Question only applicable if you work through a registered company. Not applicable if you are working as a self employed freelancer."><i class="fa fa-question-circle" aria-hidden="true"></i></a></label>
+                            <input class="form-control input-text width-100" type="text" name="company" id="company" autocomplete="off" value="<?php echo $allGuestData[1]['company'] ?>">
+                            <div class="css_error" id="company_error"></div>
+                        </div>
+                        <div class="col-md-6 col-sm-6">
+                            <label for="login">Address<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="text" name="address" id="address" autocomplete="off" value="<?php echo $allGuestData[1]['address'] ?>">
+                            <div class="css_error" id="address_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 pad0 form-group">
+                        <div class="col-md-6 col-sm-6 city-selector"> 
+                            <label for="login">Town/City<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label> 
+                            <input class="form-control input-text width-100" type="text" name="city" id="city" autocomplete="off" value="<?php echo $allGuestData[1]['city']; ?>">
+                            <div id="city-autocomplate-result"> </div>
+                            <div class="css_error" id="city_error"></div>
+                        </div>
+                        <div class="col-md-6 col-sm-6">
+                            <label for="login">Postcode<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="text" name="zip" id="zip" autocomplete="off" value="<?php echo $allGuestData[1]['zip']; ?>">
+                            <input type="hidden" name="" id="zip_valid">
+                            <div class="css_error" id="zip_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 pad0 form-group"> 
+                        <div class="col-md-6 col-sm-6">  
+                            <label for="telephone" id="telephone_txt">Home Telephone</label>
+                            <input class="form-control input-text width-100" type="text" name="telephone" id="telephone" autocomplete="off" value="<?php if($allGuestData[1]['telephone']!=0){echo $allGuestData[1]['telephone'];}?>" maxlength="15" minlength="5">
+                            <div class="css_error" id="telephone_error"></div>
+                        </div>
+                        <div class="col-md-6 col-sm-6"> 
+                            <label for="mobile" id="mobile_number">Mobile number<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true"></i></label>
+                            <input class="form-control input-text width-100" type="text" name="mobile" minlength="10" id="mobile" autocomplete="off" value="<?php if($allGuestData[1]['mobile']!=0){echo $allGuestData[1]['mobile'];} ?>" maxlength="11">
+                            <div class="css_note" id="mobile_note"></div>
+                            <div class="css_error" id="mobile_error"></div>
+                        </div>
+
+                    </div>
+ 
+                    <div class="col-md-12 pad0 form-group text-center" style="margin-top: 20px;"> 
+                        <span class="formlft">                            
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="back_personal"><span><i class="fa fa-angle-double-left" aria-hidden="true"></i> &nbsp;&nbsp;Back</span></button>
+                        </span>
+                        <span class="formlft">
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="qus_next"><span>Next &nbsp;&nbsp;<i class="fa fa-angle-double-right" aria-hidden="true"></i></span></button>
+                        </span>  
+                    </div>
+
+                   
+                </div>
+                <!--  STEP 2 END -->
+
+                    <div id="please-wait-msg" style="display:none">
+                        <h3><img src="<?php echo $this->cdn('/frontend/images/');?>loader.gif"> Please wait... </h3>
+                    </div>
+                    <div id="step3" style="display:none;">                      
+                        <section id="packages" class="package">
+
+                                <div class="package-container">
+                                    <div class="package-heading">
+                                        <!--<h2 class="text-center reg-step-title">Please select a package?</h2>-->
+                                    </div>
+                                    
+                                    <div class="package-block">
+                                        <div class="col-md-3 col-sm-3 package-price-box " id="package-4">
+                                            <div class="set-pack-icon">
+                                                <div class="set-pack-price">
+                                                    <img src="<?php echo $this->cdn('/frontend/locumkit-template/img').'/logo.png';?>" title="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" alt="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>">
+                                                </div>
+                                            </div>
+                                            <!--<div class="set-pack-content">
+                                                <h2 class="text-center">Free Subscription</h2>
+                                                <p>3 months trial membership</p>
+                                            </div>-->
+                                            <div class="set-pack-link">
+                                                <!--<a class="btn btn-default btn-1 lkbtn" href="javascript:void(0);" onclick="open_benifits(4)" id="pack-free-subscription">Select</a>-->
+                                                <input type="hidden" name="free-subscription" id="free_subscription" value="0">
+                                                <input type="hidden" name="free_subscription_id" id="free_subscription_id" value="4">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>                            
+                        </section>                          
+                        <section id="package-selection-section" class="clearfix">
+                            <div class="package-selection-container">
+                                <!-- <p>I have selected</p>-->
+                                <input type="hidden" name="pacakage_show" id="package_val" readonly="" class="form-control input-text width-100" value="Free Subscription">
+                                <input type="hidden" name="pacakage_val" id="package_name_val" value="Free Subscription">
+                                <input type="hidden" name="package-final" id="package-final" value="0">
+                                <input type="hidden" name="package_id" id="package_id" value="4">
+                            </div>
+                            <div class="row" style="display: none">
+                                <div class="col-md-6 col-sm-6">
+                                    <!--<h2 class="padding-left-30">Benifits</h2>-->
+                                    <div id="benifits-section" class="padding-left-30"></div>
+                                </div>
+                                <div class="col-md-6 col-sm-6">
+                                    <div id="gold_screen" style="display: none">
+                                        <?php $gold_screen = $this->gold_screen; ?> 
+                                        <img src="/public<?php echo $gold_screen['value']; ?>" alt="screen1" title="screen1" width="100%">
+                                    </div>
+                                    <div id="silver_screen" style="display: none">
+                                        <?php $silver_screen = $this->silver_screen; ?> 
+                                        <img src="/public<?php echo $silver_screen['value']; ?>" alt="screen1" title="screen1" width="100%">
+                                    </div>
+                                    <div id="bronze_screen" style="display: none">
+                                        <?php $bronze_screen = $this->bronze_screen; ?> 
+                                        <img src="/public<?php echo $bronze_screen['value']; ?>" alt="screen1" title="screen1" width="100%">
+                                    </div>
+                                    <div id="free_sub_screen" style="display: none;    text-align: right;">    
+                                        <img src="<?php echo $this->cdn('/frontend/images/free-sub.jpg'); ?>" alt="Free Subscription" title="Free Subscription" width="100%" style="width: 60%;">                            
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <input type="radio" name="paypal_method" id="paypal_payment_option" value="paypal" checked style="display:none;">
+                        <!--<section id="payment-selection-section" class="clearfix">
+                            <div class="row">
+                                <div class="col-md-12 payment-type">
+                                    <p class="padding-left-30 ">Payment methods : </p>
+                                    <p class="padding-left-30"><input type="radio" name="paypal_method" id="paypal_payment_option" value="paypal"><span class="margin-left">Paypal</span></p>
+                                    <p class="padding-left-30"><input type="radio" name="paypal_method" value="direct_debit"><span class="margin-left">Card</span></p>
+                                    <p class="padding-left-30"><input type="radio" name="paypal_method" value="annual" disabled><span class="margin-left">Annual</p>
+                                    <div class="css_error padding-left-30" id="package_error"></div>
+                                </div>
+                            </div>
+                        </section>-->  
+                      
+                      <div class="col-md-12 btn-img paypalbtnn">
+                            <?php if(!isset($_GET['profile'])){ ?>               
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="back_paypal"><span><i class="fa fa-angle-double-left" aria-hidden="true"></i> &nbsp;&nbsp;Back</span></button>
+                            
+                            <?php } ?>
+                            
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="paypal_direct"><span>Continue &nbsp;&nbsp;<i class="fa fa-angle-double-right" aria-hidden="true"></i></span></button>
+                           <input type="hidden" id="paypal_submit_free_pkg" value="<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png"/></span>
+                           <input type="hidden" id="paypal_submit_pkg" value="<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png"/></span>
+                          <!--<span><a href="<?php echo $this->serverUrl();?>/login-form" title="Skip And Pay later">   <button type="button" class="btn btn-default btn-1 lkbtn" id="skippaylater"><span> Skip & pay later</span></button></a></span>-->
+                      <!--  <span><a href="<?php echo $this->serverUrl();?>/login-form" title="Skip And Pay later"><img src="<?php echo $this->cdn('/frontend/locumkit-template/');?>img/skip_paylater.png" alt="Skip And Pay later" title="Skip And Pay later" id="skippaylater"></a></span>-->
+                       </div>
+                    </div>
+                    <!-- Step3 end -->
+                    <!-- Employer Multistore Field -->
+                    <div id="emp-store-div" style="display:none;">
+                      <div class="col-md-12">
+                            <h2 class="text-center reg-step-title">Add Store Information&nbsp;<a href="javascript:void(0);" data-toggle="tooltip" data-placement="top" title="Please add store information to get the best freelancer."><i class="fa fa-question-circle" aria-hidden="true"></i></a></h2>
+                      </div>
+                     
+                      <div class="col-md-12">
+                        <div class="store_block">
+                          <div class="store-details">
+                            <div class="width-full" id="show_add_button"><a href="javascript:void(0);" class="color-blue float-right" id="add_emp_store"><i class="fa fa-plus" aria-hidden="true" title="Add Employer store"></i></a></div> 
+                            <div class="margin-bottom" id="set_user_data">
+                        
+                            </div>
+                           
+                            </div>
+                         </div>
+                       </div>
+                     
+                      
+                      <div class="col-md-12 btn-img bck_sub_div">
+                        <p style="padding-top: 15px">
+                            <span>
+                                <button type="button" class="btn btn-default btn-1 lkbtn" id="back_qus1"><span><i class="fa fa-angle-double-left" aria-hidden="true"></i> &nbsp;&nbsp;Back</span></button>
+                            </span>
+                            <span>
+                                <button type="button" class="btn btn-default btn-1 lkbtn" id="save_store"><span><i class="fa fa-floppy-o" aria-hidden="true"></i> &nbsp;&nbsp;Submit</span></button>
+                            </span>
+                        </p>
+                    </div>
+                    </div>
+                    <!-- Employer Multistore end-->
+                    <div id="paypal-redirect" style="display:none">                      
+                        <h3><img src="<?php echo $this->cdn('/frontend/images/');?>loader.gif"> Please wait..</h3>
+                    </div>
+                    <div id="step4" style="display:none;">
+                      <div class="col-md-12">
+                            <h2 class="text-center reg-step-title">PayPal Login</h2>
+                      </div>
+                      <div class="col-md-12" style="display:none;">
+                        <p style="line-height: 1.7em;">
+                            To help prevent spam, please enter the answer to this question:
+                            <span><?php echo $number_1; ?> + <?php echo $number_2; ?> = ?</span>
+                            <input type="text" name="answer" class="form-control input-text width-100"><input type="hidden" name="answer_hash" value="<?php echo $answer; ?>">
+                        </p>
+                    </div>
+                    <div class="col-md-12 btn-img fnl_sub_btn">
+                        <p style="padding-top: 15px"><span>&nbsp;</span>
+                        <!-- <input type="image" src="<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png"  name="register_submitted">  --> 
+                            <button type="button" class="btn btn-default btn-1 lkbtn" name="register_submitted" id="register_submitted"><span><i class="fa fa-floppy-o" aria-hidden="true"></i> &nbsp;&nbsp;Submit</span></button>                      
+                    </div>
+                    </div>
+
+
+            </form>
+            
+            <div id="qus_step" style="display:none"> 
+            <h3>The following questions will enable us to notify you about job opportunities relevant to your individual needs and clinical competencies.</h3> 
+            <div class='col-md-12 margin-bottom' align='center'><a id="how-to-answer-question" href='<?php echo $this->serverUrl();?>' target='_blank' class='tip_font2' style='text-align:center;'>(Please click here for help on how to answer these questions)</a></div> 
+            <!-- <form id="emp_opt_store" class="register-frm-next-step">
+                  <div class="col-md-11 register-frm" id="emp_store_list_fix" style="display:none;">
+                        <div class="col-md-6 text-right"><p>What type of store do you run?</p></div>
+                        <div class="col-md-6 margin-bottom">
+                            <select name="store_id_emp" id="store_id_emp" required class="form-control input-text width-100">
+                               <option value="Boots">Boots</option>
+                               <option value="Specsavers">Specsavers</option>                                    
+                               <option value="Vision express">Vision express</option>
+                               <option value="Asda">Asda</option>
+                               <option value="David Clulows">David Clulows</option>
+                               <option value="Domaciliary">Domaciliary</option>
+                               <option value="Independent">Independent</option>
+                               <option value="Leightons">Leightons</option>
+                               <option value="Scrivens">Scrivens</option>
+                               <option value="Tesco">Tesco</option>
+                               <option value="The Optical Shop">The Optical Shop</option>
+                               <option value="Optical express">Optical express</option>
+                            </select>
+                        </div>
+                  </div>
+            </form> --> 
+            <form id="question_div" name="question_form" class="register-frm register-frm-next-step">
+
+            </form>
+            
+            <form id="free_min_rate" class="register-frm register-frm-next-step">
+            <?php $arr_week2=array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'); ?>
+                  <div class="col-md-11" id="free_min_rate_open" style="display:none;">
+                        <div class="col-md-6 text-right"><p>Please enter the minimum acceptable rate<i class='fa fa-asterisk required-stars' aria-hidden='true' ></i><br/><span class="tip_font2">( Please enter a whole number, ie: 250 )</span></p></div>
+                        <div class="col-md-6">
+                            <?php $st_cnt3=1;foreach($arr_week2 as $weekdays2){?>
+                            <div class="col-md-12 padding-none">
+                                <div class="col-md-3 padding-none"><p class="font-weight-500"><?php echo $weekdays2;?></p><input type="hidden" name="week_days_free_rate[]" value="<?php echo $weekdays;?>" ></div>
+                                <div class="col-md-9 padding-none"><input type="number" name="min_rate[]" class="form-control input-text width-100 req-qus-<?php echo "00".$st_cnt3;?>" placeholder="Enter minimum rate" <?php if(isset($minimum_rate)){echo 'value="'.$minimum_rate[$weekdays2].'"';}?>>
+                                <div id="required-qus-<?php echo "00".$st_cnt3;?>" style="clear: both;"></div>
+                                </div>
+                            </div>
+                            <?php $st_cnt3++;}?>
+                        </div>
+                  </div>
+              <?php ?>
+            </form>
+            <form id="storeinfo_div">
+                    <div id="store_div" style="display:none;" class="register-frm register-frm-next-step">
+                        <!-- <div class="col-md-11">
+                            <div class="col-md-6 text-right"><p>Which of the following stores have you worked for in the past?<i class="fa fa-asterisk required-stars" aria-hidden="true" ></i><br><span class="tip_font2">(If selected, please state how long has it been since you last worked)</span></p></div>
+                            <div class="col-md-6 multi_sel_list">
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                        <input class="req-store-qus-00-1 width-100" type="checkbox" id="st_3" onChange="open_select(3);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Boots', $store_id)){ echo "checked";}}?>  value="Boots"><span>Boots</span></div>
+                                    <div class="col-md-6" id="store_id_3" style=" <?php if(isset($store_id)){if(in_array('Boots', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Boots', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Boots']['Boots']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Boots']['Boots']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Boots']['Boots']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Boots']['Boots']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_2" onChange="open_select(2);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Specsavers', $store_id)){ echo "checked";}}?> value="Specsavers"><span>Specsavers</span></div>
+                                    <div class="col-md-6" id="store_id_2" style=" <?php if(isset($store_id)){if(in_array('Specsavers', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Specsavers', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required>
+                                    <option value="0-6 months" <?php if($exp_var['Specsavers']['Specsavers']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Specsavers']['Specsavers']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Specsavers']['Specsavers']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Specsavers']['Specsavers']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6"><input class="req-store-qus-00-1  width-100"  type="checkbox" id="st_1" onChange="open_select(1);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Vision express', $store_id)){ echo "checked";}}?> value="Vision express" required><span>Vision express</span></div>
+                                    <div class="col-md-6" id="store_id_1" style=" <?php if(isset($store_id)){if(in_array('Vision express', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Vision express', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Vision express']['Vision express']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Vision express']['Vision express']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Vision express']['Vision express']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Vision express']['Vision express']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_10" onChange="open_select(10);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Asda', $store_id)){ echo "checked";}}?> value="Asda"><span>Asda</span>
+                                    </div>
+                                    <div class="col-md-6" id="store_id_10" style=" <?php if(isset($store_id)){if(in_array('Asda', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Asda', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Asda']['Asda']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Asda']['Asda']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Asda']['Asda']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Asda']['Asda']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_12" onChange="open_select(12);" name="store_id[]"  <?php if(isset($store_id)){if(in_array('David Clulows', $store_id)){ echo "checked";}}?> value="David Clulows"><span>David Clulows</span></div>
+                                    <div class="col-md-6" id="store_id_12" style=" <?php if(isset($store_id)){if(in_array('David Clulows', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('David Clulows', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['David Clulows']['David Clulows']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['David Clulows']['David Clulows']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['David Clulows']['David Clulows']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['David Clulows']['David Clulows']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_9" onChange="open_select(9);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Domaciliary', $store_id)){ echo "checked";}}?> value="Domaciliary"><span>Domaciliary</span></div>
+                                    <div class="col-md-6" id="store_id_9" style=" <?php if(isset($store_id)){if(in_array('Domaciliary', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Domaciliary', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Domaciliary']['Domaciliary']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Domaciliary']['Domaciliary']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Domaciliary']['Domaciliary']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Domaciliary']['Domaciliary']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_8" onChange="open_select(8);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Independent', $store_id)){ echo "checked";}}?> value="Independent"><span>Independent</span></div>
+                                    <div class="col-md-6" id="store_id_8" style=" <?php if(isset($store_id)){if(in_array('Independent', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Independent', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Independent']['Independent']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Independent']['Independent']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Independent']['Independent']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Independent']['Independent']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_6" onChange="open_select(6);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Leightons', $store_id)){ echo "checked";}}?> value="Leightons"><span>Leightons</span></div>
+                                    <div class="col-md-6" id="store_id_6" style=" <?php if(isset($store_id)){if(in_array('Leightons', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Leightons', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Leightons']['Leightons']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Leightons']['Leightons']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Leightons']['Leightons']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Leightons']['Leightons']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_7" onChange="open_select(7);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Scrivens', $store_id)){ echo "checked";}}?> value="Scrivens"><span>Scrivens</span></div>
+                                    <div class="col-md-6" id="store_id_7" style=" <?php if(isset($store_id)){if(in_array('Scrivens', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Scrivens', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Scrivens']['Scrivens']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Scrivens']['Scrivens']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Scrivens']['Scrivens']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Scrivens']['Scrivens']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_11" onChange="open_select(11);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Tesco', $store_id)){ echo "checked";}}?> value="Tesco"><span>Tesco</span>
+                                    </div>
+                                    <div class="col-md-6" id="store_id_11" style=" <?php if(isset($store_id)){if(in_array('Tesco', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Tesco', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Tesco']['Tesco']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Tesco']['Tesco']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Tesco']['Tesco']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Tesco']['Tesco']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_5" onChange="open_select(5);" name="store_id[]" <?php if(isset($store_id)){if(in_array('The Optical Shop', $store_id)){ echo "checked";}}?> value="The Optical Shop"><span>The Optical Shop</span></div>
+                                    <div class="col-md-6" id="store_id_5" style=" <?php if(isset($store_id)){if(in_array('The Optical Shop', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('The Optical Shop', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['The Optical Shop']['The Optical Shop']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['The Optical Shop']['The Optical Shop']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['The Optical Shop']['The Optical Shop']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['The Optical Shop']['The Optical Shop']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-12">
+                                    <div class="col-md-6">
+                                    <input class="req-store-qus-00-1  width-100" type="checkbox" id="st_4" onChange="open_select(4);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Optical express', $store_id)){ echo "checked";}}?> value="Optical express"><span>Optical express</span></div>
+                                    <div class="col-md-6" id="store_id_4" style=" <?php if(isset($store_id)){if(in_array('Optical express', $store_id)){ echo "display:block";}} else{?>display:none;<?php }?>">
+                                    <?php if(isset($store_id)){if(in_array('Optical express', $store_id)){?>
+                                    <select name="store_data[]" class="form-control input-text width-100" id="store_data1" required><option value="0-6 months" <?php if($exp_var['Optical express']['Optical express']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Optical express']['Optical express']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Optical express']['Optical express']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Optical express']['Optical express']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select><?php }}?>
+                                    </div>
+                                </div>
+                                <div id="req-store-qus-00-1" style="clear: both;"></div>
+                            </div>
+                        </div> -->
+                        <div class="col-md-11 lk_dst_radio">
+                            <div class="col-md-6 text-right margin-bottom"><p class="lk_dst_txt" style="margin-bottom: 0;">How far you willing to travel?<i class='fa fa-asterisk required-stars' aria-hidden='true' ></i></p><p class="lk_dst_txt"><em style="font-style: italic;font-size: 12px;"><a style="color:#00a8dd;" href="#" onclick="showMapModal();">Click here</a> to view a map of UK boroughs/counties.</em></p></div>
+                            <div class="col-md-6">
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="5" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="5"){ echo "checked";?><?php }?>>
+                                <span>5 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="10" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="10"){ echo "checked";?><?php }?>><span>10 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="15" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="15"){ echo "checked";?><?php }?>><span>15 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="20" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="20"){ echo "checked";?><?php }?>><span>20 miles</span></div>
+                             <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="25" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="25"){ echo "checked";?><?php }?>><span>25 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="30" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="30"){ echo "checked";?><?php }?>><span>30 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="35" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="35"){ echo "checked";?><?php }?>><span>35 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="40" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="40"){ echo "checked";?><?php }?>><span>40 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="45" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="45"){ echo "checked";?><?php }?>><span>45 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="50" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="50"){ echo "checked";?><?php }?>><span>50 miles</span></div>
+                            <div class="dist_list"><input type="radio" name="max_distance" class="width-100 margin-right" value="Over 50" onclick="get_list(this.value);" <?php if(isset($allGuestData[1]['max_distance']) && $allGuestData[1]['max_distance']=="Over 50"){ echo "checked";?><?php }?>><span>Over 50 miles</span></div>
+                            <input type="hidden" id="store_selected">
+                            <div id="store_selected_error" style="clear: both;margin-bottom: 10px;"></div>                    
+                            </div>
+                        </div>
+                        <div class="col-md-11">
+                          <div class="celltip-bmm regist-tip">
+                            <div class="col-md-6 text-right celltip-wppr"><p>How many CET points do you have in the current cycle <a href="javascript:void(0);" data-toggle="tooltip" title="" data-original-title="Locumkit will require evidence of your CET points every three months to ensure credibility."><i class="fa fa-question-circle" aria-hidden="true"></i></a></p></div>
+                            <div class="col-md-6 text-left"><input type="text" name="cet" id="cet" class="form-control input-text width-100" placeholder="000" maxlength="3" autocomplete="off" <?php if($allGuestData[1]['cet']){?>value="<?php echo $allGuestData[1]['cet'];?>"<?php }?> style="margin:10px 0px" value="">                            </div>    
+                            </div>
+                        </div>
+                        <div class="col-md-11">
+                            <div class="col-md-6 text-right"><p>What is your GOC NO?<i class='fa fa-asterisk required-stars' aria-hidden='true' ></i></p></div>
+                            <div class="col-md-6 text-left"><input type="text" name="goc" id="goc" class="form-control input-text width-100 req-qus-10001" placeholder="01-12345 or D-00000" maxlength="8" autocomplete="off" <?php if($allGuestData[1]['goc']){?>value="<?php echo $allGuestData[1]['goc'];?>"<?php }?> >
+                                <div id="required-qus-10001"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-11">
+                            <div class="col-md-6 text-right"><p>Indemnity insurance: If AOP, what is your AOP membership number? </p></div>
+                            <div class="col-md-6">                              
+                                <input type="text" name="aop" id="aop" class="form-control input-text width-100 req-qus-10000" placeholder="00000" maxlength="5" autocomplete="off" style="margin:10px 0px" <?php if($allGuestData[1]['aop']){?>value="<?php echo $allGuestData[1]['aop'];?>"<?php }?>>
+                            </div>
+                        </div>
+                        <div class="col-md-11">
+                            <div class="col-md-6 text-right"><p> If not AOP, please insert Company insured with, Policy number, Date of renewal? </p></div>
+                            <div class="col-md-6">
+                            <p><input type="checkbox" name="inshu_yes" id="inshu_yes" value="1" class="width-100 pull-left margin-bottom" <?php if($allGuestData[1]['inshurance_company']!=""){ echo "checked";}?>><span class="margin-left text-left lk_confirm" >Yes</span> </p>
+                                <div id="inshu_open" style=" <?php if($allGuestData[1]['inshurance_company']!=""){ echo "display:block";}else{?>display:none;<?php }?>" class="margin-top">
+                                    <input type="text" name="inshurance_company" id="inshurance_company" class="form-control input-text width-100 margin-bottom" placeholder="company name" autocomplete="off" <?php if($allGuestData[1]['inshurance_company']){?>value="<?php echo $allGuestData[1]['inshurance_company'];?>"<?php }?>>
+                                    <input type="text" name="inshurance_no" id="inshurance_no" class="form-control input-text width-100 margin-bottom" placeholder="Membership number" autocomplete="off" <?php if($allGuestData[1]['inshurance_no']){?>value="<?php echo $allGuestData[1]['inshurance_no'];?>"<?php }?>>
+                                    <input type="date" name="inshurance_renewal_date" id="inshurance_renewal_date" class="form-control input-text width-100 margin-bottom" placeholder="dd-mm-yyyy" autocomplete="off" maxlength="10" <?php if($allGuestData[1]['inshurance_renewal_date']){?>value="<?php echo $allGuestData[1]['inshurance_renewal_date'];?>"<?php }?>>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-11">
+                            <div class="col-md-6 margin-bottom text-right"><p>What is your Opthalmic List Number (OPL)?</p></div>
+                            <div class="col-md-6"><input type="text" name="aoc_id" id="aoc_id" placeholder="OPL 11-11111/1AA" maxlength="16" class=" form-control input-text width-100 -req-qus-10002" style="margin:10px 0px" <?php if($allGuestData[1]['aoc_id']){?>value="<?php echo $allGuestData[1]['aoc_id'];?>"<?php }?>>
+                                <div id="-required-qus-10002"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                    <!-- Store list pop up start-->
+                    <div id="getlist-section" class="modal fade" role="dialog">
+                        <div class="list-popup">
+                          <div class="modal-dialog">
+                            <!-- Modal content-->
+                            <div class="modal-content">
+                              <div class="modal-header no-border-bottom">
+                                <button type="button" class="close" data-dismiss="modal" onclick="close_dive('getlist-section');">&times;</button>
+                                <h4 class="modal-title">Towns list</h4>
+                              </div>
+                              <div class="modal-body">
+                              <h3 id="load_list" style="display:none"><img src="../public/frontend/locumkit-template/img/loader.gif"> Please wait... </h3>
+                              <form id="store_list_div" name="store_frm" action="/ajax-request">
+                                
+                              </form>
+                              </div>
+                              <div class="modal-footer no-border-top">
+                               
+                              </div>
+                            </div>
+                          </div>
+                       </div>
+                     </div>
+                    <!-- Store list pop up end -->
+                     <div class="col-md-12 pad0 form-group text-center" style="margin-top: 20px;"> 
+                        <span class="formlft">                            
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="back_qus"><span><i class="fa fa-angle-double-left" aria-hidden="true"></i> &nbsp;&nbsp;Back</span></button>
+                        </span>
+                        <span class="formlft" id="payment-pro">
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="package_info" onClick='save_ans();'><span>Next &nbsp;&nbsp;<i class="fa fa-angle-double-right" aria-hidden="true"></i></span></button>
+                        </span>  
+
+                        <span id="normal-submit">
+                            <button type="button" class="btn btn-default btn-1 lkbtn" id="save_user" onClick='save_ans();'><span>submit &nbsp;&nbsp;<i class="fa fa-angle-double-right" aria-hidden="true"></i></span></button>
+                        </span>
+                    </div>
+                  
+              </div>
+              
+              <!-- Partial Registration notification -->
+                <div id="partial-register-notify-model2" class="modal fade" role="dialog">
+                    <div class="modal-dialog">
+                        <!-- Modal content-->
+                        <div class="modal-content">
+                            <div class="modal-header no-border-bottom">
+                                <h4 class="modal-title">Notification</h4>
+                            </div>
+                            <div class="modal-body">
+                                <p><b>Please note:</b> Your registartion is partial complete. You can now login using your details, however you wont be able to use the functionality of the website until registration has been completed. You can complete your profile now by using the link below or pay later using the link on your dashboard</p>
+                                <div class="row">
+                                    <div class="col-md-6 skip-btn" ><a href="/login-form">Skip</a></div>
+                                    <div class="col-md-6 cont-btn"><button type="button" class="close" data-dismiss="modal" onclick="close_dive('partial-register-notify-model2');">Continue</button></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer no-border-top">
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+    <!-- Modal content-->
+    <div id="locumkit_maps" class="modal fade" role="dialog">
+        <div class="modal-dialog" style="width: 50vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Locumkit Maps</h4>
+                </div>
+                <div class="modal-body" style="display: inline-block">
+                    <div class="col-md-5"><img alt="" id="uk-map" src="https://www.locumkit.com/public/media/ckeditor-file/UK-map-437.png" style="width: 100%"></div>
+                    <div class="col-md-7"><img alt="" id="london-map" src="https://www.locumkit.com/public/media/ckeditor-file/PCT london by map.jpg" style="width: 100%; "></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Zoom Map Pop up -->
+    <div class="modal fade" id="map-dialog" role="dialog">
+        <div class="modal-dialog" style="width: 90% !important; height: 80vh !important;">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="text-align: center; max-height: 80vh; overflow-y: auto;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.maskedinput.js'); ?>"></script>
+<script type="text/javascript">
+    $("#personal_info").click(function(){
+        var role_id = $('#user_type').val();
+        var profession_type = $('#profession_type').val(); 
+        window.getval(profession_type);
+        if(role_id==3){ 
+            $("form#storeinfo_div").remove();
+        }
+    });
+    function getval(id){
+        var role_id = $('#user_type').val();
+        var profession_type = $('#profession_type').val(); // category 
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'cat_id':id,'question':1,'role_id':role_id},
+            'success':function(result){ //alert('question'+result);
+                if(result!="0"){ //alert('inside');
+                    if (role_id == 2) {
+                        $("#how-to-answer-question").attr("href","<?php echo $this->serverUrl() ?>/how-to-answer-question-fre");
+                    }else{
+                        $("#how-to-answer-question").attr("href","<?php echo $this->serverUrl() ?>/how-to-answer-question-emp");
+                    };
+                    $("#question_div").html(result);
+                    if(role_id==3){
+                        $("#free_min_rate").remove();
+                    }
+                    if(role_id==2){
+                        $("#free_min_rate_open").show();
+                    }
+                    if(role_id==2){ // && profession_type==3
+                        $("#store_div").append("<input type='hidden' id='check_field' name='check_field' value='1'>");
+                        $("#store_div").show();
+                    }
+                    if(role_id==3){  // && profession_type==3
+                        $("#emp_store_list_fix").show();
+                    }
+                }else{
+                    
+                }
+            }
+        });
+    }
+    function close_dive(id){
+        $("#"+id).hide(1000);
+        $('.modal-backdrop').hide(1000);
+        if(id=="partial-register-notify-model2"){
+            $("#step3").show(1000);
+        }
+    }
+ </script>
+
+ <script type="text/javascript">
+    function get_type(getval){
+        var ans_type=$("#ans_type").val();
+        if(ans_type==1){
+            $("#ans_text").show(1000);
+        }else if(ans_type==2){
+            $("#ans_opt").show(1000);
+        }
+    }
+    function is_validate(user_type,no_role_pack){ 
+        var profession_type = $('#profession_type').val();
+        var validate = false;
+        var rate_validate = false;
+        var store_validate = false;
+        if($("input[class*='req-qus-']").length == 0){
+            validate = true;
+        }
+        $("input[class*='req-qus-']").each(function() {
+            var rquired_field = $(this).attr('class');
+            var qusreq = rquired_field.replace('width-100 req-qus-',' ').trim();
+            if($(this).hasClass('form-control')){
+                qusreq = qusreq.replace('form-control',' ').trim();
+            }
+            if($(this).hasClass('input-text')){
+                qusreq = qusreq.replace('input-text',' ').trim();
+            }
+            
+            if(!$(this).val() || $(this).val() == '' || $(this).val() == null || $(this).val() == 'OPL/'){
+                $("#required-qus-"+qusreq).html("<span style='color:red'>Please fill this field</span>");
+                validate = false;
+            }else{
+                $("#required-qus-"+qusreq).html("");
+                validate = true;
+            }
+        });
+        if (user_type==2) { 
+            $("input[class*='req-qus-00']").each(function() {
+                var rquired_field = $(this).attr('class');                
+                var qusreq = rquired_field.replace('form-control input-text width-100 req-qus-00','').trim();
+                if(!$(this).val() || $(this).val() == '' || $(this).val() == null || $(this).val() == 'OPL/'){
+                    $("#required-qus-00"+qusreq).html("<span style='color:red'>Please fill this field</span>");
+                    rate_validate = false;
+                }else{
+                    $("#required-qus-00"+qusreq).html("");
+                    rate_validate = true;
+                }
+            });
+            /*if($(".req-store-qus-00-1:checked").length > 0) {
+                $("#req-store-qus-00-1").html("");
+                store_validate = true;
+            }else{
+                $("#req-store-qus-00-1").html("<span style='color:red'>Please select one of the store</span>");
+                store_validate = false;
+            }*/
+            if($('#store_selected').val() != null && $('#store_selected').val() != '') {
+                $("#store_selected_error").html("");
+                dist_validate = true;
+            }else{
+                $("#store_selected_error").html("<span style='color:red'>Please select distance to travel</span>");
+                dist_validate = false;
+            }
+            if ( rate_validate == true && /*store_validate == true &&*/ dist_validate == true) {
+                validate = true;
+            }else{
+                validate =  false; 
+            }
+
+        };         
+
+        return validate;
+    }
+
+    function save_ans(){
+        //alert('I am here');
+        var qusData = $('#question_div').serialize();
+        var user_type = $('#user_type').val();
+        var no_role_pack=$("#no_role_pack").val();
+        var chk_store=$("#check_field").val(1);
+        // for data empty store list
+        var max_distance=$("input[name=max_distance]:checked").val();
+        var store_list=$("input[name=store_list]:checked").val();
+        var store_id=$("#store_id[name=store_id]:checked").val();
+        var store_data=$("#store_data").val();
+        var profession_type=$('#profession_type').val();
+        if ($("#aoc_id").val()) {
+            var aoc_id_len=$("#aoc_id").val().length;
+        }
+        var aoc_id=$("#aoc_id").val();
+        var goc=$("#goc").val();
+        var cet=$("#cet").val();
+        if ($("#goc").val()) {
+            var goc_len=$("#goc").val().length;
+        }
+        var aop       = $("#aop").val();
+        var aop_yes   = $("input[name=aop_yes]:checked").val();
+        var inshu_yes = $("input[name=inshu_yes]:checked").val();
+        var inshurance_company = $("#inshurance_company").val();
+        var inshurance_no = $("#inshurance_no").val();
+        var inshurance_renewal_date = $("#inshurance_renewal_date").val();
+        var is_validate = window.is_validate(user_type,no_role_pack);
+
+
+        $("#step3").hide();
+        //alert(is_validate);
+        if(user_type == no_role_pack){
+            $("#free_min_rate").remove();
+        }        
+        if (is_validate) {
+            var aoc_id = $("#aoc_id").val();
+            var profession_type = $('#profession_type').val();
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  : qusData,
+                'success':function(result){                                         
+                    if(result!="0"){ 
+                        $("#qus_ans_div").append(result);
+                        if(user_type == no_role_pack){  // && profession_type == 3
+                            // set user data on add store section
+                            var company_val=$("#company").val();
+                            var address_val=$("#address").val();
+                            var town_val   =$("#city").val();
+                            var postcode_val=$("#zip").val();
+                            if(user_type==3){ // && profession_type==3
+                                var store_id_emp=$("#store_id_emp").val();
+                                $("#formID").append("<input type='hidden' name='store_id' value='"+store_id_emp+"'>");
+                            }
+                            $("#qus_step").hide();
+                            $("#step3").hide();
+                            $.ajax({
+                                'url'   :'/ajax-request',
+                                'type'  :'POST',
+                                'data'  :{'multi_store_time':'1'},
+                                'success':function(result){
+                                    $('#set_user_data').html('<div class="col-md-3 no-padding-left margin-bottom"><input type="text" name="emp_store_name[]" placeholder="Enter Store name" class="form-control input-text width-100" value="'+company_val+'" ></div><div class="col-md-3 no-padding-left"><input type="text" name="emp_store_address[]" placeholder="Enter Store address" class="form-control input-text width-100" value="'+address_val+'"></div><div class="col-md-3 no-padding-left"><input type="text" name="emp_store_region[]" placeholder="Enter Store town" class="emp_store_region form-control input-text width-100" value="'+town_val+'" ></div><div class="col-md-2 no-padding-left"><input type="text" name="emp_store_zip[]" placeholder="Enter Store postcode" class="form-control input-text width-100" value="'+postcode_val+'" ></div>'+result);
+                                    var availableTags = [<?php echo $townListString; ?>];
+    
+                                    $( ".emp_store_region" ).autocomplete({
+                                        source: availableTags
+                                    });
+                                }
+                            });
+                            $("#emp-store-div").show();
+                            //$("#please-wait-msg").show(1000);
+                        }else if(user_type==2){ // for freelancer  && profession_type==3
+                            chk_store==1; // check for field not empty 
+ 
+                            if((store_id=="undefined") || (max_distance=="undefined") || (goc=="" ) || (inshu_yes==1 && inshurance_company=="" && inshurance_no=="" && inshurance_renewal_date=="")){
+                                //alert("Please fill all fields.");
+                                return false;
+                            }else{
+                                 $("#formID").append("<input type='hidden' name='cet' value='"+cet+"'><input type='hidden' name='goc' value='"+goc+"'><input type='hidden' name='aop' value='"+aop+"'><input type='hidden' name='inshurance_company' value='"+inshurance_company+"'><input type='hidden' name='inshurance_no' value='"+inshurance_no+"'><input type='hidden' name='inshurance_renewal_date' value='"+inshurance_renewal_date+"'>");
+                                $("#check_field").val(0);
+                                $("#qus_step").hide(500);
+                                /*insert into database */
+                                var email          = $('input[name=email]').val();
+                                var qus_div        = $("#question_div").serialize();
+                                var store_data     = $("#storeinfo_div").serialize();
+                                var store_list_div = $("#store_list_div").serialize();
+                                var free_min_rate  = $("#free_min_rate").serialize();
+                               
+                                var all_temp_data=qus_div+'&'+'email='+email+'&'+'store_data_info=1'+'&'+store_data+'&'+'store_list_div='+store_list_div+'&'+'free_min_rate_date='+free_min_rate;
+                                $.ajax({
+                                    'url'   :'/ajax-request',
+                                    'type'  :'POST',
+                                    'data'  :{'all_temp_data' : all_temp_data },
+                                    'success':function(result){ //alert(result);
+                                        //alert(result);
+                                    }
+                                });
+                                /*insert into database*/
+                                /* for skip and continue */
+
+                                /* for skip and continue */
+                                $("#step3").show(1000); // hide payment step
+                                $(".white-bg").css('background-color','transparent');
+                                open_benifits(4);
+                           }
+                        }else{
+                            $("#qus_step").hide(500);
+                            /*Insert into database*/
+                            var email=$('input[name=email]').val();
+                            var qus_div = $("#question_div").serialize();
+                            var store_data   = $("#storeinfo_div").serialize();
+                            var free_min_rate  = $("#free_min_rate").serialize();
+                            var all_temp_data=qus_div+'&'+'email='+email+'&'+'free_min_rate_date='+free_min_rate;
+                            $.ajax({
+                                'url'   :'/ajax-request',
+                                'type'  :'POST',
+                                'data'  :{'all_temp_data' : all_temp_data },
+                                'success':function(result){ //alert(result);
+                                    //alert(result);
+                                }
+                            });
+                            /* for skip and continue */
+                            $("#step3").show(1000); // hide payment step
+                            $(".white-bg").css('background-color','transparent'); 
+                        }
+                    }else{
+                        $("#step3").hide();
+                        alert("Please check and fill required fields.");
+                        $("#question_error").html('Please select/enter your answer.');
+                    }
+                }
+            });
+        }else{
+            $("#step3").hide();
+        }
+
+    }
+    function emailvalidate(email){ 
+        var str = email; 
+        if(str != ""){
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'email':str, 'check_email':'check'},
+                'success':function(result){ //alert(result);
+                    if($.trim(result)=="1"){ 
+                        $("#email_error").html('Email already exists');
+                    }else{ 
+                        $("#email_exists").val('0');
+                        $("#email_error").css('display','none');
+                    }
+                }
+            });
+        }
+    }
+    
+    // user package section
+    function open_benifits(id){
+        var str = id; //alert(id);
+        //$('#package_val').val($('#package-'+id+' .set-pack-content h2').text()); 
+        $('section#packages .package-block .package-price-box').each(function(){
+            $(this).removeClass("active-package");
+        })
+        //$("#package-"+id).addClass("active-package");        
+        if (id == 4) {            
+            $('input#paypal_payment_option').attr('checked','true');
+            $('span#paypal_submit img#paypal_direct').attr('src',$('input#paypal_submit_free_pkg').val()); 
+            $('div#step3 .payment-type').hide(400);
+            $('div#paypal-redirect h3 span').hide(400);
+        }else{
+            $('span#paypal_submit img#paypal_direct').attr('src',$('input#paypal_submit_pkg').val());
+            $('div#step3 .payment-type').show(400);
+            $('div#paypal-redirect h3 span').show(400);
+        }        
+
+        if(str!=""){
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'pack_id':str, 'open_block':'1'},
+                'success':function(result){ //alert(result);
+                    if(result!=""){ 
+                        $("#benifits-section").html(result);
+                    }else{
+                        $("#benifits-section").html("");
+                        $("#package-"+id).removeClass("active-package");
+                    }
+                }
+            });
+        }
+    }
+    /* New Changes 11thMay 2016 */
+    function get_list(id){  
+        if(id == 'Over 50'){$('#store_selected').val(id);}else{    
+        var town=$("#city").val();
+        var addr = $("input#address").val()+"+"+$("input#city").val()+",+UK";
+        var zip = $("input#zip").val();
+        var cat_id=$("#profession_type").val();
+        var store_id=$("#store_id").val();
+        var store_data=$("#store_data").val();
+        $('#store_selected').val(id);
+        if(town!=''){
+            $('#getlist-section').show();
+            $('#getlist-section').addClass('in');
+            $('#getlist-section').css('display','block');
+            $("#load_list").show();
+            $("#store_list_div").html('');
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'max_dis':id, 'get_list':'1','city':town,'cat_id':cat_id, 'full_addr':addr, 'zip' : zip},
+                    'success':function(result){ //alert(result);
+                        if(result!=""){ 
+                            $("#load_list").hide();
+                            $("#store_list_div").html(result);
+                            $('#getlist-section').show();
+                            $('#getlist-section').addClass('in');
+                            $('#getlist-section').css('display','block');              
+    
+                        }
+                    }
+                });
+        }else{
+            $(id).attr('checked', false)
+        }
+       }
+    }
+    
+    /*function open_select(id){
+        chk_st=$('#st_'+id).is(':checked'); 
+        if(chk_st==true){
+            $('#store_id_'+id).html('<select name="store_data[]" class="form-control input-text width-100" id="store_data'+id+'" required><option value="0-6 months">0-6 months</option><option value="7-12 months">7-12 months</option><option value="1-2 years">1-2 years</option><option value="2 years plus">2 years plus</option></select>');
+            $('#store_id_'+id).show();
+        }
+        if(chk_st==false){
+            $("#store_id_"+id).hide();
+        }
+    }*/
+    
+    function save_list(){ 
+        var max_distance = $("input[name=max_distance]:checked").val();
+        var store_list   = $("input[name=store_list]:checked").val(); 
+        var data_all     = $("#store_list_div").serialize();
+        var store_id     = $("input[name^=store_id]:checked" ).serialize();
+        var store_data   = $("#storeinfo_div").serialize();
+        var aoc_id       = $("#aoc_id").val();
+        var cet          = $("#cet").val();
+        var goc          = $("#goc").val();
+        var aop          = $("#aop").val();
+        var inshurance_company  = $("#inshurance_company").val();
+        var inshurance_no       = $("#inshurance_no").val();
+        var inshurance_renewal_date = $("#inshurance_renewal_date").val();        
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'save_list':'1','store_id':store_id,'store_data':store_data,'store_list':store_list,'max_distance':max_distance,'data_all':data_all,'cet':cet,'goc':goc,'aop':aop,'inshurance_renewal_date':inshurance_renewal_date,'inshurance_no':inshurance_no,'inshurance_company':inshurance_company},
+            'success':function(result){ 
+                //console.log(result);
+                if(result!=0){ 
+                    $('#formID').append(result);
+                    $("#getlist-section").hide(1000);
+                    $('.modal-backdrop').hide(1000);
+                }else{
+                    messageBoxOpen("Please fill details.");
+                    return false;
+                }
+            }
+        });        
+    }
+</script>
+
+
+<script type="text/javascript">
+    $(function() {        
+        $("#dob").mask("99-99-9999");
+    });
+    // Open Div on click
+    $("#aop_yes:checkbox").change(function(){
+        chk_aop=$('#aop_yes').is(':checked'); 
+        if(chk_aop==true){
+            $("#aop_open").show();
+        }
+        if(chk_aop==false){
+            $("#aop_open").hide();
+        }
+    });
+    $("#inshu_yes").click(function(){ 
+        chk_aop=$('#inshu_yes').is(':checked'); 
+        if(chk_aop==true){
+            $("#inshu_open").show();
+        }
+        if(chk_aop==false){
+            $("#inshu_open").hide();
+        }
+    });
+
+    $('input#cet').keydown(function (e) {
+        var key = e.charCode || e.keyCode || 0;
+        // Allow numeric (and tab, backspace, delete) keys only
+            return (key == 8 || 
+                    key == 9 ||
+                    key == 46 ||
+                    (key >= 48 && key <= 57) ||
+                    (key >= 96 && key <= 105)); 
+    });
+    // GOC number format
+    $('#goc').keydown(function (e) {
+            var key = e.charCode || e.keyCode || 0;
+            $goc = $(this);
+
+            
+
+            // Allow numeric (and tab, backspace, delete) keys only
+           // return (key == 8 || key == 9 || key == 46 || (key >= 48 && key <= 57) || (key >= 96 && key <= 105)); 
+        })
+        
+        .bind('focus click', function () {
+            $goc = $(this);
+            
+            if ($goc.val().length === 0) {
+                //$goc.val('(');
+            }
+            else {
+                var val = $goc.val();
+                $goc.val('').val(val); // Ensure cursor remains at the end
+            }
+        })
+        
+        .blur(function () {
+            $goc = $(this);
+            
+            if ($goc.val() === '(') {
+                $goc.val('');
+            }
+        });
+    $('#aop').keydown(function (e) {
+            var key = e.charCode || e.keyCode || 0;
+            $aop = $(this);
+
+            // Auto-format- do not expose the mask as the user begins to type
+            if (key !== 8 && key !== 9) {
+                /*if ($aop.val().length === 2) {
+                    $aop.val($aop.val() + '-');
+                }
+                if ($aop.val().length === 6) {
+                    //$aop.val($aop.val() + '/');
+                }*/
+            }
+
+            // Allow numeric (and tab, backspace, delete) keys only
+            return (key == 8 || 
+                    key == 9 ||
+                    key == 46 ||
+                    (key >= 48 && key <= 57) ||
+                    (key >= 96 && key <= 105)); 
+        })
+        
+        .bind('focus click', function () {
+            $aop = $(this);
+            
+            if ($aop.val().length === 0) {
+                //$aop.val('(');
+            }
+            else {
+                var val = $aop.val();
+                $aop.val('').val(val); // Ensure cursor remains at the end
+            }
+        })
+        
+        .blur(function () {
+            $aop = $(this);
+            
+        });
+    // Insurance renewal date   
+    $('#inshurance_renewal_date').keydown(function (e) {
+            var key = e.charCode || e.keyCode || 0;
+            $inshurance_renewal_date = $(this);
+
+            // Auto-format- do not expose the mask as the user begins to type
+            if (key !== 8 && key !== 9) {
+                if ($inshurance_renewal_date.val().length === 2) {
+                    $inshurance_renewal_date.val($inshurance_renewal_date.val() + '-');
+                }
+                if ($inshurance_renewal_date.val().length === 5) {
+                    $inshurance_renewal_date.val($inshurance_renewal_date.val() + '-');
+                }           
+            }
+
+            // Allow numeric (and tab, backspace, delete) keys only
+            return (key == 8 || 
+                    key == 9 ||
+                    key == 46 ||
+                    (key >= 48 && key <= 57) ||
+                    (key >= 96 && key <= 105)); 
+        })
+        
+        .bind('focus click', function () {
+            $inshurance_renewal_date = $(this);
+            
+            if ($inshurance_renewal_date.val().length === 0) {
+                //$inshurance_renewal_date.val('(');
+            }
+            else {
+                var val = $inshurance_renewal_date.val();
+                $inshurance_renewal_date.val('').val(val); // Ensure cursor remains at the end
+            }
+        })
+        
+        .blur(function () {
+            $inshurance_renewal_date = $(this);
+            
+            if ($inshurance_renewal_date.val() === '(') {
+                $inshurance_renewal_date.val('');
+            }
+        });
+        // aoc_id
+        $('#aoc_id').keydown(function (e) {
+            var key = e.charCode || e.keyCode || 0;
+            $aoc_id = $(this);
+            //alert(key);
+            // Auto-format- do not expose the mask as the user begins to type
+            if ($aoc_id.val().length < 15) {
+                if (key !== 8 && key !== 9) {
+                    if ($aoc_id.val().length === 6) {
+                        $aoc_id.val($aoc_id.val() + '-');
+                    }
+                    if ($aoc_id.val().length === 12) {
+                        $aoc_id.val($aoc_id.val() + '/');
+                    }           
+                }
+            }
+            // Allow numeric (and tab, backspace, delete) keys only
+            return (key == 8 || 
+                    key == 9 ||
+                    key == 46 ||
+                    (key >= 48 && key <= 57) ||
+                    (key >= 96 && key <= 105)|| (key >= 65 && key <= 90) || (key >= 97 && key <= 122)); 
+        })
+        .bind('focus click', function () {
+            $aoc_id = $(this);            
+            if ($aoc_id.val().length === 0) {
+                $aoc_id.val('OPL ');             
+            }
+            //else {
+                //var val = $aoc_id.val();
+                //$aoc_id.val('').val(val); // Ensure cursor remains at the end
+            //}
+        })
+        .blur(function () {
+            $aoc_id = $(this);
+            
+            if ($aoc_id.val() === '(') {
+                $aoc_id.val('');
+            }
+        });    
+</script>
+<!-- Add store option -->
+<script type="text/javascript">
+    var i = $(".store-details").length + 1;
+    var m = 0;
+    $("#add_emp_store").click(function () {
+        if(i > 1){   
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'multi_store_time':'1'},
+                'success':function(result){
+                    $('.store_block').append('<div class="store-details"><div class="col-md-2 no-padding-left"><input type="text" name="emp_store_name[]" required placeholder="Enter Store name" class="form-control input-text width-100 required-field_'+m+'"> </div><div class="col-md-4 no-padding-left"><input type="text" name="emp_store_address[]" required placeholder="Enter Store address" class="form-control input-text width-100 required-field_'+m+'"></div><div class="col-md-3 no-padding-left"><input type="text" name="emp_store_region[]" required placeholder="Enter Store Region" class="emp_store_region form-control input-text width-100 required-field_'+m+'"></div><div class="col-md-2 no-padding-left"><input type="text" name="emp_store_zip[]" required placeholder="Post code" class="form-control input-text width-100 required-field_'+m+'"></div><span class="removeclass small2 float-right"><i class="fa fa-times" title="Remove" aria-hidden="true"></i></span><div class="css_error2 required-field-no_'+m+'" style="clear:both;"></div>'+result+'</div>');
+                    var availableTags = [<?php echo $townListString; ?>];
+            
+                    $( ".emp_store_region" ).autocomplete({
+                        source: availableTags
+                    });
+                }
+            });
+            i++;
+            m++;
+        }
+        return false;
+    });
+
+    $("body").on("click",".removeclass", function(e){    
+        if( i > 1 ) { 
+            $(this).parent('.store-details').remove();i--;
+        }
+    });
+    $("#save_store").click(function(){
+        var check_isvalid = window.getValidation();
+        if(check_isvalid==true){ 
+            document.forms["register"].submit();
+        }
+    });
+    function getValidation(){
+        var isValid = false;
+        var countField = 0;
+        $("input[class*='required-field_']").each(function() {
+                var fixed_field = $(this).attr('class');
+                var streq = fixed_field.replace('input-text width-100 required-field_',' ').trim();
+                if($(this).val() == ''){
+                    $(".required-field-no_"+streq).html("<span style='color:red'>Please fill this field</span>");
+                    isValid = false;
+                }else{
+                    $(".required-field-no_"+streq).html("");
+                    isValid = true; 
+                }
+        });
+        //alert(countField);
+        if (countField==0) {
+            isValid = true; 
+        };
+        return isValid;
+    }
+</script>
+
+<!-- main resitration javascript start -->
+<script type="text/javascript">
+    $("#normal-submit").hide();
+    $("#step2").hide();
+    $("#qus_step").hide();
+    $("#please-wait-msg").hide();
+    /*Guest Redirect to Queston Step */
+    <?php if (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 && $_GET['profile']=="guest") { ?>
+        $('#formID').append('<input type="hidden" name="role" value="2">');
+        var temp_user_1 = $('#step1 input').serialize();
+        var temp_user_2 = $('#step1 select').serialize();
+        var temp_user_3 = $('#step2 input').serialize();
+        var temp_user_4 = $('#step2 select').serialize();
+        var temp_user_5 = $('#formID').val();
+        var temp_user = temp_user_1+'&'+temp_user_2+'&'+temp_user_3+'&'+temp_user_4+'&form_id='+temp_user_5;
+        //alert(temp_user); 
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'temp_user' : temp_user },
+            'success':function(result){ //alert(result);
+                //alert(result);
+            }
+        });
+     $("#step3").show();
+     $("#step1").hide();
+     $("#info-benifit-section").hide();
+     $("#screen-section").hide();
+     
+    /*Guest Redirect to Queston Step*/
+    <?php } else{?>
+        $("#step3").hide();
+    <?php }?>
+    $("#please-wait-msg").hide();
+    $(".white-bg").css('background-color','#fff');
+    $("#step4").hide();
+    $('#personal_info').on('click', function() {
+       var user_type = $("#user_type").val();
+       var profession_type = $("#profession_type").val();
+       if(user_type == ''){
+            $("#user_error").html("Please select role.");
+            $("#profession_error").html("");
+            $("#user_type").focus();
+            
+            $('#user_type').change(function() {
+                var user_type=$('#user_type').val();
+                var role_pack=$("#role_pack").val();
+                var no_role_pack=$("#no_role_pack").val();
+                if(user_type==""){
+                    $("#user_error").html("Please select user type.");
+                    $("#user_type").focus();
+                    return false;
+                }else{
+                    $("#user_error").html("");
+                    if(user_type==no_role_pack){ //alert('Inside'+user_type);
+                        $("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png");
+                    }else{ //alert('Paypal Process..');
+                    
+                        $("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+                    }
+                }
+                        
+            });
+       }else if(profession_type==''){
+            $("#user_error").html("");
+            $("#profession_error").html("Please select your profession.");
+            $("#profession_type").focus();
+            $('#profession_type').change(function(){
+                var profession_type=$('#profession_type').val();
+                if(profession_type==""){
+                    $("#profession_error").html("Please select your profession.");
+                    $("#profession_type").focus();
+                    return false;
+                }else{
+                    $("#profession_error").html("");
+                }
+            });
+       }else{
+            /// code to change submit button
+            var user_type = $('#user_type').val();
+            var role_pack = $("#role_pack").val();
+            var no_role_pack = $("#no_role_pack").val();
+            if(user_type==no_role_pack){ //alert('Inside'+user_type);
+                $("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+            }else{ //alert('Paypal Process..');                
+                $("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+            }
+            var id = $('#profession_type').val();
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'cat_id':id,'question':1,'role_id':user_type},
+                'success':function(result){ //alert('question'+result);
+                    if(result!="0"){ //alert('inside');
+                        $("#question_div").html(result);
+                        if(user_type==2){ //&& profession_type==3
+                            $("#store_div").append("<input type='hidden' id='check_field' name='check_field' value='1'>");
+                            $("#store_div").show();
+                        }
+                        if(user_type==3){ // && profession_type==3
+                            $("#emp_store_list_fix").show();
+                        }                        
+                        if(user_type==3){
+                            $("#company_txt").html('Store Name&nbsp;<a href="javascript:void(0);" data-toggle="tooltip" title="If you manage more than one store and would like to register multiple stores with Locumkit,you will have the option to do so later in the registration process. Please enter here, what you consider to be your main store from the Group."><i class="fa fa-asterisk required-stars required-stars" aria-hidden="true" ></i></a>'); 
+                            $("#telephone_txt").html('Store Telephone<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true" ></i>');
+                            $("#mobile_number").html('Mobile Number (optional)');
+                        }else{
+                            $("#company_txt").html('Company Name&nbsp;(optional)&nbsp;<a href="javascript:void(0);" data-toggle="tooltip" title="Question only applicable if you work through a registered company. Not applicable if you are working as a self employed freelancer."></a>');  
+                            $("#telephone_txt").html('Home Telephone&nbsp;(optional)');
+                            $("#mobile_number").html('Mobile Number<i class="fa fa-asterisk required-stars required-stars" aria-hidden="true" ></i>');
+                        }
+                                            
+                    }else{
+                        
+                    }
+                }
+            });
+            $("#step1").hide();
+            $("#info-benifit-section").hide();
+            $("#screen-section").hide();
+            $("#step2").show(1000);
+            $('#paypal-redirect').hide();
+       }
+    });
+    
+    $('#back_personal').on('click', function() {
+       $("#step2").hide();
+       $("#step1").show(1000);
+       $("#info-benifit-section").show();
+       $("#screen-section").show();
+       $(".white-bg").css('background-color','#fff');
+    });
+    $('#qus_next').on('click', function() {
+        <?php if (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 && $_GET['profile']=="guest") { ?>
+            var temp_user_1 = $('#step1 input').serialize();
+            var temp_user_2 = $('#step1 select').serialize();
+            var temp_user_3 = $('#step2 input').serialize();
+            var temp_user_4 = $('#step2 select').serialize();
+            var temp_user_5 = $('#formID').val();
+            var temp_user = temp_user_1+'&'+temp_user_2+'&'+temp_user_3+'&'+temp_user_4+'&form_id='+temp_user_5;
+            if (role_id == '') {
+                var role_id = "<?php echo $allGuestData[0]['user_acl_role_id']; ?>";
+            };
+            // get questions when load page 
+            var user_type=$('#user_type').val();
+            
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'temp_user' : temp_user },
+                'success':function(result){ //alert(result);
+                    //alert(result);
+                }
+            });
+            
+            // get questions when load page 
+            var user_type=$('#user_type').val();
+            var profession_type = $('#profession_type').val();
+            $.ajax({
+                    'url'   :'/ajax-request',
+                    'type'  :'POST',
+                    'data'  :{'cat_id':profession_type,'question':1,'role_id':user_type},
+                    'success':function(result){ //alert('question'+result);
+                        if(result!="0"){ //alert('inside');
+                            $("#question_div").html(result);
+                        }
+                    }
+            });
+            // hide div when 
+            if((role_id==3)){ //(profession_type==1) || (profession_type==4) ||    //  && profession_type==3 
+            //alert('I am here');
+                $("form#storeinfo_div").remove();
+            }
+            //
+            $("#qus_step").show(1000);
+            $("#free_min_rate_open").show(1000);
+        <?php }?>           
+            $("#step1").hide(); 
+            $("#info-benifit-section").hide();
+            $("#screen-section").hide();           
+            $(".white-bg").css('background-color','#fff');
+           var email_val=$("#email").val();
+           //emailvalidate(email_val);
+           var fname_val=$("#fname").val();
+           var lname_val=$("#lname").val();
+           var uname_val=$("#login").val();
+           var upass_val=$("#upassword").val();
+           var cpass_val=$("#cpassword").val();
+           var company_val=$("#company").val();
+           var address_val=$("#address").val();
+           var city_val=$("#city").val();
+           var zip_val=$("#zip").val();
+           var telphone_val=$("#telephone").val();
+           var mobile_val=$("#mobile").val();
+           var dob_val=$("#datepicker").val();
+           var gender_val=$("#gender").val();
+           var profile_pic_val=$("#profile_pic").val();
+           var user_type=$('#user_type').val();
+           var email_exists=$("#email_exists").val();
+            var reg = /^[0-9]+$/;
+            if(fname_val==''){
+                $('#email_error').html('');
+                $('#fname_error').html('Please enter your first name.');
+                $("#fname").focus();
+                $('#fname').on('keyup', function() {
+                    var fmatch=/^[a-zA-Z'_ ]*$/;
+                    var f_len = $('#fname').val().length;
+                    var fname = $('#fname').val();
+                    if(!fmatch.test(fname)){ 
+                        $('#fname_error').html('Please enter your first name with letters only.');
+                        $("#fname").focus();
+                        return false;
+                     }else{
+                        $('#fname_error').html('');
+                     }
+                });
+           }
+           else if(lname_val==''){
+                $('#fname_error').html('');
+                $('#lname_error').html('Please enter your last name.');
+                $("#lname").focus();
+                $('#lname').on('keyup', function() {
+                    var lmatch=/^[A-Za-z]+$/;
+                    var l_len = $('#lname').val().length;
+                    var lname = $('#lname').val();
+                    if(l_len<3 || !lmatch.test(lname)){
+                        $('#lname_error').html('Please enter your last name with letters only.');
+                        $("#lname").focus();
+                        return false;
+                     }else{
+                        $('#lname_error').html('');
+                     }
+                     
+                });
+           }
+           else if(email_val==''){
+                $('#email_error').html('Please enter email address.');
+                $("#email").focus();                
+            }
+           else  if(uname_val==''){
+                $('#lname_error').html('');
+                $('#login_error').html('Please enter username.');
+                $("#login").focus();
+                $('#login').on('keyup', function() {
+                    var logmatch=/^[A-Za-z]+$/;
+                    var log_len = $('#login').val().length;
+                    var login = $('#login').val();
+                    if(log_len<6 || !logmatch.test(login)){
+                        $('#login_error').html('Please enter a username with a minimum of 6 characters.');
+                        $("#login").focus();
+                        return false;
+                     }else{
+                        $('#login_error').html('');
+                     }
+                });
+           }
+           else if(upass_val==''){
+                $('#login_error').html('');
+                $('#upassword_error').html('Please enter password.');
+                $("#upassword").focus();
+                $('#upassword').on('keyup', function() {
+                    var pass_val=$('#upassword').val();
+                    var p_len = pass_val.length;
+                    if(p_len<6) {
+                      $('#upassword_error').html('Please enter a password with a minimum of 6 characters.');
+                      $("#upassword").focus();
+                        return false;
+                    
+                    }else{
+                        $('#upassword_error').html('');
+                     }
+                });
+           }
+           else if(cpass_val==''){
+               $('#upassword_error').html('');
+               $('#cpassword_error').html('Please enter confirm password.');
+               $("#cpassword").focus();
+               $('#cpassword').on('keyup', function() {
+                    var pass_val=$('#cpassword').val();
+                    var p_len = pass_val.length;
+                    if(p_len<6) {
+                      $('#cpassword_error').html('Please enter confirm password.');
+                      $("#cpassword").focus();
+                        return false;
+                    
+                    }else{
+                        $('#cpassword_error').html('');
+                     }
+                });
+           }
+          else if(company_val=='' && user_type==3){
+                $('#upassword_error').html('');
+                $('#company_error').html('Please enter store name.');
+                $("#company").focus();
+                $('#company').on('keyup', function() {
+                   var com_len = $('#company').val().length;
+                   if(com_len<1){
+                       $('#company_error').html('Please enter store name with a minimum of 1 characters.');
+                       $("#company").focus();
+                       return false;
+                   }else{
+                        $('#company_error').html('');
+                   }
+                });
+            }
+           else if(address_val==''){
+                $('#company_error').html('');
+                $('#address_error').html('Please enter address.');
+                $("#address").focus();
+                $('#address').on('keyup', function() {
+                    var add_len = $('#address').val().length;
+                    if(add_len<3){
+                        $('#address_error').html('Please enter address full address.');
+                        $("#address").focus();
+                        return false;
+                    }else{
+                        $('#address_error').html('');
+                    }
+                });
+           }
+           else if(city_val==''){
+                $('#address_error').html('');
+                $('#city_error').html('Please enter city name.');
+                $("#city").focus();
+                $('#city').on('keyup', function() {
+                    var city_len = $('#city').val().length;
+                    if(city_len<1){
+                        $('#city_error').html('Please enter city name.');
+                        $("#city").focus();
+                        return false;
+                    }else{
+                        $('#city_error').html('');
+                    }
+                });
+           }
+           else if(zip_val==''){
+                $('#city_error').html('');
+                $('#zip_error').html('Please enter post code.');
+                $("#zip").focus();
+                $('#zip').on('keyup', function() {
+                    var zip = $('#zip').val();
+                    var reg = /^[0-9]+$/;
+                    if ((zip.length)< 2){
+                        $('#zip_error').html('Please enter post code.');
+                        $("#zip").focus();
+                        return false;
+                    }else{
+                        $('#zip_error').html('');
+                    }
+                });
+           }
+           else if(telphone_val=='' && user_type==3){
+                $('#zip_error').html('');
+                $('#telephone_error').html('Please enter telephone number.');
+                $("#telephone").focus();
+                $('#telephone').on('keyup', function() {
+                    var telephone = $('#telephone').val();
+                    var reg = /^[0-9]+$/;
+                    if ((telephone.length) < 1){
+                        $('#telephone_error').html('Please enter telephone number.');
+                        $("#telephone").focus();
+                        return false;
+                    }
+                    else if ( !reg.test(telephone)){
+                        $('#telephone_error').html('Please enter telephone should be numbers only.');
+                        $("#telephone").focus();
+                        return false;
+                    }else{
+                        $('#telephone_error').html('');
+                    }
+                });
+           }
+            else if(telphone_val.length < '5' && telphone_val.length !=0){
+                $('#zip_error').html('');
+                $('#telephone_error').html('Please enter telephone number.');
+                $("#telephone").focus();                    
+            }
+           else if(mobile_val=='' && user_type==2){
+                $('#telephone_error').html('');
+                $('#mobile_error').html('Please enter mobile number.');
+                $("#mobile").focus();
+                $('#mobile').on('keyup', function() {
+                    var mobile = $('#mobile').val();
+                    var reg = /^[0-9]+$/;
+                    if ((mobile.length)< 10){
+                        $('#mobile_error').html('Please enter mobile number.');
+                        $("#mobile").focus();
+                        return false;
+                    }
+                    else if ( !reg.test(mobile)){
+                        $('#mobile_error').html('Mobile number should be numbers only.');
+                        $("#mobile").focus();
+                        return false;
+                    }else{
+                        $('#mobile_error').html('');
+                    }
+                });
+           }
+            else if(mobile_val.length < '11' && mobile_val.length !=0){
+                $('#telephone_error').html('');
+                $('#mobile_error').html('Please enter mobile number.');
+                $("#mobile").focus();
+            }
+           
+             else if(email_exists==1){
+                $("#email_error").html("Email already exists.");
+                $("#email").focus();
+                return false;
+             }
+
+            else if(upass_val != cpass_val){
+               $('#cpassword_error').html('Password does not match.');
+               $("#cpassword").focus();
+               return false;
+            }
+
+           else{
+              // check for role
+                 var user_type=$('#user_type').val();
+                 var role_pack=$("#role_pack").val();
+                 var no_role_pack=$("#no_role_pack").val();
+                 var profile_pic_val=$("#profile_pic").val();
+                 var email_exists=$("#email_exists").val();
+                 var login_exists=$("#login_exists").val();
+                 if(email_exists==1){
+                     $("#email_error").html("Email already exists.");
+                     $("#email").focus();
+                     return false;
+                 }else if(login_exists==1){ 
+                     $("#login_error").html("Username already exists.");
+                     $("#login").focus();
+                     return false;
+                }/*else if($(".css_error").text()){
+                                alert("Please check all field, somthing is not valid.");
+                }*/else{
+                    var temp_user_1 = $('#step1 input').serialize();
+                    var temp_user_2 = $('#step1 select').serialize();
+                    var temp_user_3 = $('#step2 input').serialize();
+                    var temp_user_4 = $('#step2 select').serialize();
+                    var temp_user_5 = $('#formID').val();
+                    var temp_user = temp_user_1+'&'+temp_user_2+'&'+temp_user_3+'&'+temp_user_4+'&form_id='+temp_user_5;
+                    if(user_type != '' && user_type != 3){
+                        $.ajax({
+                            'url'   :'/ajax-request',
+                            'type'  :'POST',
+                            'data'  :{'temp_user' : temp_user },
+                            'success':function(result){ //alert(result);
+                                console.log(result);
+                                //alert(result);
+                            }
+                        });
+                    }
+
+                    $("#step1").hide();
+                    $("#info-benifit-section").hide();
+                    $("#screen-section").hide();
+                     $("#step2").hide();
+                     $("#qus_step").show(1000);
+                    <?php /*if(!isset($_SESSION['is_guest'])){ ?>
+                     $('#partial-register-notify-model').show();
+                     $('#partial-register-notify-model').addClass('in');
+                     $('#partial-register-notify-model').css('display','block');
+                    <?php }*/ ?>
+                     $("#step3").hide();
+                     $(".white-bg").css('background-color','#fff');                                
+                 }
+           }
+    });
+    $('#back_qus').on('click', function() {
+        $("#step1").hide();
+        $("#info-benifit-section").hide();
+        $("#screen-section").hide();
+        $("#step2").show(1000);
+        $("#qus_step").hide(1000);
+        $("#step3").hide();    
+    });
+    $('#back_qus1').on('click', function() {
+        $("#step1").hide();
+        $("#info-benifit-section").hide();
+        $("#screen-section").hide();
+        $("#step2").show(1000);
+        $("#qus_step").hide(1000);
+        $("#emp-store-div").hide(1000);
+        $("#step3").hide();    
+    });
+    $('#save_user').on('click', function() {
+        $("#step1").hide();
+        $("#info-benifit-section").hide();
+        $("#screen-section").hide();
+        $("#step2").hide();
+        $("#qus_step").hide(1000);
+        $("#please-wait-msg").show(1000);
+        $("#step3").hide();    
+    });
+    $('#save_info').on('click', function() {
+       
+    });
+    
+    $('#back_paypal').on('click', function() {
+        $(".white-bg").css('background-color','#fff');
+        $("#step1").hide();
+        $("#info-benifit-section").hide();
+        $("#screen-section").hide();
+        $("#step2").show(1000);
+        $('#paypal-redirect').hide();
+        $("#step4").hide();
+        $("#step3").hide();
+    });
+    $('#paypal-redirect').hide();
+    $('#paypal_direct').on('click', function() {
+        var pack_val=$('#package_val').val(); 
+        var user_type=$('#user_type').val();
+        var role_pack=$("#role_pack").val(); // role should be same as user type for adding package
+        $("#step1").hide();
+        $("#info-benifit-section").hide();
+        $("#screen-section").hide();
+        $("#step2").hide();
+        $("#step4").hide();
+        if(pack_val=='' && user_type==role_pack){
+            $("#package_error").html("Please select package.");
+        }else if($('input[name=paypal_method]:checked').length<=0){
+            $("#package_error").html("Please select payment method.");
+        }else{ 
+            $("#step1").hide();
+            $("#info-benifit-section").hide();
+            $("#screen-section").hide();
+            $("#step2").hide();
+            $("#step3").hide();
+            if(pack_val != 0){
+                $("#paypal-redirect").show(1000);
+            }                            
+            document.forms["register"].submit();
+        }
+    });
+
+    
+    $('#pack-bronze').on('click', function() {
+        var b_val=$("#bronze").val();
+        var bronze_id=$("#bronze_id").val();
+        $("#bronze_screen").show(500);
+        $("#gold_screen").hide(500);
+        $("#silver_screen").hide(500);
+        $("#free_sub_screen").hide(500);
+        $("#package_name_val").val("Bronze");
+        $("#package-final").val(b_val);
+        $("#package_id").val(bronze_id);
+        $("#package_error").html("");
+    });
+    $('#pack-silver').on('click', function() {
+        var s_val=$("#silver").val();
+        var silver_id=$("#silver_id").val();
+        $("#silver_screen").show(500);
+        $("#bronze_screen").hide(500);
+        $("#gold_screen").hide(500);
+        $("#free_sub_screen").hide(500);
+        $("#package_name_val").val("Silver");
+        $("#package-final").val(s_val);
+        $("#package_id").val(silver_id);
+        $("#package_error").html("");
+    });
+    $('#pack-gold').on('click', function() {
+        var g_val=$("#gold").val();
+        var gold_id=$("#gold_id").val();
+        $("#gold_screen").show(500);
+        $("#silver_screen").hide(500);
+        $("#bronze_screen").hide(500);
+        $("#free_sub_screen").hide(500);        
+        $("#package_name_val").val("Gold");
+        $("#package-final").val(g_val);
+        $("#package_id").val(gold_id);
+        $("#package_error").html("");
+       
+    });
+    $("#pack-free-subscription").on('click', function() {
+        var f_val=$("#free_subscription").val();
+        var free_id=$("#free_subscription_id").val();
+        $("#gold_screen").hide(500);
+        $("#silver_screen").hide(500);
+        $("#bronze_screen").hide(500);          
+        $("#free_sub_screen").show(500);          
+        $("#package_name_val").val("Free Subscription");
+        $("#package-final").val(f_val);
+        $("#package_id").val(free_id);
+        $("#package_error").html("");           
+    });
+
+
+
+    /***on keyup***/
+    $('#user_type').change(function() {
+        if(user_type==""){
+            $("#user_error").html("Please select user type.");
+            $("#user_type").focus();
+            return false;
+            var user_type=$('#user_type').val();
+            var role_pack=$("#role_pack").val();
+            var no_role_pack=$("#no_role_pack").val();
+            var email_exists=$("#email_exists").val();
+            var login_exists=$("#login_exists").val();
+            if(email_exists==1){
+                 $("#email_error").html("Email already exists.");
+                 $("#email").focus();
+                 return false;
+            }else if(login_exists==1){ 
+                 $("#login_error").html("Username already exists.");
+            }else if(user_type==no_role_pack){ 
+                document.forms["register"].submit();
+            }else{
+                $("#user_error").html("");                
+                if(user_type==no_role_pack){
+                    $("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-submit.png");
+                }else{ //alert('Paypal Process..');
+                    $("#payment-pro img").prop("src","<?php echo $this->cdn('/frontend/locumkit-template/');?>img/registration-next.png");
+                }
+            }
+        }else{
+            $("#user_error").html("");
+        }
+            
+    });
+    $('#profession_type').change(function(){
+        if(profession_type==""){
+            $("#profession_error").html("Please select your profession.");
+            $("#profession_type").focus();
+            return false;
+        }else{
+            $("#profession_error").html("");
+        }
+    });
+    $('#email').on('keyup', function() {        
+        var regex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+        var email_val= $('#email').val();
+        if(!regex.test(email_val)) {
+         $('#email_error').html('Please enter valid email address.');
+         $("#email").focus();
+         return false;
+        }else{
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'email_check':'check','email':email_val},
+                'success':function(result){ //alert(result);                    
+                    if( $.trim( result ) == "1" ){ 
+                       $('#email_error').html('Email already exists.');                           
+                       $("#email_exists").val(1);
+                       $("#email").focus();
+                       return false;
+                    }else{
+                       $('#email_error').html('');
+                       $("#email_exists").val(0);
+                    }
+                }
+            });
+         }
+    });
+    $('#fname').on('keyup', function() {
+        var fmatch=/^[a-zA-Z'_ ]*$/;
+        var f_len = $('#fname').val().length;
+        var fname = $('#fname').val();
+        if(!fmatch.test(fname)){ 
+            $('#fname_error').html('Please enter your first name with letters only.');
+            $("#fname").focus();
+            return false;
+         }else{
+            $('#fname_error').html('');
+         }
+    });
+    $('#lname').on('keyup', function() {
+        var lmatch=/^[a-zA-Z'_ ]*$/;
+        var l_len = $('#lname').val().length;
+        var lname = $('#lname').val();
+        if(!lmatch.test(lname)){
+            $('#lname_error').html('Please enter your last name with letters only.');
+            $("#lname").focus();
+            return false;
+         }else{
+            $('#lname_error').html('');
+         }
+         
+    });
+    $('#login').on('keyup', function() {
+        var logmatch=/^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+        var log_len = $('#login').val().length;
+        var login = $('#login').val();
+        if(log_len<6 ){
+            $('#login_error').html('Please enter username with a minimum 6 of characters .');
+            $("#login").focus();
+            return false;
+         }else{
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  :{'login_check':'check','login':login},
+                'success':function(result){ //alert(result);
+                    if($.trim(result) =="1"){ 
+                       $('#login_error').html('Username already exists.');
+                       $("#login_exists").val(1);
+                    }else{
+                       $("#login_exists").val(0);
+                       $('#login_error').html('');
+                    }
+                }
+            });
+         }
+    });
+    
+    $('#upassword').on('keyup', function() {
+        var pass_val=$('#upassword').val();         
+        var p_len = pass_val.length;
+        if(p_len < 6) {
+          $('#upassword_error').html('Please enter proper password with at least 6 characters.');
+          $("#upassword").focus();
+            return false;
+        
+        }else{
+            $('#upassword_error').html('');
+         }
+    });
+    $('#cpassword').on('keyup', function() {
+        var cpass = $('#cpassword').val();
+        var pass=$('#upassword').val();            
+        if (pass != cpass) {
+            $('#cpassword_error').html('Password does not match.');
+            $("#cpassword").focus();
+            $(".full-process").hide();
+            return false;
+        }else{
+            $('#cpassword_error').html('');
+            $(".full-process").show();
+        }
+    });
+    
+    $('#address').on('keyup', function() {
+        var add_len = $('#address').val().length;
+        if(add_len<6){
+            $('#address_error').html('Please enter first line of address.');
+            $("#address").focus();
+            return false;
+        }else{
+            $('#address_error').html('');
+        }
+    });
+    $('#city').on('keyup', function() {
+        var city_len = $('#city').val().length;
+        if(city_len<1){
+            $('#city_error').html('Please enter city name.');
+            $("#city").focus();
+            return false;
+        }else{
+            $('#city_error').html('');
+        }
+    }); 
+    $('#zip').on('keyup', function() {
+        var zip = $('#zip').val();
+        var reg = /^[0-9]+$/;
+        if ((zip.length)< 3  ){
+            $('#zip_error').html('Please enter valid post code .');
+            $("#zip").focus();
+            return false;
+        }else{
+            $('#zip_error').html('');
+        }
+    });
+    $('#telephone').on('keyup', function() {
+        var telephone = $('#telephone').val();
+        var reg = /^[0-9]+$/;
+        if ((telephone.length)< 5){
+            $('#telephone_error').html('Please enter correct telephone number');
+            $("#telephone").focus();
+            //$(".full-process").hide();
+            return false;
+        }
+        if ( (!reg.test(telephone)) && (telephone.length > 0)){
+            $('#telephone_error').html('Please enter telephone should be numbers only.');
+            $("#telephone").focus();
+            //$(".full-process").hide();
+            return false;
+        }else{
+            $('#telephone_error').html('');
+            $(".full-process").show();
+        }
+    });
+    $('#mobile').on('keyup', function() {
+        var mobile = $('#mobile').val();
+        var reg = /^[0-9]+$/;
+        var user_type=$("#user_type").val();
+        if(user_type==2){ // for freelancer
+            $('#mobile_note').html('This number is used to send you notifications of your jobs and finances.');
+        }
+        if ((mobile.length)< 11 && mobile.length != 0){
+            $('#mobile_error').html('Mobile number should be 11 digits.');
+            $("#mobile").focus();
+            //$(".full-process").hide();
+            return false;
+        }
+        else if ( !reg.test(mobile) && user_type==2){
+            $('#mobile_error').html('Mobile number should be numbers only.');
+            $("#mobile").focus();
+            //$(".full-process").hide();
+            return false;
+        }else{
+            $('#mobile_error').html('');
+            $(".full-process").show();
+        }
+    });
+    $('#datepicker').on('keyup', function() {
+        var dob=$('#datepicker').val();
+        var year = new Date();
+        var curr_year=year.getFullYear();
+        var array = new Array();
+        var current_ye=dob.split('-'); 
+        var curr_ye_eight=parseInt(current_ye[0])-18;
+        if(!dob.match(/^\d{4}-\d{1,2}-\d{1,2}$/) || current_ye[0]==curr_year){
+            $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+            if(current_ye[0]==curr_year){
+               $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+            }
+            $("#datepicker").focus();
+            return false;
+        }if(dob.match(/^\d{4}-\d{1,2}-\d{1,2}$/) && (current_ye[0]==curr_year || current_ye[0]==curr_ye_eight )){
+              $('#dob_error').html('Please enter a date in the format yyyy-mm-dd and should be less than current year.');
+              $("#datepicker").focus();
+        }
+        else{
+            $('#dob_error').html('');
+        }
+    });
+    $('#gender').on('change', function() {
+        var gender = $('#mobile').val();
+        if(gender1=''){
+            $('#gender_error').html('Please select gender.');
+            $("#gender").focus();
+            return false;
+        }else{
+            $('#gender_error').html('');
+        }
+    });
+    $('#profile_pic').on('keyup', function() {
+        var avatar = $("#profile_pic").val();
+        var extension = avatar.split('.').pop().toUpperCase();
+        if(avatar.length < 1) {
+            avatarok = 0;
+        }else if (extension!="PNG" && extension!="JPG" && extension!="GIF" && extension!="JPEG"){
+            avatarok = 0;
+            alert("invalid extension "+extension);
+            $('#upload_error').html("invalid extension "+extension);
+        }   
+        $('#upload_error').html('');
+        var user_type=$('#user_type').val();
+        var role_pack=$("#role_pack").val();
+        var no_role_pack=$("#no_role_pack").val();
+        var profile_pic_val=$("#profile_pic").val();
+        if(profile_pic_val!='' && user_type==no_role_pack){
+            document.forms["register"].submit();
+        }
+    });
+    /******On Keyup end******/
+</script>
+
+<!-- Fetch all town and show in town text field autocomplate  -->
+<script type="text/javascript">
+    $(document).ready(function(){
+        open_benifits(4);
+        $('[data-toggle="tooltip"]').tooltip();
+
+        var ukmap = $('#uk-map').attr('src');
+        var londonmap = $('#london-map').attr('src');
+
+        $('#uk-map').click(function(){
+            showModalMapZoom(ukmap);
+        });
+
+        $('#london-map').click(function(){
+            showModalMapZoom(londonmap);
+        });
+
+    });
+
+    function showMapModal() {
+        $('#locumkit_maps').modal('show');
+    }
+
+    function showModalMapZoom(map_url) {
+        var available_html = '';
+        available_html += '<img src="'+map_url+'" alt="receipt" style="width: 100%">';
+        $('#map-dialog .modal-body').html(available_html);
+        // $('#map-dialog .modal-title').html(map_url);
+        $('#map-dialog').modal('show');
+    }
+
+    $(function() {
+        var availableTags = [<?php echo $townListString; ?>];
+        $( "#city" ).autocomplete({
+            source: availableTags,
+            minLength: 3, 
+            appendTo: "#city-autocomplate-result"
+        });
+    }); 
+
+    $("#user_type").change(function(){
+        $("#profession_type").val('');
+        if($("#user_type").val()==2){
+            //$("#check_back_btn").css("display", "none");
+        }
+    });
+
+    $("input#mobile").keyup(function() {
+        var imobile = $("#mobile").val();
+        if (!isNaN(imobile) && imobile.toString().indexOf('.') == -1){ }else{
+            $("#mobile").val(''); 
+        }
+
+    });
+
+    $("input#telephone").keyup(function() {
+        var itelephone= $("#telephone").val();
+        if (!isNaN(itelephone) && itelephone.toString().indexOf('.') == -1){ }else{
+          $("#telephone").val(''); 
+        }
+    });
+</script>

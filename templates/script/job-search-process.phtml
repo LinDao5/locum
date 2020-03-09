@@ -1,0 +1,983 @@
+<?php
+date_default_timezone_set('Europe/London');
+use GcFrontend\Controller\DbController as DbController;
+use GcFrontend\Controller\JobmailController as MailController;
+use Zend\Db\Sql\Sql;
+use GcFrontend\Controller\FunctionsController as FunctionsController;
+use GcFrontend\Controller\JobsmsController as JobsmsController;
+use FudugoApp\Controller\Notification\NotificationController as NotificationController;
+use GcFrontend\Controller\PackagePrivilegesController;
+
+
+use Zend\Mail\Transport\Smtp as SmtpTransport;
+use Zend\Mail\Transport\SmtpOptions;
+use Zend\Mime\Message as MimeMessage;
+use Zend\Mime\Part as MimePart;
+use Zend\Mail\Message;
+
+
+$jobsmsController = new JobsmsController();
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$functionsController = new FunctionsController();
+$mailController = new MailController();
+$sql = new Sql($adapter);
+$update = $sql->update();
+$select = $sql->select();
+$host="http://".$this->getRequest()->getUri()->getHost();
+$notifyController = new NotificationController();
+$packagePrivilegesController = new PackagePrivilegesController();
+$header = $mailController->mailHeader();
+$footer = $mailController->mailFooter();
+
+//function to encrypt
+/*function encryptIt( $q ) {
+    $cryptKey  = 'qJB0rGtIn5UB1xG03efyCp';
+    $qEncoded      = base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_256, md5( $cryptKey ), $q, MCRYPT_MODE_CBC, md5( md5( $cryptKey ) ) ) );
+    return( $qEncoded );
+}*/
+
+use GcFrontend\Controller\EndecryptController as Endecrypt;
+$endecrypt = new Endecrypt();
+use Gc\Registry;
+$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+$config = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+$currency = $config->get('email_currency');
+$currency_code = $config->get('site_currency');
+
+$request = $this->getRequest();
+if($request->isPost())
+{//print_r($_POST); //die('STOP');
+	  $post = $request->getPost();
+	  $txt_message="";
+	  $send="";
+	  $err="";
+	  $uid=$_SESSION['user_id'];
+      $check_invite  = $post->get('checkinvite'); // checkbox value for normal user
+	  $check_invite2 = $post->get('checkinvite2'); // check all private user only
+	  $check_invitep = $post->get('checkinvitep'); // for private user+normal
+	  $jtype         = $post->get('jtype');
+	  $invite_send   = $post->get('invite_send');
+	  $normal_user_invite=$post->get('normal_user_invite');
+	  $private_user_invite= $post->get('private_user_invite');
+	  $invite_private   = $post->get('invite_private');
+	  $j_id = $post->get('j_id'); // job id when send invitation
+	  // for private list
+	  $add_private_user=$post->get('add_private_user');
+	  $p_name=$post->get('p_name');
+	  $p_email=$post->get('p_email');
+	  $p_mobile=$post->get('p_mobile');
+
+	  
+	  $result_private = array();
+	  foreach ( $p_name as $key=>$name ) {
+		$result_private[] = array( 'p_name' => $name, 'p_email' => $p_email[$key], 'p_mobile' => $p_mobile[$key]);
+	  }
+	  
+	  // get email data
+	  /*$admin_email_section1=$post->get('admin_email_section1');
+	  $employer_email_section1=$post->get('employer_email_section1');
+	  $freelancer_email_section1=$post->get('freelancer_email_section1');
+	  $private_freelancer_email_section2=$post->get('privat_freelancer_email_section2');*/
+	  $email_emp=$_SESSION['user_email'];
+	  $fname_emp=$_SESSION['user_name'];
+	  
+	  //get Job Details
+		$sql_job="select * from job_post where e_id='$uid' and job_id='$j_id' ";
+		$rows_job = $adapter->query($sql_job, $adapter::QUERY_MODE_EXECUTE);
+		$result_job = $rows_job->current();
+		
+		if(isset($result_job)){
+			$job_title=$result_job['job_title'];
+			$job_id=$result_job['job_id'];
+			$job_rate=$currency.number_format($result_job['job_rate'],2);
+			$job_date=$result_job['job_date'];
+			$job_address=$result_job['job_address'];
+			$job_type=$result_job['job_type'];
+			$job_post_desc=$result_job['job_post_desc'];
+		}
+		// details from job_timeline section
+		$sql_job_timeline="select * from job_post_timeline where job_id='$j_id' and job_timeline_status=3";
+		$rows_jobtimeline = $adapter->query($sql_job_timeline, $adapter::QUERY_MODE_EXECUTE);
+		$result_jobtimeline= $rows_jobtimeline->toArray();
+		$result_jobtimelinecnt= $rows_jobtimeline->count();
+		if($result_jobtimelinecnt >0){
+			foreach($result_jobtimeline as $result){
+				$job_timeline_data.='<p><strong>Date:</strong> '.$result['job_date_new'].' <strong>Rate:</strong> '.$currency.number_format($result['job_rate_new'],2).'</p>';
+			}
+		}else{
+			$job_timeline_data="N/A";
+		}
+		// Count total freelancer invitation sent
+		if($check_invite2){
+			$sent_post_count=count($check_invite2);
+		}
+		if($check_invitep || $check_invite){
+			$sent_post_count_total=count($check_invite)+count($check_invitep);
+			$sent_post_count=$sent_post_count_total;
+		}
+		
+	  
+	 	// insert for private list
+	 	if($add_private_user==1){
+		 
+		 foreach($result_private as $val){
+			$p_name=$val['p_name'];
+			$p_email=$val['p_email'];
+			$p_mobile=$val['p_mobile'];
+			//check for email exist
+			$sqlString_sel="select email from user where email='$p_email' ";
+			$resultssel = $adapter->query($sqlString_sel, $adapter::QUERY_MODE_EXECUTE);
+			$count11=$resultssel->count();
+			
+			$sqlString_sel22="SELECT * FROM private_user WHERE p_email='$p_email' AND p_email != 'admin@localhost.com' AND emp_id ='$uid'";
+			$resultssel22 = $adapter->query($sqlString_sel22, $adapter::QUERY_MODE_EXECUTE);
+			$count22=$resultssel22->count();
+			if($count22==0 && $count11==0){
+				$txt_message="Private locum added";
+				$sqlString_pinsert22="insert into private_user (emp_id,p_name,p_email,p_mobile,status) values('".$uid."','".$p_name."','".$p_email."','".$p_mobile."','0')";
+			    $resultsp22 = $adapter->query($sqlString_pinsert22, $adapter::QUERY_MODE_EXECUTE);
+			}else{
+				$pri_fre = $resultssel22->current();
+				
+				if ($pri_fre->status == 2) {
+					$sqlString_sel22="UPDATE private_user SET status = '0', emp_id='$uid', p_name ='$p_name', p_email='$p_email', p_mobile ='$p_mobile' where p_email='$pri_fre->p_email'";
+					$resultssel22 = $adapter->query($sqlString_sel22, $adapter::QUERY_MODE_EXECUTE);
+					$txt_message="Private locum added";
+				}else{
+					//$error_message="'".$p_email."' Email id is already exists.";
+					$error_message="This user is already a member of the Locumkit community so should already be part of our database of locums who are invited to this job automatically.<br> For confirmation, please contact us and we can assist you on this.";
+					$err==1;
+				}								
+			}
+		 }
+		 //die('stopppp');
+	 }
+	  
+     $empty="";
+	 if($jtype==1){
+		 if(($normal_user_invite==1 && empty($check_invite)) || ($private_user_invite==1 && empty($check_invitep))){
+			 if(empty($check_invite)&& empty($check_invitep)){
+				 $empty=1;
+			 }
+		 }
+	 }
+	  
+	  if(($empty==1) or ($jtype==2 && empty($check_invite2)) or (isset($add_private_user) && !empty($err)))
+      { 
+		 if($err==1){
+		    return array('error_message' => 'Email address already exists.');
+		 }if($empty==1){
+            return array('error_message' => 'Please select at least one locum.');
+		 }
+      }
+
+      //Current EMP cancellation percentage
+      $cancellationRate = $functionsController->getEmpCancellationRate($uid,$adapter);
+      $cancellationRate = ($cancellationRate > 0) ? $cancellationRate.'%' : '0.00%';
+      //Current EMP feedback percentage
+      $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $uid, 2);
+      $feedbackRate = round($functionsController->getOverallRating($currentFeedbackData),2);
+      $feedbackRate = ($feedbackRate > 0) ? $feedbackRate.'%' : '0.00%';
+
+
+
+
+	  
+	  	// email variables  
+		//get Job Details
+		$sql_job="select * from job_post where e_id='$uid' and job_id='$j_id' ";
+		$rows_job = $adapter->query($sql_job, $adapter::QUERY_MODE_EXECUTE);
+		$result_job = $rows_job->current();
+		
+		if(isset($result_job) && ($result_job['job_status']!=3 || $result_job['job_status']!=2)){
+			//get store details for post added
+			$sqlString_st00="select * from employer_store_list where emp_st_id='".$result_job['store_id']."' ";	
+            $results_st00 = $adapter->query($sqlString_st00, $adapter::QUERY_MODE_EXECUTE);
+            $resultset_stdate = $results_st00->current(); //print_r($resultset_stdate);
+			$emp_store_name=$resultset_stdate['emp_store_name'];
+			$emp_store_address=$resultset_stdate['emp_store_address'];
+			$emp_store_region=$resultset_stdate['emp_store_region'];
+			$emp_store_zip=$resultset_stdate['emp_store_zip'];
+			$startTime = unserialize( $resultset_stdate['store_start_time']);
+			$endTime = unserialize( $resultset_stdate['store_end_time']);
+			$lunchTime = unserialize( $resultset_stdate['store_lunch_time']);
+			
+			$job_title=$result_job['job_title'];
+			$job_id=$result_job['job_id'];
+			$job_rate=$currency.number_format($result_job['job_rate'],2);
+			$job_date=$result_job['job_date'];
+			$job_address=$result_job['job_address'];
+			$job_type=$result_job['job_type'];
+			$job_post_desc=$result_job['job_post_desc'];
+			$job_zip=str_replace(' ', '',$result_job['job_zip']);
+			$job_region=$result_job['job_region'];
+			$job_create_date=$result_job['job_create_date'];
+			$job_start_time=$result_job['job_start_time'];
+			$job_day =  date('l', strtotime(str_replace('/','-',$job_date)));
+			$emp_store_address .= ', '.$emp_store_region.', '.$emp_store_zip;
+			
+			//Store timing for posted day 
+			$store_start_time = $functionsController->getTimeOfDay($startTime,$job_day);
+			$store_end_time = $functionsController->getTimeOfDay($endTime,$job_day);
+			$store_lunch_time = $functionsController->getTimeOfDay($lunchTime,$job_day).':00 (Min)';
+			
+			//employer extra info
+			  $sqlEmpinfo = "SELECT store_unique_time,telephone,mobile from user_extra_info WHERE uid = '".$result_job['e_id']."'";	
+			  $ViewEmpdata = $adapter->query($sqlEmpinfo, $adapter::QUERY_MODE_EXECUTE);
+			  $ViewDetailsEmpx = $ViewEmpdata->current();
+			  $store_unique_time=unserialize($ViewDetailsEmpx['store_unique_time']);
+			  /*$store_start_time=$store_unique_time['start_time'].':00';
+			  $store_end_time=$store_unique_time['end_time'].':00';
+			  $store_lunch_time=$store_unique_time['lunch_time'].':00';*/
+			  $store_telephone=$ViewDetailsEmpx['telephone'];
+			  $store_mobile=$ViewDetailsEmpx['mobile'];
+			  if($store_telephone!=''){
+				 $store_contact_details=$store_telephone;
+			  }
+			  elseif($store_mobile!=''){
+				 $store_contact_details=$store_mobile;
+			  }
+			  
+			  
+			// eamil variables  
+			$freelancer_email_section1='<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%;font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px;background-color:#2DC9FF;" colspan="2"> Locumkit Job invitation (Key Details)</th>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Date</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_date.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Daily Rate</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_rate.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Contact Details</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_contact_details.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Address</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$emp_store_address.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Additional Booking Info</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;color:red; font-weight:bold;">'.$job_post_desc.'</td>
+					  </tr>
+					</table>';
+
+			$admin_email_section1='<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px;background-color:#2DC9FF;" colspan="2"> Locumkit job invitation (Key Details)</th>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Employer</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$fname_emp.'</td>
+					 </tr>
+					 <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Employer ID</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$uid.'</td>
+					 </tr>
+					 <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job ref</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_id.'</td>
+					 </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Date</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_date.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Daily Rate</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_rate.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Increase rate timeline</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_timeline_data.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Contact Details</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_contact_details.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Address</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$emp_store_address.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Additional Booking Info</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;color:red; font-weight:bold;">'.$job_post_desc.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Date posted</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.date('d/m/Y',strtotime(str_replace('/', '-', $job_create_date) )).'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Number of people sent to</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$sent_post_count.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;"></th>
+						<td style=" border: 1px solid black;  text-align:left;"> 
+						 <table style="text-align:left;" width="100%">
+						 <tr>
+						 	<td width="50%" style="border-right:1px solid black;">SMS SEND : 0 </td>
+							<td style="margin-left: 10px; display: block;">EMAIL SEND : '.$sent_post_count.'</td>
+						 </tr>
+						 </table>
+						</td>
+					  </tr>
+					</table>';
+
+			$employer_email_section1='<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%;font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; background-color:#2DC9FF;" colspan="2"> Locumkit job invitation (Key Details)</th>
+					  </tr>
+					 <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job ref</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_id.'</td>
+					 </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Date</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_date.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Daily Rate</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_rate.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Increase rate timeline</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$job_timeline_data.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Contact Details</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_contact_details.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Address</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$emp_store_address.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Additional Booking Info</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;color:red; font-weight:bold;">'.$job_post_desc.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Date posted</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.date('d/m/Y',strtotime(str_replace('/', '-', $job_create_date) )).'</td>
+					  </tr>
+					  </table>';
+		  $privat_freelancer_email_section2='';
+		}
+	  // freelancer and private user terms and condition
+	  $freelancer_email_section4 = $mailController->locum_email_terms('#2dc9ff');
+	  
+	  if((isset($check_invite) && $check_invite!="")||(isset($check_invitep)&&$check_invitep!="")) { // invitation for private+normal user
+	    // check whether invitation already sent or not
+		$sql_invi="select * from check_invitation where job_id='$j_id' and invi_status='1'";
+		$rows_invi = $adapter->query($sql_invi, $adapter::QUERY_MODE_EXECUTE);
+		$rows_invi_count= $rows_invi->count(); //die('STOP');
+				
+		if($rows_invi_count==0){
+	        foreach($check_invite as $arr_data){
+				$check_invite_arr=explode('/',$arr_data);
+				$email=$check_invite_arr[0];
+				$invite_id=$check_invite_arr[1];
+				$fname=$check_invite_arr[2];
+				
+				$sqlString_qu_email="select ua.*, uq.fquestion from user_answer ua,user_question uq where uq.fquestion!='' and uq.id=ua.question_id and ua.user_id='$invite_id'";
+				$results_qu_email = $adapter->query($sqlString_qu_email, $adapter::QUERY_MODE_EXECUTE);
+				$results_qu_email2 = $results_qu_email->toArray();
+				$email_fre_data = '';
+				foreach ($results_qu_email2 as $ans_value) {
+					$email_fre_data.='
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">'.$ans_value['fquestion'].'</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.str_replace(',',' / ',$ans_value['type_value']).'</td>
+						</tr>';
+				}
+				
+				$sqlString_empqu_email="select ua.*, uq.equestion from user_answer ua,user_question uq where uq.equestion!='' and uq.id=ua.question_id and ua.user_id='$uid'";
+				$results_empqu_email = $adapter->query($sqlString_empqu_email, $adapter::QUERY_MODE_EXECUTE);
+				$results_empqu_email2 = $results_empqu_email->toArray();
+				$email_data_emp = '';
+				foreach ($results_empqu_email2 as $ans_value) {
+					  $email_data_emp.='
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">'.$ans_value['equestion'].'</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.str_replace(',',' / ',$ans_value['type_value']).'</td>
+					  </tr>';
+				  
+				}
+				$email_data_emp.='
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store cancellation percentage</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$cancellationRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store feedback percentage</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$feedbackRate.'</td>
+						</tr>';
+				$freelancer_email_section2='<tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Start Time:</th>
+					<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_start_time.'</td>
+				  </tr>
+				  <tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Finish Time:</th>
+					<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_end_time.'</td>
+				  </tr>
+				  <tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Lunch Break (minutes):</th>
+					<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_lunch_time.'</td>
+				  </tr>'.$email_data_emp;
+				$sqlString_details="select ux.*,u.user_acl_profession_id from user_extra_info ux, user u where ux.uid='$invite_id' and ux.uid=u.id";
+				$results_user = $adapter->query($sqlString_details, $adapter::QUERY_MODE_EXECUTE);
+				$results_user_data = $results_user->current();
+				$search_category_id=$results_user_data['user_acl_profession_id'];
+				$minimum_rate =$results_user_data['minimum_rate'];
+				
+				// get daily rate
+				$new_date=str_replace("/","-",$job_date);
+				$timepstamp=strtotime($new_date);
+				$currentDay = date('l',$timepstamp);
+				$fre_rate = unserialize( $minimum_rate);
+				$daily_rate = $currency.number_format($fre_rate[$currentDay],2);
+				$freelancer_email_section3 = '';
+				
+				$freelancer_email_section3.='<tr>
+					  <th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">GOC Number:</th>
+					  <td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$results_user_data['goc'].'</td>
+				  	</tr>
+				  	<tr>
+					  <th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Opthalmic number (OPL):</th>
+					  <td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$results_user_data['aoc_id'].'</td>
+				  	</tr>';
+				if ($results_user_data['aop']!= '') {
+				  	$freelancer_email_section3.='<tr>
+						  <th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Insurance (AOP):</th>
+						  <td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$results_user_data['aop'].'</td>
+					  </tr>';
+				}elseif($results_user_data['inshurance_company'] != '' && $results_user_data['inshurance_no'] != ''){
+					$freelancer_email_section3.='<tr>
+						  <th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Insurance:</th>
+						  <td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.ucfirst($results_user_data['inshurance_company']).'-'.$results_user_data['inshurance_no'].'</td>
+					  	</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Insurance expiry:</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$results_user_data['inshurance_renewal_date'].'</td>
+					  	</tr>';
+				}
+
+				$freelancer_email_section3.= $email_fre_data;
+				
+				// insert into job_action table
+				$sql_insertj="INSERT INTO job_action(job_id,f_id,create_date) VALUES('$j_id','$invite_id',NOW())";
+			    $rows_insertj = $adapter->query($sql_insertj, $adapter::QUERY_MODE_EXECUTE);
+				
+				$sql_insert="INSERT INTO job_invited_user(uid,jid) VALUES('$invite_id','$j_id')";
+			    $rows_insert = $adapter->query($sql_insert, $adapter::QUERY_MODE_EXECUTE);
+				
+			    if($jtype==1){
+			    	$jobAllowFreezeDate = strtotime('+2 days');
+			    	$jobWorkDate = strtotime(str_replace('/', '-', $job_date));
+
+					
+					$link ='<a href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($invite_id).'" style="float: left;  margin-bottom: 15px;  margin-top: -10px;outline: none !important;border-radius: 25px;float: left;margin-bottom: 15px;font-size: 18px;color: #fff;background-color: #2dc9ff;padding: 10px 35px;text-decoration: none;text-transform: uppercase;font-weight: 500;">Accept</a>';
+				
+				$smsLinkA = $host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($invite_id);
+
+					/* Check user privileges */
+					$is_user_pkg_allow_job_freeze = $packagePrivilegesController->getCurrentPackagePrivilegesResources('job_freeze',$invite_id,$adapter);
+					if ($jobAllowFreezeDate < $jobWorkDate && $is_user_pkg_allow_job_freeze == 1) {
+						$link .=' <p style="float: left; margin: 13px; font-size: 20px;"> OR &nbsp; </p> <a style="outline: none !important;border-radius: 25px;float: left;margin-bottom: 22px;font-size: 18px;color: #fff;background-color: #2dc9ff;padding: 10px 35px;text-decoration: none;text-transform: uppercase;font-weight: 500;" href="'.$host.'/freeze-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($invite_id).'">Freeze</a>';
+					}
+				}else{
+					$link ='<a style="outline: none !important;border-radius: 25px;float: left;margin-bottom: 15px;font-size: 18px;color: #fff;background-color: #2dc9ff;padding: 10px 35px;text-decoration: none;text-transform: uppercase;font-weight: 500;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('2').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($invite_id).'" style=" float: left;  margin-bottom: 15px;  margin-top: -10px;  /*background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;*/">Accept</a> ';
+				
+				$smsLinkA = $host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('2').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($invite_id);
+				}
+				
+				
+				// send email to no of user
+				$freelancer_email_section2=$freelancer_email_section2;
+				$freelancer_email_section3=$freelancer_email_section3;
+				if($freelancer_email_section3!=''){
+					$freelancer_email_section3_data='<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+					       <tr>
+							<th style=" border: 1px solid black;  text-align:left; padding:5px;background-color:#2DC9FF;" colspan="2"> Locumkit job invitation – information you provided us
+							</th>
+						  </tr>
+						  <tr>
+							<th style=" border: 1px solid black;  text-align:left; padding:5px;color:red; font-weight:bold;text-align:center;" colspan="2">
+							Please check the details below and advise us immediately if this information is incorrect
+							</th>
+						  </tr>
+						'.$freelancer_email_section3.'
+						</table>';
+				}
+				
+				$message_free= $header.'
+						<div style="padding: 25px 50px 5px; text-align: left; ">
+						<p>Hi '.$fname.',</p>
+						<p>We would like to inform you that a new job that matches your requirements has been posted. You can see the job details below:</p>
+						<h3>Job Information</h3>
+						'.$freelancer_email_section1.'
+						<br/>
+						<p>'.$link.'<p>
+						<br/>
+						<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+						   <tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; background-color:#2DC9FF;" colspan="2">Locumkit job invitation (additional information)</th>
+						  </tr>
+						'.$freelancer_email_section2.'
+						</table>
+						<br/>
+						'.$freelancer_email_section3_data.'
+						<br/>
+						'.$freelancer_email_section4.'
+						
+						</div>'.$footer;
+						
+				$fre_sub = 'Locumkit job notification: Date : '.$job_date.' / Location : '.$emp_store_address.' / Rate : '.$currency_code.number_format($result_job['job_rate'],2);		
+				$txt_message="Invitations sent";
+				$send=1;
+
+				// freelancer
+				//$mail = new \Gc\Mail('utf-8', $message_free);
+				
+				try{
+				// freelancer	
+				// $mail->getHeaders()->addHeaderLine('Content-type','text/html');
+				// $mail->setSubject($fre_sub);
+				// $mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+				// $mail->addTo($email,$fname);
+				// $mail->send();
+
+				$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+				$mailController->sendSMTPMail($message_free,$from,$email,$fname,$fre_sub);
+
+				//Mobile APP Notification
+				$mobile_invitation_send = $notifyController->notification($j_id,$message="Job Ref:".$job_id.', Date:'.$job_date.', Location:'.$emp_store_address.', Rate:'.$currency_code.number_format($result_job['job_rate'],2).', Open this message to view full details.', $title='Job invitation',$invite_id,$types="acceptJob");
+						
+
+				//send sms start
+				$jobsmsController->jobInvitationFreeSms($invite_id,$j_id,$smsLinkA);
+				//send sms end
+
+
+
+			
+				}catch (Exception $e) { }
+			}// foreach end for normal user
+			//invitation for normal + private when job type=1 i.e first come first serve
+			if($check_invitep){
+				 foreach($check_invitep as $parr_data){
+					$check_invite_arr=explode('/',$parr_data);
+					$email2=$check_invite_arr[0];
+					$invite_id2=$check_invite_arr[1];
+					$name2=$check_invite_arr[2]; 
+					// insert into job action table
+					$sql_insert_pj="INSERT INTO private_user_job_action(puid,emp_id,j_id,status) VALUES('$invite_id2','$uid','$j_id',1)";
+			        $rows_insert_pj = $adapter->query($sql_insert_pj, $adapter::QUERY_MODE_EXECUTE);
+					
+					$link2 ='<a  style="outline: none !important;float: left;font-size: 18px;background-color: #2dc9ff;padding: 7px 30px;color: #fff;text-transform: uppercase;text-decoration: none;border-radius: 25px;margin-bottom: 0px;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($invite_id2).'">Accept</a>';
+					
+					$smsLinkA2 = $host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($invite_id2);
+					
+					
+					$sqlString_qu_email="select ua.*, uq.equestion from user_answer ua,user_question uq where uq.equestion!='' and uq.id=ua.question_id and ua.user_id='$uid'";
+					$results_qu_email = $adapter->query($sqlString_qu_email, $adapter::QUERY_MODE_EXECUTE);
+					$results_qu_email2 = $results_qu_email->toArray();
+					$email_data = '';
+					foreach ($results_qu_email2 as $ans_value) {
+						$email_data.='
+							<tr>
+								<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">'.$ans_value['equestion'].'</th>
+								<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.str_replace(',',' / ',$ans_value['type_value']).'</td>
+							  </tr>';
+					}
+					$email_data.='
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store cancellation percentage</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$cancellationRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store feedback percentage</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$feedbackRate.'</td>
+						</tr>';
+					
+					$private_freelancer_email_section2 = $email_data;
+					
+					// send email to no of user
+				    $message2=$header.'
+						<div style="padding: 25px 50px 5px; text-align: left; ">
+						  	<p>Hello '.$name2.',</p>
+						  	<p>Locumkit is a platform that matches employers with locums, with no middleman involved.</p>
+						  	<p>To find out more about Locumkit, please <a href="https://www.youtube.com/watch?v=uM4Og3BxQm0" target="_blank">click here</a> </p>
+							<p>Our client is looking for a locum - please find below details for the day in question. To accept the job, please click on accept and we shall notify the employer, who can then close the job. </p>
+
+						   <h3>Job Information</h3>
+						   '.$freelancer_email_section1.'
+						   <br/>
+						   <p style="float:left;width:100%;">'.$link2.'<p>	
+						   <p>To continue receiving job notifications like these please <a href="'.$host.'/private-invitation/" target="_blank">click here</a></p>
+						   <br/>
+						   <table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+						   <tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; background-color:#2DC9FF;" colspan="2"> Locumkit job invitation (additional information)</th>
+						  </tr>
+						  <tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Start Time:</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_start_time.'</td>
+						  </tr>
+						  <tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Finish Time:</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_end_time.'</td>
+						  </tr>
+						  <tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Lunch Break (minutes):</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_lunch_time.'</td>
+						  </tr>
+						    '.$private_freelancer_email_section2.'
+						   </table>
+						   <br/>
+	 					   '.$freelancer_email_section4.'
+							<p>About Locumkit:</p>
+							<p>Locumkit is designed to connect employers with locums. Locumkit offers plenty of benefits, functions, and services that you will certainly find very useful. From a single location, you will be able to monitor your bookings, work history, financials, new job opportunities, and much more. </p>
+							<p>Locumkit not only puts you at the center of our focus, we field highly cable teams, with depth and experience of Optometry and Accounting, on every job. Locumkit is a  bespoke & innovative platform created and run by experienced optometrists over 25 years of first hand experience of which 15 years has been as locums with a range of employers from multiples, independents, to eye casualties and domiciliary. </p>
+							<p>In addition to that there are many other benefits of Locumkit such as: </p>
+							<ul>
+								<li><p>Get many more job bookings like this</p></li>
+								<li><p>Get job bookings tailored to your requirements; day rate, distance willing to travel</p></li>
+								<li><p>Get job reminders irrespective if from our website or "off website"</p></li>
+								<li><p>Upto date accounting - accessed from anywhere, anytime</p></li>
+								<li><p>Automated book keeping and all your statutory financial compliance taken care of</p></li>
+							</ul>
+
+							<p>Why not visit Locumkit and join the platform where you can have that many significant benefits and dramatically boost your job opportunities?</p>							
+
+							<p>Please visit our website for more information <a href="'.$host.'">localhost</a></p>
+							
+							
+
+						</div>'.$footer;
+						$send = 0;
+						$p_fre_sub = 'Locumkit job notification: Date : '.$job_date.' / Location : '.$emp_store_address.' / Rate : '.$currency_code.number_format($result_job['job_rate'],2);
+						// $mail = new \Gc\Mail('utf-8', $message2);
+
+
+						try{
+							// $mail->getHeaders()->addHeaderLine('Content-type','text/html');
+							// $mail->setSubject($p_fre_sub);
+							// $mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+							// $mail->addTo($email2,$name2);
+							// $mail->send();
+
+
+							$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+							$mailController->sendSMTPMail($message2,$from,$email2,$name2,$p_fre_sub);
+								
+
+							$send = 1;
+							$txt_message="Invitations sent";
+							
+							//send sms start
+							$jobsmsController->jobInvitationFreeSms($invite_id2,$j_id,$smsLinkA2);
+							//send sms end
+
+						}catch (Exception $e) {
+						    $send = 0;
+							$error_message="Invitation is not send, please try after some time.";
+						}
+				 }// foreach end for private
+			}
+			 
+			//send admin and employer email
+			$sqlString_empqu_email="select ua.*, uq.equestion from user_answer ua,user_question uq where uq.equestion!='' and uq.id=ua.question_id and ua.user_id='$uid'";
+		 	$results_empqu_email = $adapter->query($sqlString_empqu_email, $adapter::QUERY_MODE_EXECUTE);
+		 	$results_empqu_email2 = $results_empqu_email->toArray();
+		 	$email_data_emp1 = '';
+		 	foreach ($results_empqu_email2 as $ans_value) {
+			  	$email_data_emp1.='
+			  		<tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">'.$ans_value['equestion'].'</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.str_replace(',',' / ',$ans_value['type_value']).'</td>
+			  		</tr>';		  
+		 	}
+		 	$email_data_emp1.='
+				<tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store cancellation percentage</th>
+					<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$cancellationRate.'</td>
+				</tr>
+				<tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store feedback percentage</th>
+					<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$feedbackRate.'</td>
+				</tr>';
+
+		 	$freelancer_email_section2='<tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Start Time:</th>
+				<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_start_time.'</td>
+			  </tr>
+			  <tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Finish Time:</th>
+				<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_end_time.'</td>
+			  </tr>
+			  <tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Lunch Break (minutes):</th>
+				<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_lunch_time.'</td>
+			  </tr>'.$email_data_emp1;
+			  
+		 	$message_admin=$header.'
+				<div style="padding: 25px 50px 5px; text-align: left;font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;">
+				<p>Hello <b>Admin</b>,</p>
+				<p>A new job has just been posted by: <b>'.$fname_emp.'</b></p>
+				<h3>Job Information</h3>
+				'.$admin_email_section1.'
+				<br/>
+				<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+				<tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; background-color:#2DC9FF;" colspan="2"> Locumkit Job invitation (additional information)</th>
+				  </tr>
+				'.$freelancer_email_section2.'
+				</table>
+				<br/>
+				</div>'.$footer;
+
+			$emp_sub = 'Locumkit: New job posting (#'.$job_id.')';		
+			$message_employer=$header.'
+				<div style="padding: 25px 50px 5px; text-align: left;font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;">
+				<p>Hello '.$fname_emp.',</p>
+				<p>We would like to inform you that your job post has been confirmed and is now active. The selected locums have been notified.</p><p>You will be notified once a locum has accepted your booking.</p>
+				<h3>Job Information</h3>
+				'.$employer_email_section1.'
+				<br/>
+				<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+				<tr>
+					<th style=" border: 1px solid black;  text-align:left;  padding:5px; background-color:#2DC9FF;" colspan="2"> Locumkit job invitation (additional information)</th>
+				  </tr>
+				'.$freelancer_email_section2.'
+				</table>
+				<br/>
+				<p>Should you need to cancel this job, please <a href="'.$host.'/cancel-job?e='.$job_id.'">click here</a>.</p>
+				<p>Should you need to edit this job, please <a href="'.$host.'/managejob?e='.$job_id.'">click here</a>.</p>
+				</div>'.$footer;
+			$admin_sub = 'Locumkit job notification: New job posting : #'.$job_id;
+				// admin
+			try {
+				// $mailAdmin = new \Gc\Mail('utf-8', $message_admin);
+				// $mailAdmin->getHeaders()->addHeaderLine('Content-type','text/html');
+				// $mailAdmin->setSubject($admin_sub);
+				// $mailAdmin->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+				// $mailAdmin->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+				// $mailAdmin->send();
+
+				$to = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+				$to_name = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name');
+				$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+				$mailController->sendSMTPMail($message_admin,$from,$to,$to_name,$admin_sub);
+
+			}catch (Exception $e){
+			}
+				
+			//employer
+			try {
+				//$mailEmp = new \Gc\Mail('utf-8', $message_employer);
+				//$mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+				//$mailEmp->setSubject($emp_sub);
+				//$mailEmp->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+				//$mailEmp->addTo($email_emp,$fname_emp);
+				//$mailEmp->send();
+				
+				$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+				
+				$mailController->sendSMTPMail($message_employer,$from,$email_emp,$fname_emp,$emp_sub);
+								
+				
+				//send sms start
+				$jobsmsController->jobInvitationemployerSms($uid,$j_id,null);
+				//send sms end			
+			}catch (Exception $e){
+			}
+		
+		if($send==1){
+			$sql_insert_invi="INSERT INTO check_invitation(job_id,invi_status,date_created) VALUES('$j_id','1',NOW())";
+			$rows_insert_invi = $adapter->query($sql_insert_invi, $adapter::QUERY_MODE_EXECUTE);
+		}
+	 }else{
+		 $error_message="This job invitation was already sent";
+	 }
+	 
+	 
+	 
+	 } //invitation for privat+normal end
+	 
+	 // invitation for private user only
+	 if(isset($check_invite2) && $check_invite2!=""){ 
+		 foreach($check_invite2 as $parr_data){
+				$check_invite_arr=explode('/',$parr_data);
+				$email2=$check_invite_arr[0];
+				$invite_id2=$check_invite_arr[1];
+				$name2=$check_invite_arr[2];
+				// insert into job action table
+				$sql_insert_pj="INSERT INTO private_user_job_action(puid,emp_id,j_id,status) VALUES('$invite_id2','$uid','$j_id',1)";
+		        $rows_insert_pj = $adapter->query($sql_insert_pj, $adapter::QUERY_MODE_EXECUTE); 
+				
+				//$link2 ='<a style="outline: none !important;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('2').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($invite_id2).'" style=" float: left;  margin-bottom: 15px;  margin-top: -10px; /*background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;*/"><img src="'.$host.'/public/frontend/images/accept.png" style="width:170px;"/></a>';
+				
+				$link2 ='<a style="outline: none !important;float: left;font-size: 18px;background-color: #2dc9ff;padding: 7px 30px;color: #fff;text-transform: uppercase;text-decoration: none;border-radius: 25px;margin-bottom: 20px;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('2').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($invite_id2).'">Accept</a>';
+				
+				$sqlString_qu_email="select ua.*, uq.equestion from user_answer ua,user_question uq where uq.equestion!='' and uq.id=ua.question_id and ua.user_id='$uid'";
+				$results_qu_email = $adapter->query($sqlString_qu_email, $adapter::QUERY_MODE_EXECUTE);
+				$results_qu_email2 = $results_qu_email->toArray();
+				$email_data = '';
+				foreach ($results_qu_email2 as $ans_value) {
+					$email_data.='
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">'.$ans_value['equestion'].'</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.str_replace(',',' / ',$ans_value['type_value']).'</td>
+						</tr>';
+				}
+
+				$email_data.='
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store cancellation percentage</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$cancellationRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store feedback percentage</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$feedbackRate.'</td>
+						</tr>';
+				
+				$private_freelancer_email_section2 = $email_data;
+				
+				// send email to no of user
+			    $message2=$header.'
+					   <div style="padding: 25px 50px 5px; text-align: left;font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;">
+					  <p>Hi <b>'.$name2.'</b>,</p>
+
+					<p>Locumkit is a website which joins locums with employers.</p>
+					<p>This job has been sent to you from an employer with whom you have worked in the past.</p>
+					<p>Why not join locumkit and enjoy the benefit of being seen by many more employers.</p>
+					<p>Please visit our webiste for more information <a href="'.$host.'">localhost</a></p>
+					<p>&nbsp;</p>
+					   <p> A new job has been posted for which you have been invited to apply. Please see below the details of the job Ref: </p>
+					   <h3>Job Information</h3>
+					  '.$freelancer_email_section1.'
+					  <br/>
+					   <table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+					   <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; background-color:#2DC9FF;" colspan="2"> Locumkit job invitation (additional information)</th>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Start Time:</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_start_time.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Finish Time:</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_end_time.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Lunch Break (minutes):</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$store_lunch_time.'</td>
+					  </tr>
+						'.$private_freelancer_email_section2.'
+					   </table>
+					   <br/>
+ 					  '.$freelancer_email_section4.'
+					<br/>
+					<p>'.$link2.'<p>
+					
+					
+					</div>'.$footer;
+					
+					// message format
+					$message_admin=$header.'
+					<div style="padding: 25px 50px 5px;text-align: left; ">
+					<p>Hello <b>Admin</b>,</p>
+					<p>A new job has just been posted by:</p>
+					<h3>Job Information</h3>
+					'.$admin_email_section1.'
+					<br/>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%;font-family: Roboto,RobotoDraft,Helvetica,Arial,sans-serif;">
+					'.$private_freelancer_email_section2.'
+					</table>
+					<br/>
+					</div>'.$footer;
+					$emp_sub = 'Locumkit: New job posting (#'.$job_id.')';
+					$message_employer=$header.'
+					<div style="padding: 25px 50px 5px; text-align: left; ">
+					<p>Hello <b>'.$fname_emp.'</b>,</p>
+					<p>New Job notification to matching to your profile,if interested in job accept using below link. </p>
+					<h3>Job Information</h3>
+					'.$employer_email_section1.'
+					<br/>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;" width="100%">
+					'.$private_freelancer_email_section2.'
+					</table>
+					<br/>
+					</div>'.$footer;
+					
+					$txt_message="Invitation sent";
+					$send=1;
+					$admin_sub = 'Locumkit job notification: New job posting = #'.$job_id;
+					try{
+						// $mail = new \Gc\Mail('utf-8', $message2);
+						// $mail->getHeaders()->addHeaderLine('Content-type','text/html');
+						// $mail->setSubject('Job invitation');
+						// $mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+						// $mail->addTo($email2,$name2);
+						// $mail->send();
+
+						
+						$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+						$mailController->sendSMTPMail($message2,$from,$email2,$name2,'Job invitation');
+
+					}catch (Exception $e){
+			        }
+					
+					// admin
+					try{
+						// $mailAdmin = new \Gc\Mail('utf-8', $message_admin);
+						// $mailAdmin->getHeaders()->addHeaderLine('Content-type','text/html');
+						// $mailAdmin->setSubject($admin_sub);
+						// $mailAdmin->setFrom($email_emp,$fname_emp);
+						// $mailAdmin->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+						// $mail_admin->send();
+
+						$to = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+						$to_name = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name');
+
+						$mailController->sendSMTPMail($message_admin,$email_emp,$to,$to_name,$admin_sub);
+
+					}catch (Exception $e){
+			        }
+					
+					//employer
+					try{
+						// $mailEmp = new \Gc\Mail('utf-8', $message_employer);
+						// $mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+						// $mailEmp->setSubject($emp_sub);
+						// $mailEmp->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+						// $mailEmp->addTo($email_emp,$fname_emp);
+						// $mailEmp->send();
+
+						$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+						$mailController->sendSMTPMail($message_employer,$from,$email_emp,$fname_emp,$emp_sub);
+
+					}catch (Exception $e){
+			        }
+					
+			 }// foreach end for private
+		 
+	 }
+	 if ($txt_message) {
+	 	$this->flashMessenger()->addSuccessMessage($txt_message);
+	 }else{
+	 	$this->flashMessenger()->addErrorMessage($error_message);
+	 }
+     if($send==1){
+		$this->redirect()->toUrl('/job-listing?sort_by=job_date&order=DESC');
+	 }else{
+     	$this->redirect()->toUrl('/job-search?s='.$j_id);
+	 }
+	 return TRUE;
+}
+?>

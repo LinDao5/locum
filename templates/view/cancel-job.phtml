@@ -1,0 +1,150 @@
+<?php
+    date_default_timezone_set('Europe/London');
+  if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+    $uid=$_SESSION['user_id'];
+  }else{
+      echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>"; 
+  }
+  /* Job Id */
+  $cjid = '';
+  if (isset($_GET['e']) && $_GET['e'] != '') { 
+    $cjid = $_GET['e'];
+  }else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>";
+  }
+  /* User type */
+  $uType = '';
+  if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] != '') {
+    $uType = $_SESSION['user_role_id'];
+  }else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";    
+  }
+  use GcFrontend\Controller\DbController as DbController;
+  $dbConfig = new DbController();
+  $adapter = $dbConfig->locumkitDbConfig();
+  /* Check if user not attend job */
+  if (isset($_GET['attendance']) && $_GET['attendance'] == 0) {
+    $attendance = 0;
+
+    /* == Check if already attend == */
+    $sqlOnDayJobData = "SELECT * from job_on_day WHERE  status='2' AND f_id = '$uid' AND j_id ='$cjid'"; 
+    $jobOnDayJobData= $adapter->query($sqlOnDayJobData, $adapter::QUERY_MODE_EXECUTE);
+    $jobOnDayData = $jobOnDayJobData->current();
+    if(!empty($jobOnDayData)){
+       $attendance = 3; // already attend
+    }
+
+  }else{
+    $attendance = 1;
+  }
+
+  use GcFrontend\Controller\FunctionsController;
+
+  $functionsController = new FunctionsController();
+  $cancellationRate = 0;
+  if ($uType == 3 ) {
+    $cancellationRate = $functionsController->getEmpCancellationRate($uid,$adapter);
+  }elseif($uType == 2 ){
+    $cancellationRate = $functionsController->getFreCancellationRate($uid,$adapter);
+  }
+
+
+
+  $this->script('cancel-job-process'); 
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="/user-profile">Dashbord</a></li>
+                    <li><a href="/job-listing">Job List</a></li>
+                    <li><a href="javascript:void(0);">Cancel Job</a></li>
+                </ul>
+                
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon" style="   padding: 8px 13px 0px;">
+                    <i class="glyphicon glyphicon-briefcase" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Cancel Job</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+              <?php if($attendance != 3){?>
+              <form id="cancel-job" name="cancel-job" action="/cancel-job?e=<?php echo $cjid ?>" method="post" onsubmit="return validateForm()">
+                <?php if(!$attendance){?>
+                  <p>You are not attending job means you are canceling job contract and that will affect on your job cancellation rate.</p>
+                  <h3 style="text-align: left;">Cancellation rate prior to cancelling current job : <?php echo $cancellationRate; ?>%</h3>
+                  <p>Please specify the reason of not attending job </p>
+                <?php }else{ ?>
+                  <h3 style="text-align: left;">Cancellation rate prior to cancelling current job : <?php echo $cancellationRate; ?>%</h3>
+                  <p>Why do you want to cancel the job ? Please specify the reason below...</p>
+                <?php } ?>
+                
+                <div class="cancel-reason-div">
+                  <textarea name="cancel-reason" rows="5" id="cancel-reason" placeholder="Please enter reason up to 128 character only...."></textarea>
+                  <div id="error"></div>
+                </div>
+                <input type="submit" value="SUBMIT" class="cancel-submit"> 
+              </form>
+              <?php }else{ ?>
+                 <h3 style="text-align: center; color:red;">You have already attend this job so now you can not able to cancel this job.</h3>
+              <?php } ?>
+          </div>
+        </div>
+   	</div>
+</div>
+<script type="text/javascript">
+  var max = 128;
+  jQuery("#cancel-reason").keypress(function(e) {
+    if (e.which < 0x20) {
+        return;     
+    }
+    if (this.value.length == max) {
+        e.preventDefault();
+    } else if (this.value.length > max) {
+        this.value = this.value.substring(0, max);
+    }
+  });
+  function validateForm() {
+    var el = jQuery("#cancel-reason").val();
+    if (el == '') {
+      jQuery("#error").html("<p style='color:red;'>This field is required</p>");
+      return false;
+    }else{
+      jQuery("#error").html('');
+    /*  if (!confirm("Are you sure you want to cancel job ?")) {
+        return false;
+      }*/
+confirm_delete() ;
+    }
+  }
+
+
+    function confirm_delete(){
+        event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Are you sure you want to cancel job?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#cancel-job").submit();
+            messageBoxClose();
+        });
+    }
+
+
+
+</script>

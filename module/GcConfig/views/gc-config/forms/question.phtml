@@ -1,0 +1,241 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+   
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('user_acl_profession_id')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('user_acl_profession_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('user_acl_profession_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('fquestion')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('fquestion')); ?>
+            <?php echo $this->formElementErrors($this->form->get('fquestion'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('equestion')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('equestion')); ?>
+            <?php echo $this->formElementErrors($this->form->get('equestion'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('sort_order')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('sort_order')); ?>
+            <?php echo $this->formElementErrors($this->form->get('sort_order'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('required_status')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('required_status')); ?>
+            <?php echo $this->formElementErrors($this->form->get('required_status'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('type_key')); ?>
+        <div class="col-lg-10">
+            <div id="qus_key">
+                <p><?php echo $this->formElement($this->form->get('type_key')); ?></p>
+            </div>            
+            <!-- <a href="javascript:void(0)" id="add_qus">Add</a> | <a href="javascript:void(0)" id="remove_qus">Remove</a> -->
+        </div>
+    </div>
+    <div  id="range_qus">
+        <div class="form-group" >
+            <?php echo $this->formLabel($this->form->get('type_value_range_unit')); ?>
+            <div class="col-lg-10">
+                <p><?php echo $this->formElement($this->form->get('type_value_range_unit')); ?></p>
+            </div>
+        </div>
+    </div>
+    <div  id="comp_qus">        
+        <div class="form-group" >
+            <?php echo $this->formLabel($this->form->get('type_value_range_type')); ?>
+            <div class="col-lg-10">
+                <p><?php echo $this->formElement($this->form->get('type_value_range_type')); ?></p>
+            </div>
+        </div>
+        
+    </div>
+    <div class="form-group" id="field_qus">
+        <?php echo $this->formLabel($this->form->get('type_value[]')); ?>
+        <div class="col-lg-10">
+            <div id="qus_field">
+                <div>
+                    <p><?php echo $this->formElement($this->form->get('type_value[]')); ?></p>
+                </div>            
+                <a href="javascript:void(0)" id="add_qus">Add</a> | <a href="javascript:void(0)" id="remove_qus">Remove</a>
+            </div>
+            <div id="range_field">
+                <div class="block-margin" id="range_field_div">
+                    <div class="col-md-6" style="padding-left:0px;">
+                        <input type="number" class="form-control value_1" id="min_value_1" placeholder="Enter min value">
+                    </div>
+                    <div class="col-md-6" style="padding-right:0px;">
+                        <input type="number"  class="form-control value_1" id="max_value_1" placeholder="Enter max value">
+                    </div>
+                    <p>
+                        <?php //echo $this->formElement($this->form->get('type_value[]')); ?>
+                        <input type="hidden" name="type_value[]" class="form-control" id="type_value_1" placeholder="Enter value" value=""> 
+                    </p>
+                </div>
+                <div style="clear:both"></div>
+                <div style="margin-top: 10px;">
+                    <a href="javascript:void(0)" id="range_add_qus">Add</a> | <a href="javascript:void(0)" id="range_remove_qus">Remove</a>
+                </div> 
+            </div>
+        </div>
+    </div>
+   
+
+    
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save & add new')); ?>" name="addNew">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+var i = 1;
+var j = 1;
+if($('#qus_key select').val() == 2 || $('#qus_key select').val() == 3 ) {
+    $('#comp_qus').hide(500);
+    $('#range_qus').hide(500);
+    $('#range_field').hide(500);
+    $('#field_qus').show(1000);
+    $('#qus_field').show(1000);
+}else if($('#qus_key select').val() == 4){
+    $('#comp_qus').show(1000);
+    $('#range_qus').show(1000);
+    $('#range_field').hide(1000);
+    $('#field_qus').show(1000);
+    $('#qus_field').show(1000);
+}else if($('#qus_key select').val() == 5){
+    $('#comp_qus').hide(1000);
+    $('#field_qus').show(1000);
+    $('#qus_field').hide(1000);
+    $('#range_field').show(1000);
+    $('#range_qus').show(1000);
+}else{
+    $('#comp_qus').hide(1000);
+    $('#range_qus').hide(1000);
+    $('#field_qus').hide(1000);
+    $('#range_field').hide(1000);
+}
+
+
+
+$('#qus_key select').on('change', function() {
+    if( this.value == 2 || this.value == 3 ){
+        $('#comp_qus').hide(500);
+        $('#range_qus').hide(500);
+        $('#range_field').hide(500);
+        $('#field_qus').show(1000);
+        $('#qus_field').show(1000);
+        
+    }else if(this.value == 4){
+        $('#comp_qus').show(1000);
+        $('#range_qus').show(1000);
+        $('#range_field').hide(1000);
+        $('#field_qus').show(1000);
+        $('#qus_field').show(1000);
+    }else if(this.value == 5){
+        $('#comp_qus').hide(1000);
+        $('#field_qus').show(1000);
+        $('#qus_field').hide(1000);
+        $('#range_field').show(1000);
+        $('#range_qus').show(1000);
+    }else{
+        $('#comp_qus').hide(1000);
+        $('#range_qus').hide(1000);
+        $('#field_qus').hide(1000);
+        $('#range_field').hide(1000);
+    }
+});
+$("#add_qus").click(function(){
+    var nEle = '<p><?php echo $this->formElement($this->form->get('type_value[]')); ?></p>';
+    $("#qus_field").append(nEle).show(1000);
+    i++;
+});
+$("#remove_qus").click(function(){
+    var lenghtEle = $( "input#type_value" ).length;
+    if (lenghtEle > 1) {
+        $("input#type_value").last().remove();
+    }else{
+        alert("cant remove this");
+    }
+});
+
+
+$("#range_add_qus").click(function(){
+    j++;
+    var nEle = '<div class="block-margin"><div class="col-md-6" style="padding-left:0px;"><input type="number" class="form-control value_'+j+'" id="min_value_'+j+'" placeholder="Enter min value"></div><div class="col-md-6" style="padding-right:0px;"><input type="number"  class="form-control value_'+j+'" id="max_value_'+j+'" placeholder="Enter max value"></div><p><input type="hidden" name="type_value[]" class="form-control" id="type_value_'+j+'" placeholder="Enter value" value=""></p></div>';
+    $("#range_field_div").append(nEle).show(1000);
+    i++;
+    OnKeyUp();
+});
+$("#range_remove_qus").click(function(){
+    var lenghtEle = $( ".block-margin" ).length;   
+    if (lenghtEle > 1) {
+        $(".block-margin").last().remove();
+    }else{
+        alert("cant remove this");
+    }
+});
+OnKeyUp();
+function OnKeyUp() {
+    $(".block-margin input").keyup(function(e) {
+        var field_class = $(this).attr("class");
+        var field_number = field_class.replace("form-control value_","")
+        var full_value = $("#min_value_"+field_number).val()+'-'+$("#max_value_"+field_number).val();
+        $("#type_value_"+field_number).val(full_value);
+    });
+}
+
+</script>
+<style type="text/css">
+    .block-margin{
+        margin-top: 10px;
+        display: block;
+        float: left;
+        width: 100%;
+    }
+</style>

@@ -1,0 +1,166 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<?php 
+//print_r($this->form);
+
+//echo $this->partial('gc-config/forms/question.phtml', array('form' => $this->form)); ?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+    	
+        <?php echo $this->formLabel($this->form->get('user_acl_role_id')); ?>
+        <div class="col-lg-10">
+        	<?php 
+        		/*echo "<pre>";
+        		print_r($this->form->get('user_acl_role_id'));
+        		echo "</pre>";*/
+        	?>
+            <?php echo $this->formElement($this->form->get('user_acl_role_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('user_acl_role_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('user_acl_profession_id')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('user_acl_profession_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('user_acl_profession_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('question')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('question')); ?>
+            <?php echo $this->formElementErrors($this->form->get('question'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('type_key')); ?>
+        <div class="col-lg-10">
+            <div id="qus_key">
+                <p><?php echo $this->formElement($this->form->get('type_key')); ?></p>
+            </div>            
+            <!-- <a href="javascript:void(0)" id="add_qus">Add</a> | <a href="javascript:void(0)" id="remove_qus">Remove</a> -->
+        </div>
+    </div>
+    <div class="form-group" id="field_qus">
+        <?php echo $this->formLabel($this->form->get('type_value[]')); ?>
+        <div class="col-lg-10">
+            <div id="qus_field">
+                <p id="edit1"><?php echo $this->formElement($this->form->get('type_value[]')); ?></p>
+                <div id="editVal"></div>
+            </div>            
+            <a href="javascript:void(0)" id="add_qus">Add</a> | <a href="javascript:void(0)" id="remove_qus">Remove</a>
+        </div>
+    </div>
+   
+
+    
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+<input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save & add new')); ?>" name="addNew">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+var i = 1;
+if($('#qus_key select').val() == 2){
+    $('#field_qus').show();
+}else{
+   $('#field_qus').hide(); 
+}
+
+
+$('#qus_key select').on('change', function() {
+    if( this.value == 2 ){
+        $('#field_qus').show(1000);
+    }else{
+        $('#field_qus').hide(1000);
+    }
+});
+$("#add_qus").click(function(){
+    var nEle = '<p><?php echo $this->formElement($this->form->get('type_value[]')); ?></p>';
+    $("#qus_field").append(nEle).show(1000);
+    i++;
+});
+$("#remove_qus").click(function(){
+    var lenghtEle = $( "input#type_value" ).length;
+    if (lenghtEle > 1) {
+        $("input#type_value").last().remove();
+    }else{
+        alert("cant remove this");
+    }
+});
+</script>
+<?php 
+	$url = $_SERVER['REQUEST_URI'];
+	$editId = explode("/", $url);    		
+	use Gc\User\Question;
+	$questionModel = Question\Model::fromId($editId[6]);
+	$allValue = $questionModel->getData();
+	//print_r($allValue);
+	foreach ($allValue as $key => $value) {
+		if ($key == 'role_id') {        			
+		?>
+		<script type="text/javascript">
+			$("#user_acl_role_id").val("<?php echo $value; ?>");			
+		</script>
+		<?php 
+		}
+		if ($key == 'cat_id') {
+		 ?>
+		<script type="text/javascript">
+			$("#user_acl_profession_id").val("<?php echo $value; ?>");
+		</script>
+		<?php		
+		}
+		if ($key == 'type_value') {
+			$optionVal = unserialize($value);
+			foreach ($optionVal as $opk => $opv) {
+				if ($opk == 0) {
+					?>
+					<script type="text/javascript">
+						$('#edit1 input#type_value').val('<?php echo $opv ?>');
+					</script>	
+					<?php
+				}else{
+			?>
+			<script type="text/javascript">
+				
+				$('#editVal').append('<p><input type="text" name="type_value[]" class="form-control" id="type_value" value="<?php echo $opv ?>"></p>')
+			</script>
+			<?php
+				}
+			}	
+		}
+	}
+?>

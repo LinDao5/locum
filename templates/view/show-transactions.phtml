@@ -1,0 +1,240 @@
+<?php
+
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+use GcFrontend\Controller\PackagePrivilegesController;
+$packagePrivilegesController    = new PackagePrivilegesController();
+
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2 && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1 ){
+    $uid = $_SESSION['user_id'];
+    $userRoleId = $_SESSION['user_role_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+die();
+}
+$currency = $this->config()->get('site_currency');
+$show = @$_GET['show'] ? $_GET['show'] : null;
+$financialYear = isset($_GET['year']) ? $_GET['year'] : null;
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'year';
+$ptitle = '';
+if($show == 'in'){
+    $incomeRecord = $financeHelper->getAllIncome($uid,$financialYear,null);
+    $ptitle = 'Income';
+}
+if($show == 'ex'){
+    $expenseRecord = $financeHelper->getAllExpense($uid,$financialYear,null);
+    $ptitle = 'Expense';
+}
+
+$return = $this->script('finance_detail_process'); 
+
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="/finance-detail">Finance</a></li>
+                    <li><a href="#"><?php echo $ptitle ;?></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-list-alt" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3><?php echo $ptitle ;?></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="text-left">
+                    <div class="col-md-12 pad0">
+                        <div class="text-capitalize text-center finance-page-head"><?php echo $ptitle ;?></div>
+                    </div>
+                    
+                    <div class="cash_man_chart2 wholeborder pad0">
+                    <?php echo $this->partial('flash-messages'); ?>
+                        <form action="" class="">
+                            <div class="col-md-12 pad0">
+                                <div class="financial-year-title col-md-7 col-sm-7 col-xs-12 bglightgrey">
+                                    <h4 class="text-right">Please select your financial year &nbsp;&nbsp;&nbsp;&nbsp;: </h4>
+                                </div>
+                                <div class="financial-year-select col-md-5 col-sm-5 col-xs-12 bglightgrey">
+                                    <input type="hidden" name="show" value="<?php echo $show; ?>"/>
+                                    <select name="year" id="finance-year" class="filter-selection" onchange="this.form.submit()">
+                                        <?php echo "<option value=''>All Years</option>";
+                                        $registerYear = $financeHelper->getCreatedYear($uid);
+                                        for($i = $registerYear; $i <= date('Y'); $i++ ){
+                                           $m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+                                          $t =  (date('m') > $m) ? $i : $i-1     ?>
+                                    <option value="<?php echo $i  ; ?>"  <?php echo @$financialYear == $i ? 'selected' : '' ; ?>><?php echo $financeHelper->getoneplusyear($t); ?></option>
+                                    <?php } ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="col-md-12 cash_table_box">
+                            <div class="col-md-12 cash_table_form pad0">
+
+                            </div>
+                            <div class="col-md-12 pad0"> <!--cash_table-->
+                                <div class="table-responsive  show-transactions-table"> 
+                                    <?php if($show == 'in'){ ?>
+                                    <table class="table table-striped income_sum_table" id="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th class="col-md-1">Tran No</th>
+                                            <th class="col-md-1">Job No</th>
+                                            <th class="col-md-1">Date</th>
+                                            <!--<th class="col-md-1">Net</th>-->
+                                            <!--<th class="col-md-1">Vat</th>-->
+                                            <th class="col-md-1">Amount</th>
+                                            <th class="col-md-1">Location</th>
+                                            <th class="col-md-1">Category</th>
+                                            <th class="col-md-1">Bank</th>
+                                            <th class="col-md-1">Bank Date</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        <?php
+                                        if (!empty($incomeRecord)) :
+                                            $i0 =  $i30 = $i60 = $i90 = 0 ;
+                                            foreach($incomeRecord as $incomedata){
+                                                $jobId[] = $incomedata['job_id'];
+                                                $grossCost = $incomedata['job_rate'];
+                                                $isBank = $incomedata['bank'];
+                                                $diffDayarray[] = $diffDay = $financeHelper->getdataDifference($incomedata['created_at'])
+                                                ?>
+                                                <tr>
+                                                    <td class="col-md-1" data-order="<?php echo $incomedata['trans_id']; ?>"><?php echo htmlentities('#').' '.$incomedata['trans_id']; ?></td>
+                                                    <td class="col-md-1"><?php echo $incomedata['job_id']; ?></td>
+                                                    <td class="col-md-1" data-order="<?php echo $incomedata['job_date']; ?>" ><?php echo date_format(date_create($incomedata['job_date']), 'd/m/Y'); ?></td>
+                                                    <!--<td class="col-md-1"><?php echo $currency.$financeHelper->getNetRate($grossCost); ?></td>-->
+                                                    <!--<td class="col-md-1"><?php echo $currency.$financeHelper->getVatRate($grossCost);?></td>-->
+                                                    <td class="col-md-1"><?php echo $currency.$financeHelper->setPriceFormate($grossCost); ?></td>
+                                                    <td class="col-md-1"><?php echo @$incomedata['location'] ? $incomedata['location'] : 'N/A'; ?></td>
+                                                    <td class="col-md-1"><?php echo $financeHelper->getIncometype($incomedata['income_type']) ?></td>
+                                                    <td class="col-md-1"><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankincome('.$incomedata['id'].')"><i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+                                                    <td class="col-md-1"><?php echo $incomedata['bank_date'] != '' ? date('d/m/Y',strtotime($incomedata['bank_date'])) : 'N/A' ?></td>
+                                                </tr>
+
+
+                                            <?php } endif;  ?>
+                                        </tbody>
+                                    </table>
+                                    <?php } ?>
+                                    <?php if($show == 'ex'){ ?>
+                                    <table class="table table-striped income_sum_table" id="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th class="col-md-1">Trans no</th>
+                                            <th class="col-md-1">Job No</th>
+                                            <th class="col-md-1">Amount</th>
+                                            <th class="col-md-2">Date</th>
+                                            <th class="col-md-2">Description</th>
+                                            <th class="col-md-2">category</th>
+                                            <th class="col-md-1">Bank</th>
+                                            <th class="col-md-1">Bank date</th>
+                                            <th class="col-md-1">Receipt</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        <?php   if (!empty($expenseRecord)) :
+                                            foreach($expenseRecord as $alltran){
+                                                $isBank = $alltran['bank'];
+                                                $trans_type = $alltran['trans_type']; ?>
+                                                <tr>
+                                                    <td class="col-md-1" data-order="<?php echo $alltran['trans_id']; ?>"># <?php echo $alltran['trans_id']; ?></td>
+                                                    <td class="col-md-1"><?php echo @$alltran['job_id'] ? $alltran['job_id'] : 'N/A'; ?></td>
+                                                    <td class="col-md-1"><?php echo $currency.$financeHelper->setPriceFormate($alltran['cost']); ?></td>
+                                                    <td class="col-md-1"><?php echo date_format(date_create($alltran['job_date']), 'd/m/Y'); ?></td>
+                                                    <td class="col-md-2">
+                                                        <a href="javascript:void(0);" onclick="detailDescription('<?php echo $alltran['description']; ?>')"><?php echo substr($alltran['description'], 0,8).'...' ?></a>
+                                                    </td>
+                                                    <td class="col-md-2"><?php echo  $financeHelper->getExpencetype($alltran['expense_type_id']) ; ?></td>
+                                                    <td class="col-md-1"><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankexpanse('.$alltran['id'].')"><i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+                                                    <td class="col-md-1"><?php echo $alltran['bank_date'] != '' && $alltran['bank_date'] != '0000-00-00' ? date('d/m/y',strtotime($alltran['bank_date'])) : 'N/A' ?></td>
+                                                    <td class="col-md-1">
+                                                        <?php if(isset($alltran['receipt_image'])) { ?>
+                                                            <img src="<?php echo $this->cdn('/media/icons/receipt.png');?>" alt="receipt" style="width:30px;" onclick="receiptImg('<?php echo($alltran['receipt_image'])?>');">
+                                                        <?php } else { ?>
+
+                                                        <?php } ?>
+                                                    </td>
+                                                </tr>
+                                            <?php   }
+                                        endif; ?>
+                                        </tbody>
+                                    </table>
+                                    <?php } ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Pop up -->
+    <div class="modal fade" id="receipt-img-dialog" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Receipt Information</h4>
+                </div>
+                <div class="modal-body" style="text-align: center">
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css"/>
+<script>
+    $(document).ready(function() {
+        $('#datatable').DataTable( {
+            "aaSorting": [],
+        /*    searching: false,
+            paging: false,
+            "bInfo": false
+            order: [],
+             columnDefs: [ { orderable: false, targets: [0] } ]*/
+
+aLengthMenu: [
+        [50, 100, 150, 200],
+        [50, 100, 150, 200]
+    ],
+    iDisplayLength: 50
+        } );
+		//$('.dataTable input').addClass('form-control');
+    } );
+
+    function receiptImg(receiptImgPath) {
+        var available_html = '';
+        available_html += '<img src="<?php echo $this->serverUrl().'/';?>'+receiptImgPath+'" alt="receipt">';
+        $('#receipt-img-dialog .modal-body').html(available_html);
+        $('#receipt-img-dialog').modal('show');
+    }
+
+</script>

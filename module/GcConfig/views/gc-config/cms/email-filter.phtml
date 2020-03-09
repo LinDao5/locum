@@ -1,0 +1,11 @@
+<style type="text/css">
+.col-lg-10.email-box .main-container.container > .col-lg-12 {
+    padding-left: 0px !important;
+}
+.page-content {
+    padding: 0;
+}
+</style>
+<?php foreach ($user_email as $userModel) {  ?>
+     <label class="required control-label col-lg-2 email-list"><input type="checkbox" name="email[]" id="email" class="form-control checkBoxClassUser" value="<?php echo $userModel['email']; ?>"><?php echo $userModel['email']; ?></label>
+<?php    }   ?>

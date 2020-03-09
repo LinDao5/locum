@@ -1,0 +1,158 @@
+<?php
+    date_default_timezone_set('Europe/London');
+    use GcFrontend\Controller\DbController as DbController;
+    use Zend\Serializer\Serializer;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Gc\User\Packageresource\Model;
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	$sql = new Sql($adapter);
+	$select = $sql->select();
+    if(!isset($_SESSION['user_id'])){
+	//$this->redirect()->toUrl('/login-form');
+	//return true;
+    }
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$uid=$_SESSION['user_id'];
+    }
+    $request = $this->getRequest();
+	if($request->isPost())
+	{
+    $post = $request->getPost();
+	$e_id = $post->get('e_id');
+	$job_title = $post->get('job_title');
+	$job_date = $post->get('job_date');
+	$job_start_time= $post->get('job_start_time');
+	$job_post_valid_date = $post->get('job_post_valid_date');
+	$job_rate = $post->get('job_rate');
+	$job_type = $post->get('job_type');
+	$job_post_desc=$post->get('job_post_desc');
+	$cat_id = $post->get('cat_id');
+	$job_region = $post->get('job_region');
+	$job_zip = $post->get('job_zip');
+	$job_title = $post->get('job_title');
+	$job_address = $post->get('job_address');
+	$job_status = $post->get('job_status');
+	$store_id = $post->get('store_id');
+
+	if($job_start_time == ''){
+		$get_store_info = "SELECT store_start_time FROM employer_store_list WHERE emp_st_id ='$store_id' AND emp_id ='$uid'";
+		$store_info_obj = $adapter->query($get_store_info, $adapter::QUERY_MODE_EXECUTE);
+		$store_info = $store_info_obj->current();
+		if (!empty($store_info)) {
+			$store_time = unserialize($store_info->store_start_time);			
+			$job_day = date('l', strtotime(str_replace('/', '-', $job_date)));
+			foreach ($store_time as $key => $value) {	
+				foreach ($value as $day => $time) {
+					if ($day == $job_day) {
+						$hr_time = explode(':', $time);
+						$job_start_time = ltrim($hr_time[0], '0');
+					}
+				}		
+			}
+		}
+	}
+
+	/* IF job is edit then Edit post id*/
+	$edit_post_id = $post->get('current_job_id');
+
+	$is_relist = $post->get('relist-job')=='on' ? 1 : 0;
+	// post variables for job_post_timeline table
+	$set_timeline 	= $post->get('set_timeline');
+	$set_timeline2 	= $post->get('set_timeline2');
+	$job_date_new 	= $post->get('job_date_new');
+	$job_rate_new 	= $post->get('job_rate_new');
+	$job_timeline_hrs = $post->get('job_timeline_hrs');
+
+	$is_date_valid = true;
+
+ 
+	if ( (strtotime(str_replace('/', '-', $job_date)) < strtotime(date('Y-m-d'))) || ( strtotime(str_replace('/', '-', $job_date)) == strtotime(date('Y-m-d')) && floatval(date('G.i')) >= floatval(11.3) ) ) {
+		$this->flashMessenger()->addErrorMessage('Please check date');		
+        	$this->redirect()->toUrl('/managejob?e='.$_GET['e']);
+        	return TRUE;
+	}
+	
+
+    $result = array();
+	foreach ( $job_date_new as $key=>$name ) {
+		$result[] = array( 'job_date_new' => $name, 'job_rate_new' => $job_rate_new[$key], 'job_timeline_hrs' => $job_timeline_hrs[ $key ] );
+	}
+    //print_r($job_date_new);  
+	//die('STOOOp');
+	$message="";$return_url="";
+	if(empty($e_id) or empty($job_title) or empty($job_date))
+    {
+        return array('error_message' => 'Fill Data');
+    }
+    else
+    {
+		/*if($post->get('job_id')){
+			
+			$job_id=$post->get('job_id');
+			
+            $keyValues=array('cat_id'=>$cat_id,'job_title'=>$job_title,'job_date'=>$job_date,'job_start_time'=>$job_start_time,'job_post_desc'=>$job_post_desc,'job_rate'=>$job_rate,'job_type'=>$job_type ,'job_address'=>$job_address,'job_region'=>$job_region,'job_zip'=>$job_zip,'store_id'=>$store_id,'job_status'=>$job_status,'job_update_date'=>'NOW()');
+			
+			$update = $sql->update();
+			$update->table('job_post');
+			$update->set( $keyValues );
+			$update->where( array( 'job_id' => $job_id ) );
+        	$statement  = $sql->prepareStatementForSqlObject( $update );
+        	$resultsup    = $statement->execute(); //print_r($resultsup); die();
+			
+			// insert into job_post_timeline table values
+			if($set_timeline==1 || $set_timeline2==1){
+				   $sqlString_del="delete from job_post_timeline where job_id='$job_id'";
+				   $resultsdel = $adapter->query($sqlString_del, $adapter::QUERY_MODE_EXECUTE); 
+				   //print_r($resultsdel); echo "<pre>";print_r($result);echo "</pre>"; die('STOP');
+				if(isset($result)){
+					foreach($result as $vale){
+						$hours=$vale['job_timeline_hrs'];
+						$sqlString_up="insert into job_post_timeline (job_id,job_date_new,job_timeline_hrs,job_rate_new,job_timeline_status) values('".$job_id."','".$vale['job_date_new']."','".$hours."','".$vale['job_rate_new']."','3')";
+						$results22 = $adapter->query($sqlString_up, $adapter::QUERY_MODE_EXECUTE);
+					 }
+				}
+			}
+			
+			$message="Information Updated.";
+			$return_url='/job-search?s='.$job_id;
+			
+		}else{*/
+			$sqlString_insert="insert into job_post (e_id,cat_id,job_title,job_date,job_start_time,job_post_desc,job_rate,job_type,job_address,job_region,job_zip,store_id,job_status,job_relist,job_create_date) values('$e_id','$cat_id','$job_title','$job_date','$job_start_time','$job_post_desc','$job_rate','$job_type','$job_address','$job_region','$job_zip','$store_id','1','$is_relist',NOW())";
+			$results2 = $adapter->query($sqlString_insert, $adapter::QUERY_MODE_EXECUTE);
+			$inserted_id = $adapter->getDriver()->getLastGeneratedValue(); // this is new job id
+
+			/* Delete the previous job if update job action take place only for waiting status job */
+			if( $edit_post_id != '' ){
+				$sqlString_update = "UPDATE job_post SET job_status = '7' WHERE job_id = '$edit_post_id' AND job_status = '1' ";
+				$updateResult = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE);
+			}
+			
+			
+
+			$sqlString_insert00="insert into job_post_timeline (job_id,job_date_new,job_timeline_hrs,job_rate_new,job_timeline_status) values('".$inserted_id."','".$job_date."','".$job_start_time."','".$job_rate."','1')";
+			$results00 = $adapter->query($sqlString_insert00, $adapter::QUERY_MODE_EXECUTE);
+			
+			// insert into job_post_timeline table values
+			
+			if(!empty($result)) {
+				foreach($result as $val){
+					if ($val['job_rate_new'] && $val['job_rate_new'] != '') {
+						$hours=$val['job_timeline_hrs'];
+						$sqlString_insert22="insert into job_post_timeline (job_id,job_date_new,job_timeline_hrs,job_rate_new,job_timeline_status) values('".$inserted_id."','".$val['job_date_new']."','".$hours."','".$val['job_rate_new']."','3')";
+						$results22 = $adapter->query($sqlString_insert22, $adapter::QUERY_MODE_EXECUTE);
+					}
+				}
+			}
+			
+		    $message="Please select the locum(s) you wish to invite to your booking";
+		    $return_url='/job-search?s='.$inserted_id;  
+		/* } */
+		
+		$this->flashMessenger()->addSuccessMessage($message);
+        $this->redirect()->toUrl($return_url);
+        return TRUE;
+	}
+}
+?>

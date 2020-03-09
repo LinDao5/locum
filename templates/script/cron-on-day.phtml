@@ -1,0 +1,175 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Zend\Db\Sql\Sql;
+	use Gc\Registry;
+    use Gc\User\JobReminder\OnDayModel as OnDayModule;
+	use GcFrontend\Controller\JobmailController as MailController;
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+    use GcFrontend\Controller\DbController as DbController;
+  	  use Gc\User\Finance\Employertrans\Model as EmployertransModel;
+  use GcFrontend\Controller\JobsmsController as smsController;	  
+  use GcFrontend\Controller\PackagePrivilegesController;
+  $packagePrivilegesController    = new PackagePrivilegesController();	  
+	$employertransModel = new EmployertransModel();    
+	$encypt = new Ecryption();
+	$mailController = new MailController();
+    $onDayModule = new OnDayModule();
+	$dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+    echo 'Notification time = '.$attendNotificationTime = $configGet->get('attend_job_notification');
+echo '<br/>';
+    $expenseNotificationTime = $configGet->get('expenses_job_notification');        
+    //$currentDate = date("Y-m-d");
+  
+    $currentDate = date("d-m-Y");   
+    echo 'current time = '.$currentTime = date('H');    
+echo '<br/>';
+  echo '<br/>';
+	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	/* Get job reminder dates information */
+	echo $sqlOnDayJob = "SELECT * from job_on_day WHERE DATE(STR_TO_DATE(job_date, '%d/%m/%Y')) = DATE(NOW()) AND status='0' AND notify = '0'";	
+    $jobOnDayData = $adapter->query($sqlOnDayJob, $adapter::QUERY_MODE_EXECUTE);
+    $jobOnDay = $jobOnDayData->toArray();
+    echo '<pre>';
+    print_r($jobOnDay);
+    echo '</pre>';
+
+
+    foreach ($jobOnDay as $key => $value) {
+    	$onDayId = $value['on_day_id'];
+    	$jobId 	= $value['j_id'];
+    	$jobFid = $value['f_id'];
+    	$jobEid = $value['e_id'];
+    	$job_date = date('Y-m-d', strtotime(str_replace('/', '-', $value['job_date'])));
+    	//$yesBtnLink = '<a style="outline: none !important;" href="'.$serverUrl().'/attendance?j='.$encypt->encryptIt($jobId).'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('yes').'" style=" float:left;  /*padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff;*/ "><img src="'.$serverUrl().'/public/frontend/images/yes.png" style="width: 120px;"/></a><a style="outline: none !important;position: relative;top: 3px;" href="'.$serverUrl().'/cancel-job?attendance=0&e='.$jobId.'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('no').'" style="float:left; /*padding: 8px 30px; font-size: 16px; font-weight: 700; background: #ff0000; color: #fff;*/ "><img src="'.$serverUrl().'/public/frontend/images/no.png" style="width: 120px;"/></a> <div style="clear:both;width:100%;"></div>';
+    	
+$yesBtnLink = '<a style="outline: none !important;float:left;font-size: 20px;background-color: #2dc9ff;padding: 7px 30px;color: #fff;text-transform: uppercase;
+text-decoration: none;border-radius: 25px; margin-right: 15px;" href="'.$serverUrl().'/attendance?j='.$encypt->encryptIt($jobId).'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('yes').'">Yes</a><a style="outline: none !important;position: relative;top: 3px;float:left;font-size: 20px;background-color: #2dc9ff;padding: 7px 30px;color: #fff;text-transform: uppercase;text-decoration: none;border-radius: 25px;" href="'.$serverUrl().'/cancel-job?attendance=0&e='.$jobId.'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('no').'">No</a><div style="clear:both;width:100%;"></div>';
+
+        if($attendNotificationTime == $currentTime){
+        
+        /* add auto in emp finance table --start */
+        $sqlOnDayJobRate = "SELECT job_rate ,job_status FROM job_post WHERE job_id ='".$jobId."'";
+        $sqlOnDayJobRate = $adapter->query($sqlOnDayJobRate, $adapter::QUERY_MODE_EXECUTE);
+        $sqlOnDayJobRate = $sqlOnDayJobRate->current();
+        
+        if ($sqlOnDayJobRate['job_status'] == 4) {
+        
+        $empFinance = array(
+            'job_id' => $jobId,
+            'emp_id' => $jobEid,
+            'fre_id' => $jobFid,
+            'fre_type' => 1,
+            'job_date' => $job_date,
+            'job_rate' => $sqlOnDayJobRate['job_rate']
+        );
+        $employertransModel->save($empFinance);
+
+
+        /* add auto in emp finance table --end */
+        if($packagePrivilegesController->getCurrentPackagePrivilegesResources('job_reminders',$jobFid,$adapter) == 1){
+           $mailController->sendOnDayNotificationToFreelancer($jobId,$jobFid,$jobEid,$yesBtnLink,$adapter);
+         }
+            $onDayModule->notificationStatusUpdate($onDayId);
+
+// send sms
+           /*Get freelancer Mobile number*/
+            $smsLinksArray =  array('yes' => $serverUrl().'/attendance?j='.$encypt->encryptIt($jobId).'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('yes') , 'no' => $serverUrl().'/cancel-job?attendance=0&e='.$jobId.'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('no')); ;
+            $smsController = new smsController();
+          // $smsController->sendOnDayNotificationToFreelancerSms($jobFid,$jobId,$smsLinksArray);
+         // send sms end
+         }
+       }
+    }
+
+    $pCurrentDate = date("Y-m-d");
+    /* Get job reminder dates information Private job */
+    echo $sqlPJReminderJob = "SELECT * from freelancer_private_job WHERE priv_job_start_date = '$pCurrentDate' AND ( status = '0' OR status = '1')";  
+    $pJobReminderData = $adapter->query($sqlPJReminderJob, $adapter::QUERY_MODE_EXECUTE);
+    $pJobReminder = $pJobReminderData->toArray(); 
+
+echo '<pre>';
+    print_r($pJobReminder);
+echo '<pre>';    
+if (!empty($pJobReminder)) {
+        foreach ($pJobReminder as $key => $pValue) {
+            $jobPvid      = $pValue['pv_id'];
+            $jobFid       = $pValue['f_id'];
+            $pEmpName     = $pValue['emp_name'];
+            $pEmpEmail    = $pValue['emp_email'];
+            $pJobTitle    = $pValue['priv_job_title'];
+            $pJobRate     = $pValue['priv_job_rate'];
+            $pJobDate     = $pValue['priv_job_start_date'];
+            $pJobLocation = $pValue['priv_job_location']; 
+            $yesBtnLink = '<a style="outline: none !important;" href="'.$serverUrl().'/attendance?j='.$encypt->encryptIt($jobPvid).'&u='.$encypt->encryptIt($jobFid).'&s='.$encypt->encryptIt('yes').'&jt='.$encypt->encryptIt('private').'" style=" float:left; /* padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff;*/ "><img src="'.$serverUrl().'/public/frontend/images/yes.png" style="width: 120px;"/></a> <a href="'.$serverUrl().'/private-job-cancel" style="/* padding: 8px 30px; font-size: 16px; font-weight: 700; background: #ff0000; color: #fff; */"><img src="'.$serverUrl().'/public/frontend/images/no.png" style="width: 120px;"/></a>  ';
+         if($attendNotificationTime == $currentTime || $jobFid == 241){
+            $mailController->sendPrivateJobOnDayReminder($jobPvid, $jobFid, $pEmpName, $pEmpEmail, $pJobTitle, $pJobRate, $pJobDate, $pJobLocation, $yesBtnLink, $adapter);
+           
+            $sqlPJReminderJobUpdate = "UPDATE freelancer_private_job SET status = '2' WHERE priv_job_start_date = '$pCurrentDate' AND ( status = '0' OR status = '1') AND pv_id = '$jobPvid'";  
+            $pJobReminderUpdate = $adapter->query($sqlPJReminderJobUpdate , $adapter::QUERY_MODE_EXECUTE);  
+         }        
+        }
+    }
+
+
+
+
+/* If job accepted by private locum then update employer finance */
+echo '<br/>Private Locum Accept Job <br/>';
+//echo $sqlOnDayJobPU = "SELECT * FROM  private_user_job_action AS a JOIN job_post AS jp ON jp.job_id = a.j_id WHERE a.status='3' AND a.notify = '1'  AND DATE(STR_TO_DATE(jp.job_date, '%d/%m/%Y')) = DATE(NOW())";
+
+echo $sqlOnDayJobPU = "SELECT * FROM  private_user_job_action AS a JOIN job_post AS jp ON jp.job_id = a.j_id WHERE a.status='3' AND a.notify = '1'  AND DATE(STR_TO_DATE(jp.job_date, '%d/%m/%Y')) = DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 1 DAY) , '%Y-%d-%m')";
+$jobOnDayDataPU = $adapter->query($sqlOnDayJobPU, $adapter::QUERY_MODE_EXECUTE);
+$jobOnDayPU = $jobOnDayDataPU->toArray();
+echo '<pre>';
+print_r($jobOnDayPU);
+echo '</pre>';
+
+
+foreach ($jobOnDayPU as $key => $value) {
+    $pua_id = $value['pua_id'];
+    $puid = $value['puid'];
+    $jobId 	= $value['job_id'];
+    $jobpuid = $value['puid'];
+    $jobEid = $value['emp_id'];
+    $job_date = date('Y-m-d', strtotime(str_replace('/', '-', $value['job_date'])));
+
+    if($attendNotificationTime == $currentTime ) {
+
+        if ($value['job_status'] == 4) {
+
+            $mailController->sendOnDayRemindertoprivateuser($puid,$jobId,$jobEid,$adapter);
+
+            $sqlPJReminderJobUpdate = "UPDATE private_user_job_action SET notify = '2' WHERE pua_id = '$pua_id' AND status = '3'";
+            $pJobReminderUpdate = $adapter->query($sqlPJReminderJobUpdate , $adapter::QUERY_MODE_EXECUTE);
+
+            $sqlOnDayJobRate = "SELECT job_rate ,job_status FROM job_post WHERE job_id ='".$jobId."'";
+            $sqlOnDayJobRate = $adapter->query($sqlOnDayJobRate, $adapter::QUERY_MODE_EXECUTE);
+            $sqlOnDayJobRate = $sqlOnDayJobRate->current();
+
+            $empFinance = array(
+                'job_id' => $jobId,
+                'emp_id' => $jobEid,
+                'fre_id' => $puid,
+                'fre_type' => 2,
+                'job_date' => $job_date,
+                'job_rate' => $sqlOnDayJobRate['job_rate']
+            );
+            echo $employertransModel->save($empFinance);
+
+        }
+    }
+}
+    
+
+
+
+/*
+// Testing section 
+echo 'Testing start....';
+$yesBtnLink = '';
+
+$mailController->sendOnDayNotificationToFreelancer(1980,241,205,$yesBtnLink,$adapter);
+echo '<br/>Testing end....';
+*/

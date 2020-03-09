@@ -1,0 +1,71 @@
+<?php
+/**
+ * Develop By Suraj Wasnik( suraj.wasnik0126@gmail.com ) at FuduGo Solutions
+ */
+?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('finance_year')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('finance_year')); ?>
+            <?php echo $this->formElementErrors($this->form->get('finance_year'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('c4_min_ammount_1')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c4_min_ammount_1')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c4_min_ammount_1'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c4_min_ammount_tax_1')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c4_min_ammount_tax_1'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('c4_min_ammount_2')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c4_min_ammount_2')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c4_min_ammount_2'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c4_min_ammount_tax_2')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c4_min_ammount_tax_2'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('c4_min_ammount_3')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c4_min_ammount_3')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c4_min_ammount_3'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c4_min_ammount_tax_3')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c4_min_ammount_tax_3'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('c2_min_amount')); ?>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c2_min_amount')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c2_min_amount'), array('class' => 'text-danger')); ?>
+        </div>
+        <div class="col-lg-5">
+            <?php echo $this->formElement($this->form->get('c2_tax')); ?>
+            <?php echo $this->formElementErrors($this->form->get('c2_tax'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+</script>

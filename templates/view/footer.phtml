@@ -1,0 +1,435 @@
+<?php //echo date_default_timezone_get(); 
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+
+
+?>
+<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js')?>/jquery.dataTables.min.js" charset="UTF-8"></script>
+<footer id="footer" class="footers">
+    <div class="container">
+        <div class="row">
+            <div class="footerrs">
+            <div class="col-md-4 col-sm-5 newslater">
+                <!-- <h3>NEWSLETTER</h3> -->
+                <div class="footer-logo">
+                    <figure>
+                        <img src="<?php echo $this->cdn('/frontend/locumkit-template/img')?>/logo.png" alt="">
+                    </figure>
+                </div>
+                <div class="subcribers">
+                    <h5>To subscribe to our newsletter please enter your email below. </h5>
+                               <!-- Begin MailChimp Signup Form -->
+                    <link href="//cdn-images.mailchimp.com/embedcode/classic-10_7.css" rel="stylesheet" type="text/css">
+                    <style type="text/css">
+                        #mc_embed_signup{background:#fff; clear:left; font:14px Helvetica,Arial,sans-serif; }
+                        /* Add your own MailChimp form style overrides in your site stylesheet or in this style block.
+                           We recommend moving this block and the preceding CSS link to the HEAD of your HTML file. */
+                    </style>
+                    <div id="mc_embed_signup">
+                    <form action="//fudugosolutions.us13.list-manage.com/subscribe/post?u=41b543e3133f958b3c58df8b5&amp;id=fb441ef5f1" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+                    <div id="mc_embed_signup_scroll">
+                    <div class="mc-field-group">
+                        <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                        <input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="btn btn-custom-3">
+                    </div>
+                        <div id="mce-responses" class="clear">
+                            <div class="response" id="mce-error-response" style="display:none"></div>
+                            <div class="response" id="mce-success-response" style="display:none"></div>
+                        </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+                        <div style="position: absolute; left: -5000px; top:0" aria-hidden="true"><input type="text" name="b_41b543e3133f958b3c58df8b5_fb441ef5f1" tabindex="-1" value=""></div>
+                        
+                        </div>
+                    </form>
+                    </div>
+                    <script type='text/javascript' src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js'></script><script type='text/javascript'>(function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';fnames[1]='FNAME';ftypes[1]='text';fnames[2]='LNAME';ftypes[2]='text';}(jQuery));var $mcj = jQuery.noConflict(true);</script>
+                    <!--End mc_embed_signup-->
+                    <!-- <form>
+                        <input type="text" name="newsletter" required placeholder="Email address">
+                        <button type="submit" class="btn btn-custom-3" value="Subscribe">Subscribe</button>
+                    </form> -->
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-3 recentpost recentpost-mobile"> 
+                <h3>Recent posts</h3>
+                <div class="postrecent">
+                    <ul>
+                    <?php 
+                     $i=0; 
+                     $now = time(); // or your date as well
+                     $arr = $this->document('recent-posts')->getAvailableChildren();
+                     
+                     if(isset($arr)){
+                     
+                   /*      foreach($this->document('recent-posts')->getAvailableChildren() as $child): 
+                         //$img = unserialize($child->getProperty('image')->getValue()); 
+                         $create_date = strtotime($child->getCreatedAt());
+                         $c_date =  date("d M Y",$create_date);
+                         $datediff = $now - $create_date;
+                         $today=floor($datediff/(60*60*24)); */
+                         
+                         
+                         foreach($financeHelper->getpostblog() as $blog): 
+                         //$img = unserialize($child->getProperty('image')->getValue()); 
+                         $create_date = strtotime($blog['create_at']);
+                         $c_date =  date("d M Y",$create_date);
+                         $datediff = $now - $create_date;
+                         $today=floor($datediff/(60*60*24));
+                         
+                         if($i< 3){
+                        ?>
+                        <li>
+                            <a href="<?php echo $this->serverUrl().'/blog/'.$blog['slug'] ; ?>">
+                                <h5><?php echo $this->translate($blog['title']) ;?></h5>
+                                <span class="rec-p-date"><i class="glyphicon glyphicon-calendar"></i><?php echo $c_date; ?></span>
+                                <span><?php //if($today!='-1'){echo $today.' days ago';}?></span>
+                            </a>
+                        </li>
+                    <?php } $i++; endforeach; }else{ ?>
+                        <li>
+                            <a href="#">
+                                <h5>Consecte tur adipiscing elit ut eunt</h5>
+                                <span>1 days ago</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <h5>Fusc val tempus auge nunc</h5>
+                                <span>1 days ago</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <h5>Lorem nulla, vitae eleifend leo tincidunt</h5>
+                                <span>1 days ago</span>
+                            </a>
+                        </li>
+                        <?php } ?>
+                    </ul>
+                </div>
+            </div>
+               <div class="col-md-4 col-sm-4 contactus contactus-mobile">
+                <h3>Contact us</h3>
+                <div class="contact-info">
+                     <ul>
+                        <?php if($this->config()->get('site_addr') && $this->config()->get('site_addr') != '.'){ ?><li><i class="fa fa-location-arrow" aria-hidden="true"></i><?php echo $this->config()->get('site_addr') ?></li> <?php } ?>
+                        <?php if($this->config()->get('site_mobile')){ ?><li><i class="fa fa-phone" aria-hidden="true"></i><?php echo $this->config()->get('site_mobile') ?></li><?php } ?>
+                        <?php if($this->config()->get('site_email')){ ?><li><i class="fa fa-envelope-o" aria-hidden="true"></i><?php echo $this->config()->get('site_email') ?></li><?php } ?>
+                    </ul>
+                </div>
+                <div class="socials">
+                    <div class="col-md-12 footer_links no-padding-left no-padding-right">
+                        <ul>
+                            <li class="no-padding-left"><a href="<?php echo $this->serverUrl();?>/contact">Contact Us</a></li>
+                            <li><a href="<?php echo $this->serverUrl();?>/term-condition">Terms of use</a></li>
+                            <li><a href="<?php echo $this->serverUrl();?>/privacy-policy">Privacy Policy</a></li>
+                            <li><a href="<?php echo $this->serverUrl();?>/sitemap">Sitemap</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-12 socials_links no-padding-left">
+                    <ul>
+                        <?php if($this->config()->get('fb')){ ?>
+                            <!-- <li><a href="<?php echo $this->config()->get('fb') ?>" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img'); ?>/facebook.png" class="img-responsive"></a></li> -->
+                            <li><a href="<?php echo $this->config()->get('fb') ?>" target="_blank"><i class="fa fa-facebook-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('gp')){ ?>
+                            <li><a href="<?php echo $this->config()->get('gp') ?>" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img'); ?>/googleplus.png" class="img-responsive"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('li')){ ?>
+                            <!-- <li><a href="<?php echo $this->config()->get('li') ?>" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img'); ?>/linked-in.png" class="img-responsive"></a></li> -->
+                            <li><a href="<?php echo $this->config()->get('li') ?>" target="_blank"><i class="fa fa-linkedin-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('tw')){ ?>
+                            <li><a href="<?php echo $this->config()->get('tw') ?>" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img'); ?>/twitter.png" class="img-responsive"></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('pi')){ ?>
+                            <li><a href="<?php echo $this->config()->get('pi') ?>" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img'); ?>/pinterest.png" class="img-responsive"></a></li>
+                        <?php } ?>
+                    </ul>
+                   </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <!-- <div class="copyright">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    Cpoyright <?php echo date('Y'); ?> &copy; <?php echo $this->escapeHtml($this->config()->get('site_name')); ?> | All Right Reserved | Designed by sakoyatsoft
+                </div> 
+                <div class="col-md-6">
+                    <ul class="footer-menu">
+                        <li><a href="/about">About us</a></li>
+                        <li><a href="/term-condition">Term & Condition</a></li>
+                        <li><a href="/privacy-policy">Privacy Policy</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                    </ul>
+                </div>              
+            </div>
+        </div>
+    </div> -->
+</footer>
+ 
+<!-- Alert Message Modal -->
+<div id="alert-modal" class=" alert-modal modal fade" >
+    <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+        <div class="modal-header">
+            <!--<button type="button" class="close hide-pop-up" data-dismiss="modal">&times;</button>-->
+            <h4 class="modal-title">LocumKit</h4>
+        </div>
+        <div class="modal-body" >
+            <h3 id="alert-message"></h3>
+        </div>
+        <div class="modal-footer">
+            <button type="button"  class="close-alert btn btn-default" data-dismiss="modal" onClick="window.location.reload()">Ok</button>
+        </div>
+    </div>
+
+    </div>
+</div> 
+<!-- Alert Message Modal -->
+<div id="alert-confirm-modal" class=" alert-modal modal fade" >
+    <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+        <div class="modal-header">
+            <!-- <button type="button" class="close close-alert" data-dismiss="modal" onClick="window.location.reload()">&times;</button> -->
+            <h4 class="modal-title">LocumKit</h4>
+        </div>
+        <div class="modal-body" >
+            <h3 id="alert-message"></h3>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="confirm">Yes</button>
+            <button type="button" class="close-alert btn btn-default" >No</button>
+        </div>
+    </div>
+
+    </div>
+</div> 
+
+<!-- Modal Manage income bank-->
+<div id="manage-bank-income" class="modal fade financepopup" role="dialog">
+<div class="modal-dialog">
+<form action="" method="post">
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><!--Manage Income Bank Status-->Locumkit</h4>
+    </div>
+    <div class="modal-body">
+        <div class="col-md-12 pad0 financeform">        
+            <div class="form-group" id="bank_date">
+                <div class="pull-left" style="display: none;">
+                    <input name="in_bank" id="modal-in_bank" value="1" type="hidden">  
+                </div>
+                <div class="input-group" id="for-display" style="display: block;">
+                    <p>Please enter the date the transaction hit the bank</p>
+                    <input type="hidden" name="in_bankid" id="in_bankid">
+                    <input type="text" class="form-control financein_bankdate readonly" name="in_bankdate" id="in_bankdate" placeholder="dd/mm/yyyy" required>
+                    <button type="submit" class="btn btn-info" name="income-bank-btn" value="income-bank-btn" id="income-bank-btn" >Submit</button>
+                    </div>
+                </div>  
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>
+                                                
+<!-- Modal Manage expense bank-->
+<div id="manage-bank-expense" class="modal fade financepopup" role="dialog">
+<div class="modal-dialog">
+<form action="" method="post">
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Locumkit</h4>
+    </div>
+    <div class="modal-body">
+        <div class="col-md-12 pad0 financeform">        
+            <div class="form-group" id="bank_date">
+                <div class="pull-left" style="display:none">
+                    <input name="ex_bank" id="modal-ex_bank" value="1" type="hidden">
+                </div>
+                <div class="input-group" id="for-displayex" style="display:block">
+                    <p>Please enter the date the transaction hit the bank</p>
+                    <input type="hidden" name="ex_bankid" id="ex_bankid">                  
+                    <input type="text" class="form-control financeex_bankdate readonly" name="ex_bankdate" id="ex_bankdate" placeholder="dd/mm/yyyy" required>
+                    <button type="submit" class="btn btn-info" id="expense-bank-btn" name="expense-bank-btn" value="expense-bank-btn">Submit</button>
+                    </div>
+                </div>  
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    
+    
+        /*use for manage bank status*/
+       $('input#modal-in_bank').change(function(){
+        var c = this.checked ? '1' : '0';
+        if(c==1){
+            
+            $('#fordisplay').show();
+        }else{
+            $('#fordisplay').hide();
+            }
+       });
+
+       $('input#modal-ex_bank').change(function(){
+        var c = this.checked ? '1' : '0';
+        if(c==1){
+            
+            $('#fordisplayex').show();
+        }else{
+            $('#fordisplayex').hide();
+            }
+       }); 
+
+    function managebankincome(id) {
+	$('#fordisplay').hide();
+	$('#in_bankdate').val('');
+	$('#modal-in_bank').attr('checked', false); 
+    $('#in_bankid').val(id);
+    $('#manage-bank-income').modal('show');
+    }   
+    function managebankexpanse(id) {
+	 $('#fordisplayex').hide();
+	$('#ex_bankdate').val('');
+	$('#modal-ex_bank').attr('checked', false); 
+    $('#ex_bankid').val(id);
+    $('#manage-bank-expense').modal('show');
+    }
+    /*use for manage bank status end*/
+    
+    
+    
+    $('div.alert-modal button.close-alert').click(function(){
+        messageBoxClose();
+    }); 
+    $('div.alert-modal button.close.hide-pop-up').click(function(){
+        messageBoxClose();
+    });
+    function messageBoxClose(){
+        $('div#alert-modal').removeClass('in');
+        $('div#alert-modal').css('display','none');
+        $('div#alert-confirm-modal').removeClass('in');
+        $('div#alert-confirm-modal').css('display','none');
+    }
+    function messageBoxOpen(msg, url){
+        $('div#alert-modal #alert-message').html(msg);
+        $('div#alert-modal').addClass('in');
+        $('div#alert-modal').css('display','block'); 
+        if(url != null ) {  
+           $('button.close-alert').attr('onClick','window.location.replace("'+url+'")');
+        }
+    }
+</script> 
+
+<!--default date picker-->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" />
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('input.financein_bankdate').datepicker({
+            maxDate: '0',
+            dateFormat: 'dd/mm/yy'
+        });
+    });  
+       $(document).ready(function() {
+        $('input.financeex_bankdate').datepicker({
+            maxDate: '0',
+            dateFormat: 'dd/mm/yy'
+        });
+    }); 
+
+
+$(".readonly").keydown(function(e){
+e.preventDefault();
+});
+ 
+
+//prevent to submit form by enter button
+
+$(document).ready(function() {
+  $(window).keydown(function(event){
+    if(event.keyCode == 13) {
+      //event.preventDefault();
+      //return false;
+    }
+  });
+
+$('p.finance-price').each(function(){
+var hprice =  $(this).text().split('£');
+$(this).text('£'+set_thousand_number_format(hprice[1]));
+
+});
+$('h2.mar0').each(function(){
+var hprice =  $(this).text().split('£');
+$(this).text('£'+set_thousand_number_format(hprice[1]));
+
+});
+
+
+});
+
+
+
+function set_thousand_number_format(nStr){
+   nStr += '';
+   x = nStr.split('.');
+   x1 = x[0];
+   x2 = x.length > 1 ? '.' + x[1] : '';
+   var rgx = /(\d+)(\d{3})/;
+   while (rgx.test(x1)) {
+     x1 = x1.replace(rgx, '$1' + ',' + '$2');
+   }
+   return x1 + x2;        
+ }
+
+    /*function set_thousand_number_format(nStr){
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0].replace(/,/g, '').split('');
+      x2 = x.length > 1 ? '.' + x[1] : '';
+      x3 = '';
+
+      x1.forEach(function(item, index, array) {
+        x3_length = x1.length - 4;
+        x3 +=''+item;
+        if(index == x3_length)
+          x3 +=',';
+      });
+      x4 = x3.split(','); 
+      if(x4.length > 1)
+        return set_hundred_number_format(x4[0]) +','+ x4[1]+x2;
+      else
+        return x4[0]+x2;      
+    }
+
+
+  function set_hundred_number_format(nStr){
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x6 = x.length > 1 ? '.' + x[1] : '';
+      var rgx = /(\d+)(\d{2})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + ',' + '$2');
+      }
+      return x1 + x6;        
+    }*/
+  </script>

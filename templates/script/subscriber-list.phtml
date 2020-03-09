@@ -1,0 +1,24 @@
+<?php
+	use Gc\User\Mailchimp\Model as SubscriberModel;
+	use Gc\User\Mailchimp\Collection as SubscriberCollection;
+	use Gc\User\Mailchimp\Mailchimp as MailchimpController;
+	$subscriberModel = new SubscriberModel();
+	$subscriberCollection = new SubscriberCollection();
+	$mailchimpController = new MailchimpController();
+	$emailRecord = $mailchimpController->getSubscribeUserList();
+	/*echo "<pre>";
+	print_r($emailRecord);
+	echo "</pre>";*/
+	foreach ($emailRecord['data'] as $key => $value) {
+		/*echo "<pre>";
+		print_r($value);
+		echo "</pre>";*/
+		$is_exsit = $subscriberCollection->checkSubscriber($value['email']);
+		if (!$is_exsit) {
+			$subscriberModel->save($value);
+			echo "Success";
+		}else{
+			echo "Already exist";
+		}
+		
+	}

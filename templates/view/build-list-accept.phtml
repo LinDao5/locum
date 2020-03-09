@@ -1,0 +1,134 @@
+<?php
+    use GcFrontend\Controller\DbController as DbController;
+    use Gc\User\JobAction\Model as ActionModel;
+    use Gc\User\Job\Model as JobModel;
+    use Gc\Core\Config as CoreConfig;
+    use Zend\Db\Sql\Sql;
+    use Zend\Db\TableGateway\TableGateway;
+    use GcFrontend\Controller\JobmailController as MailController;
+    use GcFrontend\Controller\EndecryptController as Ecryption;
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $encypt = new Ecryption();
+    $mailController = new MailController();
+    $actionModel  = new ActionModel();
+    $jobModel     = new JobModel(); 
+    $adapter = new Zend\Db\Adapter\Adapter(array(
+        'driver' => 'pdo_mysql',
+        'username' => 'fudugoso_locum',
+        'password' => 'locumkit123.*',
+        'database' => 'fudugoso_locumkit',
+        'hostname' => 'localhost'            
+    ));
+    $jobAlredyAccept = 0;
+    /* Check freelancer login or not*/
+      if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){
+          $uid = $_SESSION['user_id'];
+      }else{
+          /*echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>"; */
+      }
+
+      /* Is url having job id or not */
+      $job_id = 0;
+      if (isset($_GET['j']) && $_GET['j'] != '') {
+          $job_id = $_GET['j'];
+      }else{
+          /*echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; */
+      }
+      /* Is url having userid or not */
+      $fuid = 0;
+      if (isset($_GET['f_id']) && $_GET['f_id'] != '') {
+          $fuid = $_GET['f_id'];
+      }else{
+          /*echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; */
+      }
+      /* User type n=normal user; p=private user*/
+      $u_type = 0;
+      if (isset($_GET['utype']) && $_GET['utype'] != '') {
+          $u_type = $_GET['utype'];         
+      }else{
+          echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+      }
+
+
+      /* Fetch record of job */
+      if ($job_id) {
+          $sqlString_get="SELECT * FROM job_post WHERE job_id = '$job_id' AND e_id='$uid'";
+          $result = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+          //print_r($results0);
+          $getJobObj = $result->current();            
+          $getJob = (array)$result->current();  
+          
+          if(empty($getJobObj)){
+              /*echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; */
+          }elseif($getJobObj['job_status'] == 1){
+            if ($u_type == 'n' && $fuid && $job_id) {
+              $jobModel->jobStatusUpdate($job_id,4);
+              /* Upadate job action status*/
+              $actionModel->updateJobaction($job_id,$fuid,3,0);
+              $mailController->sendAprrovalMailToUser($fuid,$job_id,$adapter);
+            }elseif ($u_type == 'p') {
+              /* Get private user id */
+              $jobModel->jobStatusUpdate($job_id,4);
+              /* Upadate Private job action status*/
+              $sqlUPJAction = "UPDATE  private_user_job_action SET status = '3' WHERE puid='$fuid' AND j_id = '$job_id'";
+              $executeUPJAction = $adapter->query($sqlUPJAction, $adapter::QUERY_MODE_EXECUTE);
+              /* Call mail function */
+              $mailController->sendAprrovalMailToPrivateUser($fuid,$job_id,$adapter);
+            }else{
+                /*echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/404'</script>"; */
+            }
+          }else{
+            $jobAlredyAccept = 1;
+          } 
+              
+      }else{
+          echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+      }
+      
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/job-listing">List Page</a></li>
+                    <li><a href="javascript:void(0)">Build List</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Freelancer Job </h3>
+                </div>
+            </div>
+            
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section>
+      			<p style="text-align:center;">
+				<img src="<?php echo $this->cdn('/frontend/locumkit-template/'); ?>img/logo.png" alt="logo">
+				</p>
+        <?php if ($jobAlredyAccept) { ?>
+          <h1 class="error_msg">Job is not open please check the status.</h1>
+        <?php }else{ ?>
+				  <h1 class="successfull_msg">Job Successfully Assigned to freelancer</h1>
+        <?php } ?>
+				<!-- <h4 class="feedback_msg">Please give us 24-48 hours to verify this account.</h4> -->
+             </section>
+            </div>
+        </div>
+   	</div>
+</div>

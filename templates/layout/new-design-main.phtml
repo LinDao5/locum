@@ -1,0 +1,157 @@
+<?php //echo $this->partial('coming-soon'); ?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title><?php echo $this->escapeHtml($this->pageTitle); ?></title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="description" content="<?php echo $this->escapeHtml($this->metaDescription); ?>" />
+        <meta name="keywords" content="<?php echo $this->escapeHtml($this->metaKeywords); ?>" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/bootstrap.min.css'); ?>" rel="stylesheet" type="text/css">
+		<link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/animations.min.css'); ?>" type="text/css" rel="stylesheet">
+		<link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/theme.css'); ?>" type="text/css" rel="stylesheet">
+		<link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/style.css'); ?>" type="text/css" rel="stylesheet">
+
+		<script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/jquery-3.3.1.min.js'); ?>" type="text/javascript"></script>
+        <?php echo $this->partial('seo-head'); ?>
+    </head>
+    <body>
+        <?php echo $this->partial('seo-body'); ?> 
+
+      	<?php date_default_timezone_set('Europe/London'); ?>
+      	<div id="loader-div">
+         	<div class="loader"></div>
+      	</div>
+
+		<!-- Header -->
+		<header class="header">
+		    <div class="container-fluid headbar">
+		        <div class="container">
+		        	<div class="row">            
+		                <nav class="navbar navbar-default">
+		                  <div class="container">
+		                    <div class="navbar-header">
+		                      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+		                        <span class="sr-only">Toggle navigation</span>
+		                        <span class="icon-bar"></span>
+		                        <span class="icon-bar"></span>
+		                        <span class="icon-bar"></span>
+		                      </button>
+		                      <a class="navbar-brand" href="<?php echo $this->serverUrl();?>">
+		                      	<img src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/img').'/logo.png';?>" title="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" alt="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" width="80px">
+		                      </a>
+		                    </div>
+		                    <div id="navbar" class="navbar-collapse collapse">		                    	
+		                      	<ul class="nav navbar-nav navbarmid">
+		                      		<?php echo $this->partial('new-design-header'); ?>
+			                        <?php if(isset($_SESSION['user_id'])&& $_SESSION['user_id']!=''){?>
+										<li><a href="<?php echo $this->serverUrl();?>/user-profile" title="My Profile" alt="My Profile">My Dashboard</a></li>									
+										<li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="fa fa-power-off" aria-hidden="true"></i></a></li>
+									<?php }elseif(isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 ) || ( isset($_SESSION['un_verified_user']) && $_SESSION['un_verified_user'] == 1)){ ?>
+										<li><a href="<?php echo $this->serverUrl();?>/guest-profile" title="Guest Profile" alt="Guest Profile">Profile</a></li>
+										<li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="fa fa-power-off" aria-hidden="true"></i></a></li>
+										<?php }elseif(!isset($_SESSION['un_verified_user'])){?>
+										<li><a href="javascript:void(0);" title="Log In" alt="Log In" data-toggle="modal" data-target="#login-form-model">Log In</a></li>
+										<li <?php echo ($_SERVER['REQUEST_URI'] == '/register') ? 'class="active"':''; ?>><a href="<?php echo $this->serverUrl();?>/register" title="Register" alt="Register">Register</a></li>
+										<?php echo $this->partial('login-form'); ?>	
+									<?php }?>
+
+		                      	</ul>
+		                      	<ul class="nav navbar-nav navbar-right hidden-xs">
+			                        <a href="https://play.google.com/store/apps/details?id=com.FuduGo.Locumkit&hl=en" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/images/googleplay.png'); ?>" class="Locumkit  Google Play"></a>
+			                        <a href="https://itunes.apple.com/gb/app/locumkit/id1362518464" target="_blank"><img src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/images/appstore.png'); ?>" class="Locumkit App Store"></a>
+		                      	</ul>
+		                    </div><!--/.nav-collapse -->
+		                  </div>
+		                </nav>
+		            </div>
+		        </div>
+		    </div>
+		</header>
+		
+		<!-- .Header -->
+
+
+
+
+	    <?php echo $this->content; ?>
+	    <?php echo $this->partial('new-design-footer'); ?>
+
+
+		<a href="javascript:" id="return-to-top" class="onHoverWave"><i class="fa fa-arrow-up"></i></a>
+		<!--Theme Fonts-->
+		<link href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/theme-fonts.css'); ?>" type="text/css" rel="stylesheet">
+		<!--Font Awesome-->
+		<!--<link rel="stylesheet" href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/font-awesome.min.css'); ?>">-->
+		<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+
+<!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"> -->
+		<!--Jquery UI-->
+		<link rel="stylesheet" href="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/css/jquery-ui.css'); ?>">
+
+		<!-- All JS -->		
+		<script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/jquery-ui.js'); ?>" type="text/javascript"></script>
+		<script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/bootstrap.min.js'); ?>" type="text/javascript"></script>
+		<script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/animations.min.js'); ?>" type="text/javascript"></script>
+		<script src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/theme.js'); ?>" type="text/javascript"></script>
+		<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js')?>/jquery.dataTables.min.js" charset="UTF-8"></script>
+
+
+	    <script type="text/javascript">
+		  	$(function() {
+				$( "#datepicker" ).datepicker({				
+					changeMonth: true,
+		            changeYear: true,
+		            showButtonPanel: true,
+		            dateFormat: "yy-mm-dd",
+					yearRange: '1950:2000', // specifying a hard coded year range
+		            onClose: function(dateText, inst) { 
+		                var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
+		                var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
+		                $(this).datepicker('setDate', new Date(year, month, 1));
+		            }
+				});
+		  	});
+	   	</script>
+	    <!--  date picker end -->
+	   	<script type="text/javascript">
+			function logout_user(obj)
+			{ 
+		       $("#loader-div").show();
+			   var str=obj.value; //alert(obj);
+			   if(str!=""){
+				   $.ajax({
+						'url'   :'/ajax-request',
+						'type'  :'POST',
+						'data'  :{'user_id':str, 'log_out':'1'},
+						'success':function(result){ //alert(result);
+							console.log(result);
+							if($.trim(result)=="1"){ 
+							    $("#loader-div").hide(100);	
+								$('div#alert-modal button.close.hide-pop-up').hide();	                    
+								messageBoxOpen('Logged out successfully.');
+								//$('div#alert-modal button.close-alert.btn.btn-default').html('Login');
+								$('div#alert-modal button.close-alert.btn.btn-default').remove();
+								window.setTimeout(function(){
+							        window.location.href = "<?php echo $this->serverUrl();?>";
+							    }, 800);
+							}
+						}
+					});
+				}
+			}
+	    </script>
+	    <?php if (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) { ?>
+	    	<script type="text/javascript">
+		    	$('input#email').off('keyup keydown keypress');
+		    	$('input#login').off('keyup keydown keypress');
+		    </script>
+	    <?php } ?>
+	    
+		<script type="text/jscript">
+	        $("#loader-div").hide(100);
+	    </script>
+    </body>
+</html>

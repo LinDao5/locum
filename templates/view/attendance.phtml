@@ -1,0 +1,242 @@
+<?php 
+  use Gc\User\JobReminder\OnDayModel as OnDayModule;
+  use GcFrontend\Controller\EndecryptController as Ecryption;
+  use GcFrontend\Controller\JobmailController as MailController;
+  use GcFrontend\Controller\FunctionsController as FunctionController;
+  use Zend\Db\Sql\Sql;
+  use Gc\Registry;
+  use Gc\User\Finance\Model as FinanceModel; 
+  use Gc\User\Finance\PrivateJobModel as PrivateJobFinanceModel; 
+  use Gc\User\Job\Collection as JobCollection;
+  use GcFrontend\Controller\DbController as DbController;
+  use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+  use Gc\User\Finance\Income\Model as IncomeModel;
+  $incomefinance          = new IncomeModel();
+  $financeHelper          = new FinanceHelper();
+  $encypt                 = new Ecryption();
+  $onDayModule            = new OnDayModule();
+  $mailController         = new MailController();
+  $dbConfig               = new DbController();
+  $financeModel           = new FinanceModel();
+  $privateJobFinanceModel = new PrivateJobFinanceModel();
+  $jobCollection          = new JobCollection();
+  $functionController     = new FunctionController();
+  $adapter                = $dbConfig->locumkitDbConfig();
+  $currentDate            = date("Y-m-d");
+  $actual_link            = "$_SERVER[REQUEST_URI]";
+  $_SESSION['action_url'] = $actual_link;
+  $jobDate = '';
+  if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+    $job_id = 0;
+    if (isset($_GET['j']) && $_GET['j'] != '') {
+      $job_id = $encypt->decryptIt($_GET['j']);
+    }
+
+    $u_id = 0;
+    if (isset($_GET['u']) && $_GET['u'] != '') {
+      $u_id = $encypt->decryptIt($_GET['u']);
+    }
+
+    if ( $_SESSION['user_id'] != $u_id) {
+      $url= $this->serverUrl().'/login-form';
+      echo "<script type='text/javascript'>alert('You are not valid user to access this page.');window.location='".$url."'</script>"; 
+    }
+
+    $presentStatus = 'no';
+    if (isset($_GET['s']) && $_GET['s'] != '') {
+      $presentStatus = $encypt->decryptIt($_GET['s']);
+    }
+
+    $check_job_status = 0;
+
+    if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {
+      if (isset($_GET['jt']) && $encypt->decryptIt($_GET['jt']) == 'private') {
+        if (is_numeric($job_id) && $job_id > 0 && $presentStatus == 'yes') {
+          
+          /* Get private job information */ 
+          $insert = 0;   
+          $privateJobObj = $functionController->getPrivateJobInfo($adapter, $job_id);
+          if (!empty($privateJobObj)) {            
+            $pJobId       =  $privateJobObj->pv_id; 
+            $pJobFid      =  $privateJobObj->f_id; 
+            $pJobEmpName  =  $privateJobObj->emp_name; 
+            $pJobRate     =  $privateJobObj->priv_job_rate; 
+            $pJobDate     =  $privateJobObj->priv_job_start_date;
+            $pJobLocation     =  $privateJobObj->priv_job_location;
+
+            $check_finance = $financeHelper->checkFinanceincome($pJobId,$pJobFid,$pJobDate,1,2);           
+            if (empty($check_finance)) {              
+              $financeSaveArray = array(
+                'job_id'        => $pJobId,
+                'fre_id'        => $pJobFid,
+                'emp_name'      => $pJobEmpName,
+                'job_rate'      => $pJobRate,
+                'job_date'      => date('d/m/Y',strtotime( $pJobDate ))
+              );
+              $insert = $privateJobFinanceModel->save($financeSaveArray);
+
+              /*---start---*/
+              $financeIncomeSaveArray = array(
+                  'job_id'    => $pJobId,
+                  'job_type'   => 2,
+                  'fre_id'    => $pJobFid,
+                  'emp_id'    => 0,
+                  'job_rate'  => $pJobRate,
+                  'job_date'  => $pJobDate,
+                  'location'  => $pJobLocation,
+                  'store'     => $pJobEmpName,
+                  'supplier'  => $pJobEmpName,
+                  'income_type'  => 1,
+                  'invoice_id'  => 0,
+                  'status'  => 1
+              );
+              $res =  $incomefinance->save($financeIncomeSaveArray);
+              if($res){
+                  $finance_trans = array(
+                      'trans_type_id' => $res ,
+                      'trans_type'  => '1'
+                  );
+                  $financeModel->save($finance_trans);
+              }
+              /*---end---*/
+            }
+           
+           /**************UPDATE JOB STATUS freelancer private job status as 5. Attended***********************/
+            $sqlPJReminderJobUpdate = "UPDATE freelancer_private_job SET status = '5' WHERE pv_id = '$pJobId' AND ( status = '0' OR status = '1' OR status = '2') ";  
+
+            $pJobReminderUpdate = $adapter->query($sqlPJReminderJobUpdate , $adapter::QUERY_MODE_EXECUTE); 
+
+          }
+          if ($insert == 1 ) {
+            $check_job_status = 1;
+          }
+        }       
+      }else{
+        if (is_numeric($job_id) && $job_id > 0 && $presentStatus == 'yes') {
+         
+          $serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+          /* Get job reminder dates information */
+          $sqlOnDayJob = "SELECT * from job_on_day WHERE DATE(STR_TO_DATE(job_date, '%d/%m/%Y')) = DATE(NOW()) AND status='0' AND f_id = '$u_id'"; 
+          $jobOnDayData = $adapter->query($sqlOnDayJob, $adapter::QUERY_MODE_EXECUTE);
+          $jobOnDay = $jobOnDayData->toArray();
+         
+          
+            if (!empty($jobOnDay)) {
+              $onDayModule->updateJobOnDayStatus($job_id,2);              
+              foreach ($jobOnDay as $key => $value) {
+                $jobId    = $value['j_id'];
+                $jobDate  = $value['job_date'];
+                $jobFid   = $value['f_id'];
+                $jobEid   = $value['e_id'];
+                $yesBtnLink = '<a href="'.$serverUrl().'/attendance?j='.$encypt->encryptIt($jobId).'&u='.$encypt->encryptIt($jobEid).'&s='.$encypt->encryptIt('yes').'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff; ">Yes</a> <a href="'.$serverUrl().'/attendance?j='.$encypt->encryptIt($jobId).'&u='.$encypt->encryptIt($jobEid).'&s='.$encypt->encryptIt('no').'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #ff0000; color: #fff; ">No</a> ';                
+                        //  $jobDetails = $jobCollection->getJobDetailsByJobId($jobId);
+                        $jobDetails = $financeHelper->getWebsiteJobdetail($jobId);
+
+                      /*  $jobRate = '';
+                        foreach ($jobDetails as $key => $jobDetail) {
+                              $jobRate = $jobDetail->getJobRate();
+                              $jobDate = $jobDetail->getJobDate();
+                              $jobAddress = $jobDetail->getJobAddress();
+                              $jobRegion = $jobDetail->getJobRegion();
+                             $jobStoreId = $jobDetail->getStoreId();
+                        }*/
+                        /*---start---*/
+                      $check_finance = $financeHelper->checkFinanceincome($jobId,$jobFid,date('Y-m-d', strtotime(str_replace('/', '-', $jobDetails['job_date']))),1,1);           
+                      if (empty($check_finance)) { 
+                        $mailController->sendOnDayNotificationToEmployer($jobId,$jobFid,$jobEid,$yesBtnLink,$adapter) ;
+                        $check_job_status = 1; 
+                        $financeIncomeSaveArray = array(
+                            'job_id'    => $jobId,
+                            'job_type'    => 1,
+                            'fre_id'    => $jobFid,
+                            'emp_id'    => $jobEid,
+                            'job_rate'  => $jobDetails['job_rate'],
+                            'job_date'  => date('Y-m-d', strtotime(str_replace('/', '-', $jobDetails['job_date']))),
+                            'location'  => $jobDetails['job_region'],
+                            'store'  => $jobDetails['store_nm'],
+                            'supplier'  => $jobDetails['first_nm'].' '.$jobDetails['last_nm'],
+                            'income_type'  => 1,
+                            'invoice_id'  => 0,
+                            'status'  => 1
+                        );
+                        $res =  $incomefinance->save($financeIncomeSaveArray);
+                        if($res){
+                            $finance_trans = array(
+                                'trans_type_id' => $res ,
+                                'trans_type' 	=> '1'
+                            );
+                            $financeModel->save($finance_trans);
+                        }
+                      }
+                        /*---end---*/
+                      /*  $financeSaveArray = array(
+                            'job_id'    => $jobId,
+                            'fre_id'    => $jobFid,
+                            'emp_id'    => $jobEid,
+                            'job_rate'  => $jobRate,
+                            'job_date'  => $jobDate
+                        );
+                        $financeModel->save($financeSaveArray);*/
+                    }
+                }
+            }else{
+                $check_job_status = 3;
+            }
+        }
+
+    }elseif(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3){
+       
+      if (is_numeric($job_id) && $job_id > 0 && $presentStatus == 'yes') {
+        $sqlOnDayJob = "SELECT * from job_on_day WHERE DATE(STR_TO_DATE(job_date, '%d/%m/%Y')) = '$currentDate' AND status='1' AND e_id = '$u_id'";
+        $jobOnDayData = $adapter->query($sqlOnDayJob, $adapter::QUERY_MODE_EXECUTE);
+        $jobOnDay = $jobOnDayData->toArray();
+        if (!empty($jobOnDay)) {
+          $onDayModule->updateJobOnDayStatus($job_id,2);
+          $check_job_status = 2;
+        }else{
+          $check_job_status = 4;
+        }
+      }else{
+        $check_job_status = 4;
+      }
+    }
+   
+    //Check if locum doing attendance on job day 
+    $sqlOnDayJob = "SELECT * from job_on_day WHERE j_id = '$job_id' AND f_id = '$u_id'"; 
+    $jobOnDayData = $adapter->query($sqlOnDayJob, $adapter::QUERY_MODE_EXECUTE);
+    $jobOnDay = $jobOnDayData->toArray();    
+
+?>
+  <div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+              <section>
+                <p style="text-align:center;">
+                  <img src="<?php echo $this->cdn('/frontend/locumkit-template/'); ?>img/logo.png" alt="logo">
+                </p>
+                <?php if($check_job_status == 1){ ?>
+                  <h1 class="successfull_msg">Attendance confirmed</h1>
+                <?php }elseif($check_job_status == 2){ ?>
+                  <h1 class="successfull_msg">Thanks...Have a nice time..</h1>
+                <?php }elseif($check_job_status == 3){ ?>
+                  <h1 class="error_msg">Offfsss...! Please inform employer about the reason.</h1>
+                <?php }elseif($check_job_status == 4){ ?>
+                  <h1 class="error_msg">Offfsss...! Please ask locum about the reason.</h1>
+                <?php }else{ ?>
+                  <?php if(!empty($jobOnDay[0]) && ( $jobOnDay[0]['job_date'] == date('d/m/Y') || $jobOnDay[0]['status'] > 0 )){ ?>
+                    <h1 class="error_msg">Attendance is already done.</h1>
+                  <?php }else{ ?>
+                     <h1 class="error_msg">You can not able attend this job today.</h1>
+                  <?php } ?>
+                <?php } ?>
+               </section>
+              </div>
+          </div>
+      </div>
+  </div>
+<?php }else{ ?>
+    <script type="text/javascript">
+      window.location="/login-form";
+    </script> 
+<?php } ?>

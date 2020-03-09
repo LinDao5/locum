@@ -1,0 +1,9 @@
+max_execution_time = 9000
+file_uploads = On
+date.timezone = "Europe/London"
+display_errors = Off
+memory_limit = 4096M
+max_input_time = 9000
+zend_extension=/usr/local/php56/lib/php/extensions/ioncube.so
+zend_extension=/usr/local/php56/lib/php/extensions/ZendGuardLoader.so
+;zend_extension=/usr/local/php56/lib/php/extensions/ZendOptimizer.so

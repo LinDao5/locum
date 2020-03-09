@@ -1,0 +1,203 @@
+<?php
+/**
+ * PHP Version >=5.3
+ *
+ * @category   Gc_Application
+ * @package    GcFrontend
+ * @subpackage Controller
+ */
+
+ namespace GcFrontend\Controller;
+ use Gc\Mvc\Controller\Action;
+ use Gc\view\Helper\Config as ConfigModule;
+ use Gc\Core\Config as CoreConfig;
+ use Gc\Registry;
+
+ class FunctionsController extends Action
+ {
+   // job accept count
+   	public function jobAcceptCount($freelancer_id,$adapter){
+		$sql_accept="select ja.* from job_action ja where ja.f_id='$freelancer_id' and ja.action=3"; // job accepted count 
+		$results_accept = $adapter->query($sql_accept, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_accept = $results_accept->current();
+		$count_accept = $results_accept->count();
+		return $count_accept;
+	}
+   // User blocked count	
+   public function blockUserCount($freelancer_id,$adapter){
+		$sql_bkl_user="select * from block_user where frelan_id='$freelancer_id'"; // block user count 
+		$results_bkl = $adapter->query($sql_bkl_user, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_bkl = $results_bkl->current();
+		$count_date_bkl = $results_bkl->count();
+		return $count_date_bkl;
+	}
+   // User block date :not Available on date	
+   public function userBlockDate($freelancer_id,$job_date,$adapter){
+   		$job_date = str_replace("/","-",$job_date);
+   		$job_date = date('Y-n-j', strtotime($job_date));
+		$sqlString_block="select * from user_work_calender where uid='".$freelancer_id."'";	
+		$results_block = $adapter->query($sqlString_block, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_block = $results_block->current();
+		$block_date_array = unserialize($result_data_block['block_date']);
+		$count_block_date = 0;
+		foreach ($block_date_array as $key => $block_date) {
+		 	if ($job_date == $block_date['date']) {
+		 		$count_block_date = 1;
+		 		break;
+		 	}
+		}
+		return $count_block_date;
+	}
+
+	//Get freelancer book dates 
+	public function getBookDate($uid,$job_date,$adapter){
+		$job_date = str_replace("/","-",$job_date);
+   		$job_date = date('Y-n-j', strtotime($job_date));
+		$pCurrentDate = date("Y-m-d");
+		$sqlGetPBookings = "SELECT * from freelancer_private_job WHERE priv_job_start_date >= '$pCurrentDate' AND f_id = $uid";
+		$getPBooking = $adapter->query($sqlGetPBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getPCurrentBookings = $getPBooking->toArray();
+		if (!empty($getPCurrentBookings)) {
+		foreach($getPCurrentBookings as $pBooking){
+			$bookDates[] = date('Y-n-j', strtotime($pBooking['priv_job_start_date']));  
+			}
+		}
+
+		/* Get current month Website job bookings */
+		$sqlGetBookings = "SELECT job_date FROM job_post WHERE job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) and MONTH (STR_TO_DATE(job_date, '%d/%m/%Y')) = MONTH(NOW()) "; 
+		//$sqlGetBookings = "SELECT job_date,job_post_desc FROM job_post WHERE job_date >= '$currentdate' AND job_status = 4 AND job_id IN (SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) ";
+		$getBooking = $adapter->query($sqlGetBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getCurrentBookings = $getBooking->toArray();
+		/* Gell All Website job bookings */
+		$sqlGetAllBookings = "SELECT job_date,job_post_desc FROM job_post WHERE job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) 
+		"; 
+
+
+		$getAllBooking = $adapter->query($sqlGetAllBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getAllCurrentBookings = $getAllBooking->toArray();
+
+		if (!empty($getAllCurrentBookings)) {
+			foreach ($getAllCurrentBookings as $key => $allBooking) {
+				$timestamp = strtotime(str_replace('/', '-', $allBooking['job_date']) );
+				$bookDates[] = date('Y-n-j', $timestamp);
+			}
+		}
+		$count_book_date = 0;
+		foreach ($bookDates as $key => $bookDate) {
+			//echo "$job_date == $bookDate";
+			if ($job_date == $bookDate) {
+				$count_book_date = 1;
+				break;
+			}
+		}
+		return $count_book_date;
+	}
+
+
+	// 
+	public function userExpireCount($freelancer_id,$adapter){
+		$sqlString_expire="select * from user_package_details where user_id='".$freelancer_id."' and package_status=0";	
+		$results_expire = $adapter->query($sqlString_expire, $adapter::QUERY_MODE_EXECUTE); 
+		$count_expire = $results_expire->count();
+		return $count_expire;
+	}
+	// Job start time
+   	public function jobStartTime($emp_id,$adapter){
+		$sqlGetStartTime="SELECT store_unique_time FROM user_extra_info WHERE uid='$emp_id'";	
+	    $getStartTime = $adapter->query($sqlGetStartTime, $adapter::QUERY_MODE_EXECUTE);
+	    $startTimeObj = $getStartTime->current(); 
+	    $startTimeArray = unserialize($startTimeObj['store_unique_time']);
+		return $startTimeArray['start_time'];
+	}
+
+	/* Multi store time formater */
+	public function setTime($data,$index)
+    {
+    	$records = '';
+    	foreach ($data as $key => $value) {
+    		$records[] = array(
+    				$key =>$value[$index]
+    			);
+    	}
+    	return serialize($records);
+    }
+	
+	/* Get time of day */
+	public function getTimeOfDay($data,$day)
+    {
+    	$timeOfDay = '';
+    	foreach($data as $dTime){
+			$timeOfDay = $dTime[$day];
+			if($timeOfDay != '') { break; }
+		}
+    	return $timeOfDay;
+    }
+
+    /* Cancellation Rate Freelancer */
+    public function getFreCancellationRate($uid,$adapter)
+    {
+    	$sqlContCancellation = "SELECT * FROM job_cancel WHERE c_uid = '$uid'";	
+        $contCancellation = $adapter->query($sqlContCancellation, $adapter::QUERY_MODE_EXECUTE);
+        $finalCount = $contCancellation->count();
+        
+        $sqlAcceptedJob = "SELECT * FROM job_action WHERE ( action = '6' OR action = '3' ) AND f_id = '$uid'";	
+        $acceptedJob = $adapter->query($sqlAcceptedJob, $adapter::QUERY_MODE_EXECUTE);
+        $countJobAccept = $acceptedJob->count();
+        $freCancellationRate = number_format(($finalCount/$countJobAccept)*100,2);
+    	return $freCancellationRate;	
+    }
+
+    /*Cancellation Rate Employer */
+    public function getEmpCancellationRate($uid,$adapter)
+    {
+    	$sqlContCancellation = "SELECT * FROM job_post WHERE e_id = '$uid' AND job_status = '8' AND job_id IN ( SELECT job_id FROM  job_action WHERE action = '7' )";	
+        $contCancellation = $adapter->query($sqlContCancellation, $adapter::QUERY_MODE_EXECUTE);
+       $finalCount = $contCancellation->count();
+        
+        $sqlPostedJob = "SELECT * FROM job_post WHERE e_id = '$uid' AND ((job_status = 4) OR ( job_status = '8' AND job_id IN ( SELECT job_id FROM  job_action WHERE action = '7' )))";	
+        $postedJob = $adapter->query($sqlPostedJob, $adapter::QUERY_MODE_EXECUTE);
+        $countJobPost = $postedJob->count();
+        $empCancellationRate = number_format(($finalCount/$countJobPost)*100,2);
+    	return $empCancellationRate;	
+    }
+
+    /* Manage  Job Filter */
+    public function elementToSort($element,$order){
+    	if ($element == 'job_date') {
+    		$element = "STR_TO_DATE(job_date, '%d/%m/%Y')";
+    	}
+    	if( $order == 'ASC'){
+    		return 'ORDER BY '.$element.' ASC';
+    	}else{
+    		return 'ORDER BY '.$element.' DESC';
+    	}
+    }
+
+    public function elementToSortUrl($filter='',$element,$order){
+    	if ($filter != '' ) {
+            $sortUrl = "?filter=$filter&sort_by=$element&order=$order";
+        }else{
+            $sortUrl = "?sort_by=$element&order=$order"; 
+        }
+        return $sortUrl;
+    }
+
+    /*Get User Information */
+    public function getUserInfo($uid, $adapter)
+    {
+    	$sqlUserInfo = "SELECT * FROM user WHERE id = '$uid'";
+        $userInfoObj = $adapter->query($sqlUserInfo, $adapter::QUERY_MODE_EXECUTE);
+        $userInfo = $userInfoObj->current();
+        return $userInfo;
+    }
+
+    /*Get Freelancer ID From accepted job id */
+    public function getFreelancerInfoFromAcceptedJob($jid, $adapter)
+    {
+    	$sqlFreInfo = "SELECT f_id FROM job_action WHERE job_id = '$jid' AND ( action = '3' OR action = '6' )";
+        $userFreObj = $adapter->query($sqlFreInfo, $adapter::QUERY_MODE_EXECUTE);
+        $freId = $userFreObj->current();
+        $freInfo = $this->getUserInfo($freId['f_id'], $adapter);
+        return $freInfo;
+    }
+}

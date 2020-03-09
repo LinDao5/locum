@@ -1,0 +1,728 @@
+<?php
+    use GcFrontend\Controller\DbController as DbController;
+    use Gc\User\Job\Model as JobModel;
+    use Zend\Db\Sql\Sql;
+    use Zend\Db\TableGateway\TableGateway;
+    use GcFrontend\Controller\FunctionsController as FunctionsController;
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $functionsController = new FunctionsController();
+    $jobModel       = new JobModel();
+    $actual_link = "$_SERVER[REQUEST_URI]";
+    $_SESSION['action_url'] = $actual_link;
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && isset($_SESSION['user_role_id']) && ($_SESSION['user_role_id']==3 || $_SESSION['user_role_id']==2)){
+        $uid=$_SESSION['user_id'];
+    }else{
+		echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+    }
+    $job_id = 0;
+    if (isset($_GET['view']) && $_GET['view'] != '') {
+        $job_id = $_GET['view'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+    }
+    
+	if($job_id && $_SESSION['user_role_id']==2){
+    	$uid=$_SESSION['user_id'];
+    	//$sqlString_get="SELECT * FROM job_post WHERE job_id IN (SELECT job_id FROM job_action WHERE (action = 3 OR action = 4 OR action = 7 OR action = 8) AND f_id = '$uid' AND job_id = '$job_id')";
+    	$sqlString_get="SELECT * FROM job_post WHERE job_id IN (SELECT job_id FROM job_action WHERE  f_id = '$uid' AND job_id = '$job_id')";
+        $result = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+        $getJobObj = $result->current();            
+        $getJob = (array)$result->current();
+		if($getJob['job_status']==2 || $getJob['job_status']==4){
+			$sqlact_get="SELECT * FROM job_action WHERE job_id = '$job_id' AND (action = 2 OR action = 4)";
+        	$result_action = $adapter->query($sqlact_get, $adapter::QUERY_MODE_EXECUTE);
+        	$getAction = $result_action->current();
+			$getActioncount = $result_action->count();
+		}
+		
+		//employer extra info
+	    $sqlEmpinfo = "SELECT store_unique_time,telephone,mobile from user_extra_info WHERE uid = '".$getJob['e_id']."'";	
+	    $ViewEmpdata = $adapter->query($sqlEmpinfo, $adapter::QUERY_MODE_EXECUTE);
+	    $ViewDetailsEmpx = $ViewEmpdata->current();
+	    $store_unique_time=unserialize($ViewDetailsEmpx['store_unique_time']);
+		/*$store_start_time=$store_unique_time['start_time'].':00';
+		$store_end_time=$store_unique_time['end_time'].':00';
+		$store_lunch_time=$store_unique_time['lunch_time'].':00';*/
+		$store_telephone=$ViewDetailsEmpx['telephone'];
+	    $store_mobile=$ViewDetailsEmpx['mobile'];
+	    if($store_telephone!=''){
+		   $store_contact_details=$store_telephone;
+	    }
+	    elseif($store_mobile!=''){
+		   $store_contact_details=$store_mobile;
+	    }
+		
+		$sqlString_getstore="SELECT * FROM employer_store_list WHERE emp_st_id = '".$getJob['store_id']."'";
+        $result_store = $adapter->query($sqlString_getstore, $adapter::QUERY_MODE_EXECUTE);
+        $getStoreObj = $result_store->current();
+		$store_address=$getStoreObj['emp_store_address'];
+		$store_region=$getStoreObj['emp_store_region'];
+		$startTime = unserialize( $getStoreObj['store_start_time']);
+		$endTime = unserialize( $getStoreObj['store_end_time']);
+		$lunchTime = unserialize( $getStoreObj['store_lunch_time']);
+		$job_date = str_replace('/','-',$getJob['job_date']);
+		$job_day =  date('l', strtotime($job_date));
+		//Store timing for posted day 
+		$store_start_time = $functionsController->getTimeOfDay($startTime,$job_day).':00';
+		$store_end_time = $functionsController->getTimeOfDay($endTime,$job_day).':00';
+		$store_lunch_time = $functionsController->getTimeOfDay($lunchTime,$job_day).':00 (Min)';
+		
+		// Get Details from timeline table  
+		$sqldetail_get="SELECT * FROM job_post_timeline WHERE job_id = '$job_id' order by tid DESC";
+        $result_new = $adapter->query($sqldetail_get, $adapter::QUERY_MODE_EXECUTE);
+        $getJobObj_time = $result_new->current(); 
+		$getcount = $result_new->count();  
+		}else{
+			echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+		}
+		
+		if(empty($getJobObj)){
+			echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+		}
+		if (isset($_GET['action']) && $_GET['action'] == 'disable') {
+			$jobModel->jobStatusUpdate($getJob['job_id'],1);
+		}elseif (isset($_GET['action']) && $_GET['action'] == 'enable') {
+			$jobModel->jobStatusUpdate($getJob['job_id'],3);
+		}
+	// get All Questions by Employer and Freelancer
+	if(isset($uid) && $uid!=''){
+		$role_id = $_SESSION['user_role_id'];
+		$cat_id  = $_SESSION['user_profession_id'];
+		if($getJob['job_status']==1){	
+			$sqlString_data="select u.* from user u where u.id='$uid'";	
+			$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+			$result_data = $results_get->current();
+		}
+		if($getJob['job_status']==2 || $getJob['job_status']==4){
+			if($role_id==2){ // freelancer
+				if($getActioncount>0){
+					$fetch_id=$getJob['e_id'];	//employer id
+				}else{
+					$fetch_id=$uid;	//employer id
+				}
+				$sqlString_data="select u.* from user u where u.id='$fetch_id'";	
+				$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+				$result_data = $results_get->current();
+			}
+			if($role_id==3){//employer
+				if($getActioncount>0){
+					$fetch_id=$getActioncount['f_id']; // job accepted freelancer id
+				}else{
+					$fetch_id=$uid; // job accepted freelancer id
+				}
+				$sqlString_data="select u.* from user u where u.id='$fetch_id'";	
+				$results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+				$result_data = $results_get->current();
+			}
+		}
+
+	if($result_data['id']!=''){
+		// user extra info
+		
+		$sqlString_data22="select ux.* from user_extra_info ux where ux.uid='".$result_data['id']."'";	
+		$results_get22 = $adapter->query($sqlString_data22, $adapter::QUERY_MODE_EXECUTE);
+		$ExtraData = $results_get22->toArray();
+		//$ExtraData = $result_get22;
+		
+		foreach ($ExtraData as $key => $value) {
+			$allData[] = $value;
+			$allStoreData[] = $value;
+		}
+		// get store data
+		$exp_var="";
+		if(($_SESSION['user_role_id']==2 || $_SESSION['user_role_id']==3) && $_SESSION['user_profession_id']==3){
+			
+			$store_id=explode(',',$allData[0]['store_id']);
+			$store_data=explode(',',$allStoreData[0]['store_data']);
+			foreach($store_id as $key=>$name){
+				$exp_var[$name]=array($name=>$store_data[$key]);
+			}
+			//print_r($exp_var);
+		}
+		if($_SESSION['user_role_id']==3 && $_SESSION['user_profession_id']==3){
+			$store_id_emp=$ExtraData[0]['store_id'];
+		}
+		if($_SESSION['user_role_id']==3 ){
+			$store_week_time=unserialize($ExtraData[0]['store_week_time']); //print_r($store_week_time); //echo $store_week_time;
+			$daytime1=$store_week_time[0][0]; // from time 0,1,2,3 =>Monday,From,To,Lunch
+			$daytime2=$store_week_time[1][0]; // from time 0,1,2,3 =>Tuesday,From,To,Lunch
+			$daytime3=$store_week_time[2][0]; // from time 0,1,2,3 =>Wednesday,From,To,Lunch
+			$daytime4=$store_week_time[3][0]; // from time 0,1,2,3 =>Thursday,From,To,Lunch
+			$daytime5=$store_week_time[4][0]; // from time 0,1,2,3 =>Friday,From,To,Lunch
+			$daytime6=$store_week_time[5][0]; // from time 0,1,2,3 =>Saturday,From,To,Lunch
+			$daytime7=$store_week_time[6][0]; // from time 0,1,2,3 =>Sunday,From,To,Lunch
+		}
+		
+	}
+	$result_arr='<table class="table clickable table-striped table-hover"><colgroup><col width="30%"><col width="70%"></colgroup><tbody>';
+	$result_arr.='<tr><th><b>Start Time</b>'.$req_text.'</th><td>'.$store_start_time.'</td></tr>
+	<tr><th><b>Finish Time</b>'.$req_text.'</th><td>'.$store_end_time.'</td></tr>
+	<tr><th><b>Lunch Break (minutes)</b>'.$req_text.'</th><td>'.$store_lunch_time.'</td></tr>';
+	
+	$sqlString_data="select qu.fquestion as fq,qu.equestion as eq,qu.type_key as tk,qu.type_value as tv,qu.id as qid,qu.required_status,qu.range_type_unit,qu.range_type_condition from user_question qu where cat_id='$cat_id'";	
+    $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	$result_data = $results_get->toArray(); //print_r($result_data);
+	$result_count = $results_get->count();
+	$txt_ans="";
+	$sel_ans="";
+	$chk_ans="";
+	$req_status="";
+	if($result_count>0){
+		foreach($result_data as $resultset){ //type_key  1:text_field ,2:select option, 3:checkbox
+		
+		     $sql_ans="select * from user_answer where user_id='$uid' and question_id='".$resultset['qid']."'";
+			 $results_ans = $adapter->query($sql_ans, $adapter::QUERY_MODE_EXECUTE);
+	         $result_data_ans = $results_ans->current(); //print_r($result_data_ans);
+			 
+			 $required=$resultset['required_status'];
+			
+			if($role_id==2){
+				$question=$resultset['fq'];
+			}else{
+				$question=$resultset['eq'];
+			}
+			
+			if($resultset['tk']==1 && $question!=''){ // text field
+			    // comapre user_answer and user_question table question id
+				if($result_data_ans['question_id']==$resultset['qid']){ $txt_ans=$result_data_ans['type_value'];}
+					$answer_value=$txt_ans;
+			}
+			if($resultset['tk']==2 && $question!=''){ // select option
+			    $question_data=unserialize($resultset['tv']); 
+				$answer_value=$result_data_ans['type_value'];
+			}
+			if($resultset['tk']==3 && $question!=''){ // multiselect option
+				$question_data2=unserialize($resultset['tv']); 
+			    $answer_value=$result_data_ans['type_value'];
+			}
+			if($resultset['tk']==4 && $question!=''){ // select option for range
+			     $range_type_unit=$resultset['range_type_unit'];
+				 $range_type_condition=$resultset['range_type_condition'];  //1. Greater than 2. Greater than OR equel to 3. Less than 4. Less than OR equel to 5. Equel to
+				//condition_arr
+				$condition_arr=array("1"=>"Greater than","2"=>"Greater than OR equal to","3"=>"Less than","4"=>"Less than OR equal","5"=>"Equal to");
+				
+				$answer_value=$result_data_ans['type_value'].$range_type_unit;
+			}
+			if($resultset['tk']==5 && $question!=''){ // select option
+				$answer_value=$result_data_ans['type_value'].' '.$resultset['range_type_unit'];
+			}
+			
+			if($role_id==2 && $question!=''){ // for freelancer :fquestion
+			      if($required==1){
+					$req_text="<i class='fa fa-asterisk' aria-hidden='true' style='color:red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;'></i>";
+				}else{
+					$req_text="";
+				}
+				   $result_arr.='<tr><th><b>'.$resultset['fq'].'</b>'.$req_text.'</th><td>'.str_replace(',',' / ',$answer_value).'</td></tr>';
+			
+			}if($role_id==3 && $question!=''){// for employer :equestion
+			   if($required==1){
+					$req_text="<i class='fa fa-asterisk' aria-hidden='true' style='color:red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;'></i>";
+				}else{
+					$req_text="";
+				}
+			  $result_arr.='<tr><th><b>'.$resultset['eq'].'</b>'.$req_text.'</th><td>'.str_replace(',',' / ',$answer_value).'</td></tr>';
+				
+			}
+		}
+	 }
+	 $result_arr.='</tbody></table>';
+	}//if end
+	
+?>
+<?php $currency= $this->config()->get('site_currency'); ?>
+<div id="primary-content" class="main-content profiles">
+    <div class="container">
+        <div class="row">
+            <div class="contents gray-gradient">
+                <div class="welcome-heading">
+				
+				
+				Hi Suraj Wasnik,
+
+Please can you confirm your arrival to work today
+
+Yes No
+
+The details of the work are as per below:
+				
+				
+                    <hr class="shadow-line">
+                </div>
+                <div style="clear: both"></div>
+                <?php
+                    $statusUrl = 0;
+                    $status = 0;
+					$setTitle ="";
+					$setTitle2 ="";
+					$type_jst="blue";
+                    if ($getJob['job_status'] == 3) {
+                        $statusUrl = $this->serverUrl().'/single-job?view='.$getJob['job_id'].'&action=disable';
+                        $status = 'Enable';
+                    }elseif($getJob['job_status'] == 1){
+                        $statusUrl = $this->serverUrl().'/single-job?view='.$getJob['job_id'].'&action=enable';
+                        $status = 'Disable';
+                    }
+					if($getJob['job_status'] == 4){
+						$type_jst="green";
+					}
+					if($getJob['job_status'] == 2 || $getJob['job_status'] == 4){
+						if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2)
+						{
+							$setTitle1="  Details";
+							$setTitle2 ="Additional information";
+							$setTitle3 ="Details of Employer";
+						}
+						if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){
+							$setTitle1 ="Key Details";
+							$setTitle2 ="Additional information";
+							$setTitle3 ="Details of Locum booked for you";
+						}
+					}else{
+						if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2)
+						{
+							$setTitle1="  Job Invitation (Key Details)";
+							$setTitle2 ="  Job Invitation (additional information)";
+							$setTitle3 ="  Booking Confirmation – Details of Employer";
+						}
+						if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){
+							$setTitle1 ="  Job Invitation (Key Details)";
+							$setTitle2 ="  Job Invitation (additional information)";
+							$setTitle3 ="  Job invitation – Details of Locum booked for you";
+						}
+						
+					}
+
+                ?>
+                <div class="job-view job-view-scroll">
+                    <div class="general-info">
+                        <h4 class="job_bar_color_<?php echo $type_jst;?>"><?php echo $setTitle1;?> <?php if($statusUrl && $status){ ?><a href="<?php echo $statusUrl ?>"><?php echo $status ?></a><?php } ?></h4>
+                        <table class="table clickable table-striped table-hover">
+                            <colgroup>
+                                    <col width="30%">
+                                    <col width="70%">
+                                </colgroup>
+                            <tbody>
+                            <?php if($getJob['job_status'] == 2 || $getJob['job_status'] == 4){ // accepted or close?>
+                                <tr>
+                                    <th width="30%">Date</th>
+                                    <td><?php  $date_new=str_replace('/','-',$getJob['job_date']);  echo date('d/m/Y',strtotime($date_new)); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Daily Rate</th>
+                                    <td><?php echo $currency;?><?php echo number_format($getJob['job_rate'],2); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Store Contact Details</th>
+                                    <td><?php echo $store_contact_details; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Store Address</th>
+                                    <td><?php echo $getJob['job_address'].','.$getJob['job_region'].','.$getJob['job_zip']; ?></td>
+                                </tr>
+                                <tr style="display:none;">
+                                    <th>Job Status</th>
+                                    <td><?php
+                                            switch ($getJob['job_status']) {
+                                                case 1:
+                                                     echo "<span style='color:green'>Enable</span>";
+                                                    break;
+                                                case 2:
+                                                    echo "Close";
+                                                    break;
+                                                case 3:
+                                                    echo "<span style='color:red'>Disable</span>";
+                                                    break;
+                                                case 4:
+                                                    echo "Accepted";
+                                                    break;
+                                                case 5:
+                                                    echo "Done";
+                                                    break;
+                                                case 6:
+                                                    echo "Freeze";
+                                                    break;
+                                                default:                                                    
+                                                    break;
+                                            }        
+                                            ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Additional Info</th>
+                                    <td style="color:red;font-weight:bold;"><?php echo $getJob['job_post_desc']; ?></td>
+                                </tr>
+                              <?php }else{?>
+                              <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){?>
+                               <tr>
+                                    <th>Job Ref</th>
+                                    <td><?php echo $getJob['job_id']; ?></td>
+                                </tr>
+                              <?php }?>
+                                <tr>
+                                    <th>Date</th>
+                                    <td><?php  $date_new=str_replace('/','-',$getJob['job_date']);  echo date('d-m-Y',strtotime($date_new)); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Daily Rate</th>
+                                    <td><?php echo $currency;?><?php echo number_format($getJob['job_rate'],2); ?></td>
+                                </tr>
+                               <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3 && $getcount>=2){?>
+                               <tr>
+                                    <th>If increase rate timeline</th>
+                                    <td><?php echo $job_timeline_data;?></td>
+                                </tr>
+                              <?php }?>
+                                <tr>
+                                    <th>Store Contact Details</th>
+                                    <td><?php echo $store_contact_details;?></td>
+                                </tr>
+                                <tr>
+                                    <th>Store Address</th>
+                                    <td><?php echo $getJob['job_address'].','.$getJob['job_region'].','.$getJob['job_zip']; ?></td>
+                                </tr>
+                              <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){?>
+                               <!-- <tr>
+                                    <th>Type of job </th>
+                                    <td><?php echo ($getJob['job_type']==1? 'First come first serve':'Build list'); ?></td>
+                               </tr> -->
+                               <tr>
+                                    <th>Date Posted </th>
+                                    <td><?php echo date('d/m/Y',strtotime($getJob['job_create_date'])); ?></td>
+                               </tr>
+                              <?php }?>
+                                <tr style="display:none;">
+                                    <th>Job Status</th>
+                                    <td><?php
+                                            switch ($getJob['job_status']) {
+                                                case 1:
+                                                     echo "<span style='color:green'>Enable</span>";
+                                                    break;
+                                                case 2:
+                                                    echo "Close";
+                                                    break;
+                                                case 3:
+                                                    echo "<span style='color:red'>Disable</span>";
+                                                    break;
+                                                case 4:
+                                                    echo "Accepted";
+                                                    break;
+                                                case 5:
+                                                    echo "Done";
+                                                    break;
+                                                case 6:
+                                                    echo "Freeze";
+                                                    break;
+                                                default:                                                    
+                                                    break;
+                                            }        
+                                            ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Additional Info</th>
+                                    <td style="color:red;font-weight:bold;"><?php echo $getJob['job_post_desc']; ?></td>
+                                </tr>
+                              <?php }?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php if($getJob['job_status'] == 1){?>
+                    <div class="general-info" style="overflow:hidden;"><h4 class="job_bar_color_<?php echo $type_jst;?>"><?php echo $setTitle2;?></h4><?php echo $result_arr;?></div>
+                    <?php }?>
+                    <?php if($job_user_type=="normal"){?>
+                    <div class="general-info" style="overflow:hidden;"><h4 class="job_bar_color_<?php echo $type_jst;?>"><?php echo $setTitle2;?></h4>
+					<!-- Additional Information -->
+                    <?php if($_SESSION['user_role_id']==2 && $_SESSION['user_profession_id']==3){ // freelancer with optometry category?>
+                        <table class="table clickable table-striped table-hover">
+	                        <colgroup>
+		                        <col width="30%">
+		                        <col width="70%">
+		                    </colgroup>
+	                        <tbody>
+                            <tr>
+                            	<th width="30%"><strong>Worked at which stores</strong><i class="fa fa-asterisk" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i>
+                            	</th>
+                            	<td>
+		                             <?php if(in_array('Vision express', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Vision express</span></div>
+		                                    <div class="col-md-8" id="store_id_1">
+		                                        <?php echo $exp_var['Vision express']['Vision express'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Specsavers', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Specsavers</span></div>
+		                                    <div class="col-md-8" id="store_id_2">
+		                                    <?php echo $exp_var['Specsavers']['Specsavers'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Boots', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Boots</span></div>
+		                                    <div class="col-md-8" id="store_id_3">
+		                                    <?php echo $exp_var['Boots']['Boots'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Optical express', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Optical express</span></div>
+		                                    <div class="col-md-8" id="store_id_4">
+		                                   		<?php echo $exp_var['Optical express']['Optical express'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('The Optical Shop', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">The Optical Shop</span></div>
+		                                    <div class="col-md-8" id="store_id_5">
+		                                        <?php echo $exp_var['The Optical Shop']['The Optical Shop'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Leightons', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Leightons</span></div>
+		                                    <div class="col-md-8" id="store_id_6">
+		                                    	<?php echo $exp_var['Leightons']['Leightons'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Scrivens', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Scrivens</span></div>
+		                                    <div class="col-md-8" id="store_id_7">
+		                                        <?php echo $exp_var['Scrivens']['Scrivens'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Independent', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Independent</span></div>
+		                                    <div class="col-md-8" id="store_id_8">
+		                                        <?php echo $exp_var['Independent']['Independent'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Domaciliary', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Domaciliary</span></div>
+		                                    <div class="col-md-8" id="store_id_9">
+		                                        <?php echo $exp_var['Domaciliary']['Domaciliary'];?>
+		                                    </div>
+		                                </div>
+		                                <?php }?>
+		                                <?php if(in_array('Asda', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Asda</span></div>
+		                                    <div class="col-md-8" id="store_id_10">
+		                                        <?php echo $exp_var['Asda']['Asda'];?>
+		                                    </div>
+		                                </div>
+		                              <?php }?>
+		                              <?php if(in_array('Tesco', $store_id)){?>
+		                                <div class="row">
+		                                    <div class="col-md-4"><span class="margin-left-1">Tesco</span></div>
+		                                    <div class="col-md-8" id="store_id_11">
+		                                    	<?php echo $exp_var['Tesco']['Tesco'];?>
+		                                    </div>
+		                                </div>
+		                            <?php }?>
+		                            <?php if(in_array('David Clulows', $store_id)){?>
+		                            <div class="row">
+		                                <div class="col-md-4"><span class="margin-left-1">David Clulows</span></div>
+		                                <div class="col-md-8" id="store_id_12">
+		                                	<?php echo $exp_var['David Clulows']['David Clulows'];?>
+		                                </div>
+		                            </div>
+		                            <?php }?>
+		                        </td>
+                         </tr>
+                         <!-- -->
+                         <!-- -->
+                         <tr>
+                         	<th>What is your GOC NO?</th>
+                         	<td><?php if($ExtraData[0]['goc']){ echo $ExtraData[0]['goc'];}?></td>
+                         </tr>
+                         <?php if($ExtraData[0]['aop']!=''){?>
+                         <tr>
+                         	<th><strong>what is your AOP membership number?</strong><i class="fa fa-asterisk" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i>
+                         	</th>
+                         	<td><?php if($ExtraData[0]['aop']){echo $ExtraData[0]['aop'];}?></td>
+                         </tr>
+                         <?php }?>
+                         <?php if($ExtraData[0]['inshurance_company']!=""){?>
+                         <tr>
+                         	<th><strong>Provide requested information: Company insured with? Policy membership number? Date due for renewal?</strong> <i class="fa fa-asterisk" aria-hidden="true" style="color: block; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i>
+                         	</th>
+                        	<td>
+	                            <div id="inshu_open" style=" <?php if($allGuestData[0]['inshurance_company']!=""){ echo "display:block";}else{?>display:none;<?php }?>" class="margin-top">
+	                              <p>Insurance Company :<?php if($ExtraData[0]['inshurance_company']){ echo $ExtraData[0]['inshurance_company'];}?></p>
+	                              <p>Insurance No : <?php if($ExtraData[0]['inshurance_no']){ echo $ExtraData[0]['inshurance_no'];}?></p>
+	                              <p>Insurance Renewal date :<?php if($ExtraData[0]['inshurance_renewal_date']){ echo $ExtraData[0]['inshurance_renewal_date'];}?></p> 
+                               </div>
+                          	</td>
+                         </tr>
+                          
+                         <?php }?>
+                         <tr>
+                         	<th><strong>Please mention your Opthalmic number (OPL)</strong><i class='fa fa-asterisk' aria-hidden='true' style='color: block; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;'></i>
+                         	</th>
+                        	<td><?php if($ExtraData[0]['aoc_id']){ echo $ExtraData[0]['aoc_id'];}?></td>
+                        </tr>
+                        
+                     </tbody></table>
+                     <?php }?>
+                     <?php if($_SESSION['user_role_id']==3 && $getJob['job_status'] == 4  && isset($free_id)){ // && $_SESSION['user_profession_id']==3 employer with optometry category?>
+                            <table class="table clickable table-striped table-hover">
+                            	<colgroup>
+                            		<col width="30%">
+                            		<col width="70%">
+                            	</colgroup>
+                            	<tbody>
+	                                <tr style="display:none;">
+	                                	<th><strong>What type of store do you run?</strong><i class="fa fa-asterisk" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i>
+	                                	</th>
+		                                <td>
+		                                    <?php echo $store_id_emp;?>
+		                                </td>
+		                            </tr>
+                                    <?php
+									  $sqlFreeQu = "SELECT ua.*, uq.fquestion from user_answer ua, user_question uq WHERE uq.fquestion!='' and ua.user_id = '".$free_id."' and ua.question_id=uq.id";	
+									  $ViewFreeans = $adapter->query($sqlFreeQu, $adapter::QUERY_MODE_EXECUTE);
+									  $ViewDetailsFreeans = $ViewFreeans->toArray();
+									  foreach($ViewDetailsFreeans as $resultFree){
+								  ?>
+								  <tr>
+									<th class="normal"><?php echo $resultFree['fquestion'];?></th>
+									<td ><?php echo $resultFree['type_value']; ?></td>
+								  </tr>
+								  <?php
+									  } //freelancer question answer
+								  ?>
+                            	</tbody>
+                            </table>
+                     <?php }elseif($_SESSION['user_role_id']==3 && $getJob['job_status'] == 4){?>
+                     		<table class="table clickable table-striped table-hover">
+                            	<colgroup>
+                            		<col width="30%">
+                            		<col width="70%">
+                            	</colgroup>
+                            	<tbody>
+                                    <?php
+									  $sqlPriFreeInfo = "SELECT p_name FROM   private_user WHERE p_uid IN ( SELECT puid FROM private_user_job_action WHERE j_id = '$job_id' AND (status = 3 OR status = 4))  ";	
+									  $priFreeInfoObj = $adapter->query($sqlPriFreeInfo, $adapter::QUERY_MODE_EXECUTE);
+									  $priFreeInfo = $priFreeInfoObj->current();
+									  
+								  ?>
+								  <tr>
+									<th class="normal">Name </th>
+									<td ><?php echo $priFreeInfo['p_name']; ?></td>
+								  </tr>
+								    <tr> 
+										<th sclass="normal">Id</th>
+										<td> <b>Private Freelancer </b> </td>
+									</tr>
+								 
+                            	</tbody>
+                            </table>
+                     <?php } ?>
+                    <?php if($_SESSION['user_role_id'] == 2){?>
+                          <table class="table clickable table-striped table-hover">
+                          	<colgroup>
+                          		<col width="30%">
+                          		<col width="70%">
+                          	</colgroup>
+                          	<tbody>
+		                        <tr>
+		                            <th><strong>Set Minimum Rate</strong><i class="fa fa-asterisk" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i>
+		                           	</th>
+		                         	<td>
+			                            <?php
+			                                /* Get min rate per day */
+			                                $min_rate = unserialize($ExtraData[0]['minimum_rate']);
+			                            ?>
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12"><span class="rate-day">Monday</span></div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format($min_rate['Monday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div> 
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12">
+			                                    <span class="rate-day">Tuesday</span>
+			                                </div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format( $min_rate['Tuesday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div> 
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12">
+			                                    <span class="rate-day">Wednesday</span>
+			                                </div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format( $min_rate['Wednesday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div> 
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12">
+			                                    <span class="rate-day">Thursday</span>
+			                                </div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format( $min_rate['Thursday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div> 
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12">
+			                                    <span class="rate-day">Friday</span>
+			                                </div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format( $min_rate['Friday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div> 
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12">
+			                                    <span class="rate-day">Saturday</span>  
+			                                </div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format( $min_rate['Saturday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div> 
+			                            <div class="row">
+			                                <div class="col-md-3 col-sm-6 col-xs-12">
+			                                    <span class="rate-day">Sunday</span>
+			                                </div>
+			                                <div class="col-md-9 col-sm-6 col-xs-12">
+			                                    <?php if($ExtraData[0]['minimum_rate']!="0.00"){echo  $currency.number_format( $min_rate['Sunday'],2);}else{ echo '0.00'; }?>
+			                                </div>
+			                            </div>
+		                         	</td>
+		                         </tr>
+		                         <tr>
+		                         	<th>Max Distance To Travel<i class="fa fa-asterisk" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i>
+		                         	</th>
+		                          	<td>
+		                            	<?php if($ExtraData[0]['max_distance']!="0"){echo $ExtraData[0]['max_distance'].' Miles';}?>
+		                         	</td>
+		                         </tr>
+		                       </tbody>
+		                    </table>
+                    <?php }?>
+                    <!-- Additional Information -->
+                    </div>
+                    <?php }?>
+                    <!-- Questions Answered-->
+                    <div class="margin-top"></div>
+					<?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){echo $this->translate($this->freelancerTerms); }?>
+                    <?php //if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){echo $this->translate($this->employerTerms); }?>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

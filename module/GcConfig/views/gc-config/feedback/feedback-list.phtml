@@ -1,0 +1,255 @@
+<?php
+/**
+ * This source file is part of FUDUGO. *
+ * 
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User\Feedback
+ * @author     Suraj Wasnik (suraj.wasnik0126@gmail.com)
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.fudugo.com
+ */
+
+$paginatorEmp = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->feedbackEmp));
+$paginatorEmp->setItemCountPerPage(20);
+$paginatorEmp->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+$paginatorFre = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->feedbackFre));
+$paginatorFre->setItemCountPerPage(20);
+$paginatorFre->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<?php
+    $qus = 'fre';
+    if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+       $qus = 'emp';
+    }
+    
+    
+    
+    if (isset($_GET['c']) && $_GET['c'] != '') {
+        $cat = $_GET['c'];
+    }else{
+        $cat = 1;
+    }
+    
+?>
+<div class="question">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($qus == 'fre') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback/user-feedback?q=fre">Locum</a></li>
+            <li class="<?php if ($qus == 'emp') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback/user-feedback?q=emp">Employer</a></li>
+        </ul>
+    </div>
+    <?php if ($qus == 'emp') {?>
+        <div id="fre-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <?php foreach ($this->professions as $profession) { ?>
+                        <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback/user-feedback?q=emp&c=<?php echo $profession->getId(); ?>"><?php echo $profession->getName() ?></a></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>                    
+                    <col width="5%">
+                    <col width="5%">
+                    <col width="15%">
+                    <col width="15%">
+                    <col width="15%">
+                    <col width="10%">
+                    <col width="5%">
+                    <col width="5%">                    
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Sr. No')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Job ID')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Feedback From')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Feedback To')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Average Rate')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Feedback Status')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <?php
+                    if(!empty($paginatorEmp)):
+                    $j=1;
+                    foreach ($paginatorEmp as $feedback): ?>                    
+                        <tr>
+                            <td style="text-transform: capitalize;"><?php echo $this->escapeHtml( $j++ ); ?></td>
+                            <td style="text-transform: capitalize;">#<?php echo $this->escapeHtml( $feedback->getJId()); ?></td>
+                            <td style="text-transform: capitalize;"><?php echo $this->escapeHtml($feedback->empUserInfo); ?></td>
+                            <td style="text-transform: capitalize;"><?php echo $this->escapeHtml($feedback->freUserInfo); ?></td>
+                            <td>
+                                <?php //echo $this->escapeHtml($feedback->getRating()); ?>
+                                <div id="stars-rating">
+                                    <?php 
+                                        $totalStar = 5;
+                                        $ratingStar = $feedback->getRating();
+                                        $currentStar = 1;
+                                        while($totalStar > 0){ 
+                                            if($ratingStar >= $currentStar){
+                                                $starClass = 'glyphicon-star';
+                                            }else{                                                 
+                                                $starClass = 'glyphicon-star-empty'; 
+                                            }
+                                    ?>
+                                        <span class="glyphicon <?php echo $starClass; ?>"></span>
+                                    <?php $totalStar--; $currentStar++; } ?>
+                                    
+                                    
+                                </div>
+                            </td>
+                            <td>
+                                <?php 
+                                    switch ($feedback->getStatus()) {
+                                        case '0':
+                                            echo "<span style='color:#ff7600'>Pending</span>";
+                                            break;
+                                        
+                                        case '1':
+                                            echo "<span style='color:green'>Approve</span>";
+                                            break;
+                                    }                                    
+                                ?>
+                            </td> 
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/user-feedback/edit', array('id' => $feedback->getFeedbackId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/user-feedback/delete', array('id' => $feedback->getFeedbackId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php 
+                        endforeach; 
+                        else:
+                            echo "<h3>No record found..!</h3>";
+                        endif;
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/feedback/user-feedback?q=emp&c='.$cat));?>
+            </div>
+        </div>
+    <?php }elseif($qus == 'fre'){ ?>
+        <div id="fre-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <?php foreach ($this->professions as $profession) { ?>
+                        <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback/user-feedback?q=fre&c=<?php echo $profession->getId(); ?>"><?php echo $profession->getName() ?></a></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>                    
+                    <col width="5%">
+                    <col width="5%">
+                    <col width="15%">
+                    <col width="15%">
+                    <col width="15%">
+                    <col width="10%">
+                    <col width="5%">
+                    <col width="5%">                    
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Sr. No')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Job ID')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Feedback From')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Feedback To')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Average Rate')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Feedback Status')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <?php
+                    if(!empty($paginatorFre)):
+                    $j=1;
+                    foreach ($paginatorFre as $feedback): ?>                    
+                        <tr>
+                            <td style="text-transform: capitalize;"><?php echo $this->escapeHtml( $j++ ); ?></td>
+                            <td style="text-transform: capitalize;">#<?php echo $this->escapeHtml( $feedback->getJId()); ?></td>
+                            <td style="text-transform: capitalize;"><?php echo $this->escapeHtml($feedback->freUserInfo); ?></td>
+                            <td style="text-transform: capitalize;"><?php echo $this->escapeHtml($feedback->empUserInfo); ?></td>
+                            <td>
+                                <?php //echo $this->escapeHtml($feedback->getRating()); ?>
+                                <div id="stars-rating">
+                                    <?php 
+                                        $totalStar = 5;
+                                        $ratingStar = $feedback->getRating();
+                                        $currentStar = 1;
+                                        while($totalStar > 0){ 
+                                            if($ratingStar >= $currentStar){
+                                                $starClass = 'glyphicon-star';
+                                            }else{                                                 
+                                                $starClass = 'glyphicon-star-empty'; 
+                                            }
+                                    ?>
+                                        <span class="glyphicon <?php echo $starClass; ?>"></span>
+                                    <?php $totalStar--; $currentStar++; } ?>
+                                    
+                                    
+                                </div>
+                            </td>
+                            <td>
+                                <?php 
+                                    switch ($feedback->getStatus()) {
+                                        case '0':
+                                            echo "<span style='color:#ff7600'>Pending</span>";
+                                            break;
+                                        
+                                        case '1':
+                                            echo "<span style='color:green'>Approve</span>";
+                                            break;
+                                    }                                    
+                                ?>
+                            </td>                            
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/user-feedback/edit', array('id' => $feedback->getFeedbackId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/user-feedback/delete', array('id' => $feedback->getFeedbackId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php 
+                        endforeach; 
+                        else:
+                            echo "<h3>No record found..!</h3>";
+                        endif;
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/feedback/user-feedback?q=fre&c='.$cat));?>
+            </div>
+        </div>
+    <?php } ?>
+
+
+    
+<script type="text/javascript">    
+    Gc.initTableList();
+</script>
+
+<style type="text/css">
+    div#stars-rating {
+        font-size: 16px;
+        color: #df7900;
+    }
+</style>

@@ -1,0 +1,94 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\AddSupplier\Model as SupplierModel;
+	use Gc\User\Finance\AddSupplier\Collection as SupplierCollection;
+	$suppliercollection = new SupplierCollection();
+	
+	
+	
+	$supplierModel = new SupplierModel();
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2){
+		$uid=$_SESSION['user_id'];
+	}else{ 
+		$actual_link = $_SERVER[REQUEST_URI];
+		$_SESSION['action_url'] = $actual_link; 
+		$this->redirect()->toUrl('/login-form');
+	}
+	$request = $this->getRequest();
+	$post = $request->getPost();
+	if($request->isPost() && $post->get('supplier-btn') == 'add-supplier')
+	{
+		
+	    $cname 		= trim($post->get('cname'));
+	    $sname 		= trim($post->get('sname'));
+	    $address 	= trim($post->get('address'));
+	    
+	    $addresssec 	= trim($post->get('addresssec'));
+	    $country 		= trim($post->get('country'));
+	    $town 			= trim($post->get('town'));
+	    $postcode 		= trim($post->get('postcode'));	    	    	    
+	    $email	 		= trim($post->get('email'));
+	    $cnumber	 	= trim($post->get('cnumber'));
+
+	    $invoice	 	= trim($post->get('invoice'));
+	    $supplierData = array(
+	    		'name' 				=> $cname, 
+	    		'store_name' 		=> $sname, 
+	    		'address' 			=> $address, 	    		
+	    		'addresssec' 		=> $addresssec, 
+	    		'country' 			=> $country, 
+	    		'town' 				=> $town, 
+	    		'postcode' 			=> $postcode, 
+	    		'contact_no' 		=> $cnumber, 
+	    		'email' 			=> $email, 
+	    		'automaticinvoice'	=> $invoice,
+	    		'created_by'		=> $uid 
+	    	);
+	    $lastId = $supplierModel->save($supplierData);
+	    $this->flashMessenger()->addSuccessMessage('New supplier added');
+	    $this->redirect()->toUrl('/supplier-list');		    
+	}
+
+
+	if($request->isPost() && $post->get('supplier-btn') == 'update-supplier')
+	{
+		
+	    $sid 		= trim($post->get('sid'));
+	    $cname 		= trim($post->get('cname'));
+	    $sname 		= trim($post->get('sname'));
+	    $address 		= trim($post->get('address'));
+	    
+	    $addresssec 	= trim($post->get('addresssec'));
+	    $country 		= trim($post->get('country'));
+	    $town 		= trim($post->get('town'));
+	    $postcode 		= trim($post->get('postcode'));
+	    	    	    
+	    $email	 	= trim($post->get('email'));
+	    $cnumber	 	= trim($post->get('cnumber'));
+
+	    $invoice	 	= trim($post->get('invoice'));
+	    $supplierData = array(
+	    		'supplier_id'		=> $sid, 
+	    		'name' 			=> $cname, 
+	    		'store_name' 		=> $sname, 
+	    		'address' 		=> $address, 
+	    		'addresssec' 		=> $addresssec, 
+	    		'country' 		=> $country, 
+	    		'town' 			=> $town, 
+	    		'postcode' 		=> $postcode, 
+	    		'contact_no' 		=> $cnumber, 
+	    		'email' 		=> $email, 
+	    		'automaticinvoice'	=> $invoice,
+	    		'created_by'	=> $uid 
+	    	);
+	    $lastId = $supplierModel->save($supplierData);
+	    $this->flashMessenger()->addSuccessMessage('Suppliers update successfully');
+	    $this->redirect()->toUrl('/supplier-list');	    
+	}
+				
+	if($request->isPost() && $post->get('updateID') != '')
+	{
+		$id = $post->get('updateID') ;
+		$data = $suppliercollection->getSupplierInfoById($id);
+		return $data;	    
+	}

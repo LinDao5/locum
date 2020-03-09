@@ -1,0 +1,58 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\Bank\Model as BankModel;
+	use Gc\User\Finance\Bank\Collection as BankCollection;
+	$bankcollection = new BankCollection();
+	$bankModel 		= new BankModel();
+
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2){
+		$uid =	$_SESSION['user_id'];
+	}else{ 
+		$actual_link = $_SERVER[REQUEST_URI];
+		$_SESSION['action_url'] = $actual_link; 
+		$this->redirect()->toUrl('/login-form');
+	}
+	$request 	= $this->getRequest();
+	$post 		= $request->getPost();
+	if($request->isPost() && $post->get('bank-btn') == 'add-bank'){
+
+	    $acc_name	 	= trim($post->get('acc_name'));
+	    $acc_number	 	= trim($post->get('acc_number'));
+	    $acc_sort_code 	= trim($post->get('acc_sort_code'));
+	   
+	    $bankData = array(
+	    		'user_id'			=> $uid,	    		
+	    		'acc_name' 			=> $acc_name, 
+	    		'acc_number' 		=> $acc_number, 
+	    		'acc_sort_code' 	=> $acc_sort_code	    		
+	    	);
+	    $lastId = $bankModel->save($bankData);
+	    $this->flashMessenger()->addSuccessMessage('Bank details saved.');
+	    $this->redirect()->toUrl('/bank-details');		    
+	}
+
+
+	if($request->isPost() && $post->get('bank-btn') == 'update-bank')
+	{
+		
+	    $bank_id 		= trim($post->get('bank_id')); 
+	    $acc_name	 	= trim($post->get('acc_name'));
+	    $acc_number	 	= trim($post->get('acc_number'));
+	    $acc_sort_code 	= trim($post->get('acc_sort_code'));
+	   
+	    $bankData = array(
+	    		'bank_id'		=> $bank_id, 	    		
+	    		'acc_name' 		=> $acc_name, 
+	    		'acc_number' 	=> $acc_number, 
+	    		'acc_sort_code' => $acc_sort_code	    		
+	    	);
+	    $lastId = $bankModel->save($bankData);
+	    $this->flashMessenger()->addSuccessMessage('Bank details saved.');
+	    $this->redirect()->toUrl('/bank-details');	    
+	}
+				
+	if(!$request->isPost())
+	{		
+		$data = $bankcollection->getBankInfoByUserId($uid);
+		return $data;	    
+	}

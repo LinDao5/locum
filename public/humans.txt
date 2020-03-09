@@ -1,0 +1,19 @@
+/* the humans responsible & colophon */
+/* humanstxt.org */
+
+
+/* TEAM */
+  GotCms:
+  Site owner and maintainer
+  http://got-cms.com
+
+  Pierre Rambaud:
+  Web Development, technical leading
+  Site: http://pierrerambaud.com/
+  Google+: https://plus.google.com/u/0/107809758756474139920/posts
+  Location: Paris (FRANCE)
+
+/* SITE */
+  Standards: HTML5, CSS3
+  Components: Modernizr 2.6.1, CkEditor 3.6.3, jQuery 1.10.2, jQuery Ui 1.10.3, jQuery DateTimePicker, CodeMirror 3.16, elFinder, Jcrop, Zend Framework 2.3.3, Crevasse, Parsedown
+  Software: PostgreSQL, MySQL, PHP5, Apache2

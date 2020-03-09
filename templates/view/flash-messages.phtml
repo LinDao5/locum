@@ -1,0 +1,22 @@
+<?php if(!empty($this->layout()->flashMessages)): ?>
+    <?php foreach($this->layout()->flashMessages as $type => $messages):?>
+    	<?php 
+    		switch ($type) {
+    			case 'success':
+    					$class="alert-success";
+    				break;
+    			case 'error':
+    					$class="alert-danger";
+    				break;
+    			default:
+    					$class="alert-info";
+    				break;
+    		}
+    	?>
+        <?php foreach($messages as $message): ?>
+            <div class="alert <?php echo $class; ?>">
+             <?php echo $this->translate($message); ?>
+            </div>
+        <?php endforeach; ?>
+    <?php endforeach; ?>
+<?php endif; ?>

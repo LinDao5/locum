@@ -1,0 +1,251 @@
+    <div class="col-md-9" style="padding-right: 15px;padding-bottom: 25px;" >
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="add_item text-left pb30">
+                    <div class="col-md-12 pad0">
+                        <div class="text-center finance-page-head" style="font-size:20pt">INTERNAL REFERRALS AND INVESITGATION REQUESTS
+                        </div>
+                    </div>
+                    <div class="col-md-12 pad0">
+                        <div role="form" id="income_form" class="add_item_form form-inline">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="practice_name" style="padding-top: 6px;">Practice name</label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="practice_name" id="practice_name" placeholder="Please enter practice name" required value="<?php echo $q_data->practice_name  ?>" >
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12 no_field">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="date">Date</label>
+                                        <i class="fa fa-asterisk required-stars" aria-hidden="true"></i></div>
+                                    <div class="col-md-7">
+                                        <div class="input-group date
+                                                form_date" data-date="" data-date-format="dd MM
+                                                yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                                            <span class="input-group-addon"><span
+                                                        class="glyphicon
+                                                        glyphicon-calendar"></span></span>
+                                            <input class="form-control
+                                                    readonly hasDatepicker" size="10" type="date" value="<?php echo $q_data->date?>" name="date" id="date" placeholder="dd/mm/yyyy" maxlength="4" autocomplete="off">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="patient_id">Patient ID</label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="patient_id" id="patient_id" placeholder="Please enter paient ID" value="<?php echo $q_data->patient_id  ?>">
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="referred_to">Referred to</label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="referred_to" id="referred_to" placeholder="Please enter who you referred to" value="<?php echo $q_data->referred_to  ?>">
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;"><label for="issue_hand">Issue in hand</label></div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="issue_hand" id="issue_hand" placeholder="Please enter description of issue in hand" value="<?php echo $q_data->issue_hand  ?>">
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;"><label for="action_required">Action required</label></div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="action_required" id="action_required" placeholder="Please enter action required" value="<?php echo $q_data->action_required  ?>"></div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4"></div>
+                                    <div class="col-md-7">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input name="reminder_check"
+                                                        id="reminder_check"
+                                                        type="checkbox">
+                                                    Reminder needed
+                                                </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 new_bank_date no_field" style="display: none" id="reminder_datebox">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;">
+                                        <label for="reminder_date" >Reminder Needed Date</label>
+                                        <i class="fa fa-asterisk required-stars" style="padding-top: 6px;" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group date
+                                                form_date" data-date="" data-date-format="dd MM
+                                                yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                                            <input class="form-control readonly hasDatepicker"  type="date" name="reminder_date" id="reminder_date" placeholder="dd/mm/yyyy" required="" maxlength="10" autocomplete="off" style="text-align: center" value="<?php if ($q_data->reminder_datetime!= null){ $date = date_create($q_data->reminder_datetime); echo date_format($date,'Y-m-d'); } ?>">
+                                        </div>
+                                        <input type="hidden" id="dtp_input2" value="">
+                                        <br>
+                                    </div>
+                                    <div class="col-md-1" style="padding-top: 6px;">
+                                        <label for="reminder_time" style="margin-left: 10px;">Time</label>
+                                        <i class="fa fa-asterisk required-stars" style="padding-top: 6px;right: -2px;" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group date form_date" >
+                                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                                            <input class="form-control"  type="time" name="reminder_time" id="reminder_time" autocomplete="off" style="text-align: center" value="<?php if ($q_data->reminder_datetime!=null){ $date = date_create($q_data->reminder_datetime); echo date_format($date,'H:i'); } ?>">
+                                        </div>
+                                        <br>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4" style="padding-top: 6px;"><label for="notes">Notes</label></div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="notes" id="notes" placeholder="Please enter notes" value="<?php  echo $q_data->notes ?>">
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="checkbox col-md-4" style="padding-top: 6px;">
+                                        <label style="float: right;">
+                                                Completed 
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7" style="padding-top: 3px">
+                                         <input name="completed_tick"
+                                                    id="completed_tick"
+                                                    type="checkbox" >
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+
+                            <div class="col-md-12" style="padding-top: 20px;">
+                                <div class="form-group text-center">
+                                    <button id="submit" name="submit" class="read-common-btn grad_btn" style="display: inline">Submit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+        <script type="text/javascript">
+            $(document).ready(function(){
+                if (<?php if($q_data->reminder_datetime == null) echo 'false'; else echo 'true';  ?>){
+                    $('#reminder_check')[0].click();
+                }
+                if (<?php if ($q_data->completed_tick == null || $q_data->completed_tick == 0) echo 'false'; else echo 'true';?>){
+                    $('#completed_tick')[0].click();   
+                }
+            })
+            $('#reminder_check').click(function(){
+                if (!$('#reminder_check')[0].checked){
+
+                    $('#reminder_datebox').css('display', 'none');
+                }
+                else{
+                    $('#reminder_datebox').css('display', 'block');
+                }
+            })
+
+            $('#submit').click(function(){
+                var postdata = {
+                    'practice_name' : $('#practice_name').val(),
+                    'date' : $('#date').val(),
+                    'patient_id' : $('#patient_id').val(),
+                    'referred_to' : $('#referred_to').val(),
+                    'issue_hand' : $('#issue_hand').val(),
+                    'action_required' : $('#action_required').val(),
+                    'reminder_date' : $('#reminder_check')[0].checked ? $('#reminder_date').val() + ' ' + $('#reminder_time').val() : '',
+                    'notes' : $('#notes').val(),
+                    'completed_tick' : $('#completed_tick')[0].checked ? 1 : 0
+                }
+console.log(postdata);
+                $.ajax({
+                    url : '<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/edit1post',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    async: true,
+                    data: {'data': postdata, 'id' : <?php echo $editid ?>},
+                    beforeSend : function() {
+                        /* Logic before ajax request sent */
+                    },
+                    success: function(data){
+                        //console.log(data);
+                        if (data.success && data.success == 1) window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list1');
+                        else confirm('error');
+                    },
+                    error : function(xhr, textStatus, errorThrown) {
+                        if (xhr.status === 0) {
+                            alert('Not connect.\n Verify Network.');
+                        } else if (xhr.status == 404) {
+                            alert('Requested page not found. [404]');
+                        } else if (xhr.status == 500) {
+                            alert('Server Error [500].');
+                        } else if (errorThrown === 'parsererror') {
+                            alert('Requested JSON parse failed.');
+                        } else if (errorThrown === 'timeout') {
+                            alert('Time out error.');
+                        } else if (errorThrown === 'abort') {
+                            alert('Ajax request aborted.');
+                        } else {
+                            alert('There was some error. Try again.');
+                        }
+                    }
+                });
+            })
+            $(document).ready(function() {
+                $('#questionaire1_listbtn').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list1');
+                });
+                $('#practice_matters').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list2');
+                });
+                $('#daytoday_practice').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list3');
+                });
+                $('#localarea_protocols').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list4');
+                });
+                $('#practice_checklist').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/1');
+                });
+                $('#follow_up').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list6');
+                });
+            })
+
+        </script>
+
+</html>

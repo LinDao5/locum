@@ -1,0 +1,121 @@
+<?php 
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+?>
+<!-- Footer -->
+<footer class="footer animate" data-anim-type="fadeInUp" data-anim-delay="800">
+    <div class="container-fluid">
+        <div class="container">
+            <div class="row foocolums" >
+                <div class="col-md-4 col-sm-3 col-xs-12 fooc1">
+                    <div class="footer-logo">
+                        <img src="<?php echo $this->cdn('/frontend/locumkit-template/img').'/logo.png';?>" title="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" alt="<?php echo $this->escapeHtml($this->config()->get('site_name')); ?>" width="110px">
+                    </div>
+                    <p>To subscribe to our newsletter please enter your email below.</p>
+                    <!-- Begin MailChimp Signup Form -->
+                    <link href="//cdn-images.mailchimp.com/embedcode/classic-10_7.css" rel="stylesheet" type="text/css">
+                    <style type="text/css">
+                        div#mc_embed_signup form {  padding: 0; }
+                        input#mc-embedded-subscribe {  margin: 0;  width: 100px !important;  text-transform: uppercase; border-color: #25a8dd;  border-radius: 0;  float: left !important;  clear: none;}
+                        input#mce-EMAIL {  border-color: #fff;  border-radius: 0;     width: 66% !important;   float: left;}
+                        div#mce-responses { padding: 0 !important; margin: 0px !important; }
+                        div#mce-error-response {  margin: 0 !important; }
+                    </style>
+                    <div id="mc_embed_signup">
+                        <form action="//fudugosolutions.us13.list-manage.com/subscribe/post?u=41b543e3133f958b3c58df8b5&amp;id=fb441ef5f1" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+                            <div id="mc_embed_signup_scroll">
+                                <div class="mc-field-group form-group">
+                                    <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
+                                    <input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="btn btn-default btn-1 lkbtn">
+                                </div>
+                                <div id="mce-responses" class="clear">
+                                    <div class="response" id="mce-error-response" style="display:none"></div>
+                                    <div class="response" id="mce-success-response" style="display:none"></div>
+                                </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+                                <div style="position: absolute; left: -5000px; top:0" aria-hidden="true"><input type="text" name="b_41b543e3133f958b3c58df8b5_fb441ef5f1" tabindex="-1" value=""></div>
+                                
+                            </div>
+                        </form>
+                    </div>
+                    <script type='text/javascript' src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js'></script><script type='text/javascript'>(function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';fnames[1]='FNAME';ftypes[1]='text';fnames[2]='LNAME';ftypes[2]='text';}(jQuery));var $mcj = jQuery.noConflict(true);</script>
+                    <!--End mc_embed_signup-->
+                    
+                    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css">
+                </div> 
+                <div class="col-md-2 col-sm-3 col-xs-12 fooc2">
+                    <h5>Useful Links</h5>
+                    <ul class="carretlist">
+                        <li><a href="<?php echo $this->serverUrl();?>/about">About Us</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/contact">Contact Us</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/term-condition">Terms of use</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/privacy-policy">Privacy Policy</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/sitemap">Sitemap</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 col-sm-3 col-xs-12 fooc3">
+                    <h5>Recent Posts</h5>
+                    <ul class="carretlist">
+                        <?php 
+                            $i=0; 
+                            $now = time(); // or your date as well
+                            $arr = $this->document('recent-posts')->getAvailableChildren();                             
+                            if(isset($arr)){
+                                foreach($financeHelper->getpostblog() as $blog):
+                                    $create_date = strtotime($blog['create_at']);
+                                    $c_date =  date("d M Y",$create_date);
+                                    $datediff = $now - $create_date;
+                                    $today = floor($datediff/(60*60*24));
+
+                                    if($i< 3){
+                        ?>
+                            <li><a href="<?php echo $this->serverUrl().'/blog/'.$blog['slug'] ; ?>"><?php echo $this->translate($blog['title']) ;?></a><span><i class="fa fa-calendar" aria-hidden="true"></i><?php echo $c_date; ?></span></li>
+                        <?php } $i++; endforeach; } ?>
+                    </ul>
+                </div> 
+                 
+                <div class="col-md-3 col-sm-3 col-xs-12 fooc4">
+                    <h5>Contact Us</h5>
+                    <ul>
+                        <?php if($this->config()->get('site_mobile')){ ?>
+                            <li><a href="tel:<?php echo $this->config()->get('site_mobile') ?>"><i class="fa fa-phone" aria-hidden="true"></i><?php echo $this->config()->get('site_mobile') ?></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('site_email')){ ?>
+                            <li><a href="mailto:<?php echo $this->config()->get('site_email') ?>"><i class="fa fa-envelope" aria-hidden="true"></i><?php echo $this->config()->get('site_email') ?></a></li>
+                        <?php } ?>   
+                    </ul>                   
+                    <ul class="list-inline socialicon">
+                        <?php if($this->config()->get('fb')){ ?>
+                            <li><a href="<?php echo $this->config()->get('fb') ?>" target="_blank"><i class="fa fa-facebook-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>                        
+                        <?php if($this->config()->get('gp')){ ?>
+                            <li><a href="<?php echo $this->config()->get('gp') ?>" target="_blank"><i class="fa fa-google-plus-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('li')){ ?>
+                            <li><a href="<?php echo $this->config()->get('li') ?>" target="_blank"><i class="fa fa-linkedin-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('tw')){ ?>
+                            <li><a href="<?php echo $this->config()->get('tw') ?>" target="_blank"><i class="fa fa-twitter-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('pi')){ ?>
+                            <li><a href="<?php echo $this->config()->get('pi') ?>" target="_blank"><i class="fa fa-pinterest-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                    </ul> 
+                </div> 
+            </div>
+        </div>
+    </div>  
+    <div class="container-fluid copyright">
+        <div class="container">
+            <div class="row"> 
+            <div class="col-md-12 col-sm-12 col-xs-12 text-center">
+                    <p>Copyright © 2019 Locumkit - All Rights Reserved.</p>
+                 </div>
+            </div>
+        </div>
+    </div>         
+</footer>
+<!-- .Footer -->
+<!------------------ Add Cookie Policy -------------------------->
+<script type="text/javascript" id="cookieinfo" src="<?php echo $this->cdn('/frontend/locumkit-template/new-design-assets/js/'); ?>cookieinfo.min.js" data-bg="#ffffff" data-fg="#000000" data-link="#00a8dd" data-cookie="CookieInfoScript" data-text-align="left" data-close-text="I Agree">
+</script>
+<?php echo $this->partial('alert-pop-up'); ?>

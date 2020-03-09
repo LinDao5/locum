@@ -1,0 +1,269 @@
+<?php
+/**
+ * This source file is part of FUDUGO. *
+ * 
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User\Feedback
+ * @author     Suraj Wasnik (suraj.wasnik0126@gmail.com)
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.fudugo.com
+ */
+
+?>
+
+<form class="relative form-horizontal" action="<?php echo   $_SERVER['REQUEST_URI']; ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <inpute type="hidden" name="user_type" value="<?php echo $this->questionData->getUserType(); ?>">
+	<div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_from">Feedback From</label>        
+        <div class="col-lg-10">
+            <p class="form-control" readonly style="text-transform: capitalize;"><?php echo $this->questionData->getUserType() == 2 ? $this->questionData->freUserInfo : $this->questionData->empUserInfo; ?></p>                 
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_to">Feedback To</label>        
+        <div class="col-lg-10">
+            <p class="form-control" readonly style="text-transform: capitalize;"><?php echo $this->questionData->getUserType() == 2 ? $this->questionData->empUserInfo : $this->questionData->freUserInfo ; ?></p>                            
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="average_rate">Average Rate</label>        
+        <div class="col-lg-10">
+            <div id="stars-rating col-lg-5" class="user-rating" style="width: 130px;  float: left;  padding: 6px 0;">
+                <?php 
+                    $totalStar = 5;
+                    $ratingStar = $this->questionData->getRating();
+                    $currentStar = 1;
+                    while($totalStar > 0){ 
+                        if($ratingStar >= $currentStar){
+                            $starClass = 'glyphicon-star';
+                        }else{                                                 
+                            $starClass = 'glyphicon-star-empty'; 
+                        }
+                ?>
+                    <span class="glyphicon <?php echo $starClass; ?>"></span>
+                <?php $totalStar--; $currentStar++; } ?>                
+            </div> 
+            <div id="stars-rating col-lg-5" style="width: 130px;  float: left;  padding: 8px 0;">
+            	<a href="javascript:void(0)" id="show-details-feedback">Show Deatils</a>
+            </div>
+            <div id="details-feedback" style="display:none;">
+                <?php 
+                    $qusFeedbackRateArray = unserialize($this->questionData->getFeedback());
+                    $qusCount = 1;
+                    foreach ($qusFeedbackRateArray as $qusId => $feedbackRate) {
+                        /*echo "<pre>";
+                        print_r($feedbackRate);
+                        echo "</pre>";*/
+                        $i = $qusCount;
+                ?>
+                    <div class="feedback-qus-ans">
+                        <p class="qus"><span>Qus. <?php echo $qusCount++; ?>)</span><?php echo $feedbackRate['qus'] ?></p>
+                        <div class="user-rating">                             
+                            <!-- <div class="pull-left"><p style="font-size: 18px; margin-left: 10px;">                  
+                                <?php 
+                                    $totalStar = 5;
+                                    $ratingStar = $feedbackRate['qusRate'];
+                                    $currentStar = 1;
+                                    while($totalStar > 0){ 
+                                        if($ratingStar >= $currentStar){
+                                            $starClass = 'glyphicon-star';
+                                        }else{                                                 
+                                            $starClass = 'glyphicon-star-empty'; 
+                                        }
+                                ?>
+                                    <span class="glyphicon <?php echo $starClass; ?>"></span>
+                                <?php $totalStar--; $currentStar++; } ?>
+                            </p></div> -->
+                        </div>
+                        <div style="clear:both">                            
+                            <div class="rating pull-left" id="note-rate-<?php echo $i ?>">
+                                <span <?php echo ($feedbackRate['qusRate'] == 5) ? 'class="checked"':''; ?>><input type="radio" name="rating"  value="5"  <?php echo ($feedbackRate['qusRate'] == 5) ? 'checked="checked"':''; ?> ><label for="str5"></label></span>
+                                <span <?php echo ($feedbackRate['qusRate'] == 4) ? 'class="checked"':''; ?>><input type="radio" name="rating"  value="4" <?php echo ($feedbackRate['qusRate'] == 4) ? 'checked="checked"':''; ?>><label for="str4"></label></span>
+                                <span <?php echo ($feedbackRate['qusRate'] == 3) ? 'class="checked"':''; ?>><input type="radio" name="rating"  value="3" <?php echo ($feedbackRate['qusRate'] == 3) ? 'checked="checked"':''; ?>><label for="str3"></label></span>
+                                <span <?php echo ($feedbackRate['qusRate'] == 2) ? 'class="checked"':''; ?>><input type="radio" name="rating"  value="2" <?php echo ($feedbackRate['qusRate'] == 2) ? 'checked="checked"':''; ?>><label for="str2"></label></span>
+                                <span <?php echo ($feedbackRate['qusRate'] == 1) ? 'class="checked"':''; ?>><input type="radio" name="rating"  value="1" <?php echo ($feedbackRate['qusRate'] == 1) ? 'checked="checked"':''; ?>><label for="str1"></label></span>
+                                <input type="hidden" name="ratevalue[]" id="rate-val-<?php echo $i ?>" value="<?php echo $feedbackRate['qusRate']; ?>">
+                                <input type="hidden" name="fdqus[]" id="fd-qus-emp-<?php echo $i ?>" value="<?php echo $feedbackRate['qus']; ?>">
+                                <input type="hidden" name="fdqusid[]" id="fd-qus-id-<?php echo $i ?>" value="<?php echo $feedbackRate['qusId']; ?>">
+                            </div> 
+                        </div>                        
+                    </div>
+                <?php } ?>
+                <input type="hidden" name="total-rates" id="total-rates" value="<?php echo $ratingStar; ?>">
+                <div class="feedback-comment">
+                    <label class="required control-label " for="feedback_comment">Feedback Comment</label>        
+                    <div class="f-comment">
+                        <p class="form-control" readonly><?php echo  $this->questionData->getComments() != '' ?  $this->questionData->getComments() : 'No comments...'; ?></p>                            
+                    </div>
+                </div> 
+
+                <?php if($this->questionData->disputeComment != ''){ ?>
+                    <div class="feedback-comment dispute">
+                        <label class="required control-label " for="feedback_comment">Dispute Comment</label>
+                        <div class="f-comment">
+                            <p class="form-control" readonly><?php echo  $this->questionData->disputeComment != '' ?  $this->questionData->disputeComment : 'No comments...'; ?></p>
+                        </div>
+                    </div>
+                <?php } ?>
+          	
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_status">Feedback Status</label>        
+        <div class="col-lg-10">            
+            <select name="status" class="form-control" id="fd_qus_status">
+            	<!--<option value="0" <?php echo $this->questionData->getStatus()==0 ? 'Selected' : ''; ?>>Pending</option>-->
+                <option value="1" <?php echo $this->questionData->getStatus()==1 ? 'Selected' : ''; ?>>Approved</option>                
+                <option value="2" <?php echo $this->questionData->getStatus()==2 ? 'Selected' : ''; ?>>Dispute Pending</option>                
+				<option value="3" <?php echo $this->questionData->getStatus()==3 ? 'Selected' : ''; ?>>Dispute Approved</option>				
+			</select>                      
+        </div>
+    </div>
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="Save" name="submit">
+</form>
+
+<style type="text/css">
+	div#details-feedback {
+	    clear: both;
+	    padding: 10px;
+	    border: 1px solid #ccc;
+	    border-radius: 3px; 
+        float: left;
+        width: 100%;
+	}
+	div#details-feedback p{
+		font-weight: bold;
+	}
+	.user-rating{
+		font-size: 16px; 
+		color: #df7900;
+	}
+    .feedback-comment {
+        border-top: 1px solid #ccc;
+        margin-top: 15px;
+        display:none;
+    }
+    .feedback-comment.dispute {
+        display:block;
+    }
+    .feedback-comment label.required.control-label {
+        margin: 10px 0;
+    }
+    .f-comment p {
+        font-weight: bold;
+        height: auto;
+    }
+    .feedback-qus-ans {
+        border-bottom: 1px solid #cfcfcf;
+        padding: 10px;
+        margin-bottom: 10px;
+        background: #fff;
+        border-radius: 3px;
+        float: left;
+        width: 100%;
+    }
+    .feedback-qus-ans:last-child {
+        border-bottom: 0px solid #cfcfcf;
+    }
+    p.qus{
+        font-style: italic;
+    }
+    p.qus span {
+        padding-right: 8px;
+    }
+
+    /* Rating selected star */
+    .rating span{float:right;position:relative;}
+    .rating span input{position:absolute;top:0px;left:0px;opacity:0;width:30px;height:25px;cursor:pointer;}
+    .rating span label{display:inline-block;width:30px;height:30px;text-align:center;color:#FFF;background:url('http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/public/frontend/locumkit-template/css/img/rating.png');font-size:30px;margin-right:2px;line-height:30px;border-radius:50%;-webkit-border-radius:50%;cursor:pointer;}
+    .rating span:hover ~ span label,
+    .rating span:hover label,
+    .rating span.checked label,
+    .rating span.checked ~ span label{background:url('http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/public/frontend/locumkit-template/css/img/rating.png');background-position:30px 28px;color:#FFF;}
+    span.feedback-name-icon i, span.feedback-email-icon i{width: 36px;position:absolute;left:16px;top:1px;color:#00A9E0;font-size:20px;border-right:2px solid;padding:5px 10px 7px 10px;background:#ECECEC;border-top-left-radius:5px;border-bottom-left-radius:5px;}
+    input.form-control.margin-bottom.feedback-name, input.form-control.margin-bottom.feedback-email{padding-left:45px;}
+</style> 
+<script type="text/javascript">
+	jQuery("a#show-details-feedback").click(function(){
+		jQuery("#details-feedback").toggle(1000);
+	});
+
+
+
+
+
+    jQuery(document).ready(function(){
+    //  Check Radio-box
+        //alert("#note-rate-"+i+" input:radio");
+        //jQuery("div[id*='note-rate-']").click( function(){
+            //var id = jQuery(this).attr('id');
+            //var qusnum = id.replace('note-rate-',' ').trim();
+            //jQuery("#"+id+" input:radio").attr("checked", false);
+            jQuery("div[id*='note-rate-'] input:radio").click(function(){
+                var id = jQuery(this).parent().parent().attr('id');
+                var qusnum = id.replace('note-rate-',' ').trim();
+                jQuery("#"+id+" input:radio").attr("checked", true);
+                jQuery("#"+id+" span").removeClass('checked');
+                jQuery(this).parent().addClass('checked');
+                jQuery("#rate-val-"+qusnum).val(jQuery(this).val());
+                var values = [];
+                var coutQus = jQuery("input[name='ratevalue[]']").length;
+                jQuery("input[name='ratevalue[]']").each(function() {
+                    values.push(isNaN(parseInt(jQuery(this).val())) ? 0 : parseInt(jQuery(this).val()));
+                });
+                var totalRateValues = 0;
+                jQuery.each(values, function(){
+                    totalRateValues += this;
+                });
+                var perOfRating = (totalRateValues/(coutQus*5))*100;
+                jQuery("#feedback-progress-bar").attr("aria-valuenow",perOfRating);
+                var pWidth = Math.round(perOfRating)+"%";
+                jQuery("#feedback-progress-bar").css("width",pWidth);
+                jQuery("#feedback-progress-bar").html('<div id="percentRating">'+perOfRating+"%</div>");
+                jQuery("#total-rates").val((totalRateValues/(coutQus)).toFixed(1)); 
+
+            });
+        //});
+
+        jQuery("div[id*='qus-']").click( function(){
+            var id = jQuery(this).attr('id');                    
+            if (!jQuery("#"+id+" a").hasClass("active")) {
+                jQuery("#"+id+" a").addClass("active");
+                jQuery('#'+id+' a span i').addClass("fa-minus");
+                jQuery('#'+id+' a span i').removeClass("fa-plus");
+            }else{              
+                jQuery("#"+id+" a").removeClass("active");
+                jQuery('#'+id+' a span i').removeClass("fa-minus");
+                jQuery('#'+id+' a span i').addClass("fa-plus");
+            }
+            
+        });
+    });
+    
+
+
+
+
+    function isValidate() {     
+        var valid = 1;
+        jQuery("input[name='ratevalue[]']").each(function() {                        
+            if (jQuery(this).val() == '' ) {
+                valid = 0;
+            }
+        });
+        if (jQuery("input[name='t_and_c']").prop("checked") == false  && valid == 1) {           
+            valid = 0;
+        }
+
+        return valid;       
+    }
+    
+        
+
+</script>

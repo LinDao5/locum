@@ -1,0 +1,125 @@
+<?php
+/**
+ * PHP Version >=5.3
+ *
+ * @category   Gc_Application
+ * @package    GcFrontend
+ * @subpackage Controller
+ */
+
+ namespace GcFrontend\Controller;
+ use Gc\Mvc\Controller\Action;
+ use Gc\view\Helper\Config as ConfigModule;
+ use Gc\Core\Config as CoreConfig;
+ use Gc\Registry;
+
+ class FunctionsController extends Action
+ {
+   // job accept count
+   	public function jobAcceptCount($freelancer_id,$adapter){
+		$sql_accept="select ja.* from job_action ja where ja.f_id='$freelancer_id' and ja.action=3"; // job accepted count 
+		$results_accept = $adapter->query($sql_accept, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_accept = $results_accept->current();
+		$count_accept = $results_accept->count();
+		return $count_accept;
+	}
+   // User blocked count	
+   public function blockUserCount($freelancer_id,$adapter){
+		$sql_bkl_user="select * from block_user where frelan_id='$freelancer_id'"; // block user count 
+		$results_bkl = $adapter->query($sql_bkl_user, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_bkl = $results_bkl->current();
+		$count_date_bkl = $results_bkl->count();
+		return $count_date_bkl;
+	}
+   // User block date :not Available on date	
+   public function userBlockDate($freelancer_id,$job_date,$adapter){
+   		$job_date = str_replace("/","-",$job_date);
+   		$job_date = date('Y-n-j', strtotime($job_date));
+		$sqlString_block="select * from user_work_calender where uid='".$freelancer_id."'";	
+		$results_block = $adapter->query($sqlString_block, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_block = $results_block->current();
+		$block_date_array = unserialize($result_data_block['block_date']);
+		$count_block_date = 0;
+		foreach ($block_date_array as $key => $block_date) {
+		 	if ($job_date == $block_date['date']) {
+		 		$count_block_date = 1;
+		 		break;
+		 	}
+		}
+		return $count_block_date;
+	}
+
+	//Get freelancer book dates 
+	public function getBookDate($uid,$job_date,$adapter){
+		$job_date = str_replace("/","-",$job_date);
+   		$job_date = date('Y-n-j', strtotime($job_date));
+		$pCurrentDate = date("Y-m-d");
+		$sqlGetPBookings = "SELECT * from freelancer_private_job WHERE priv_job_start_date >= '$pCurrentDate' AND f_id = $uid";
+		$getPBooking = $adapter->query($sqlGetPBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getPCurrentBookings = $getPBooking->toArray();
+		if (!empty($getPCurrentBookings)) {
+		foreach($getPCurrentBookings as $pBooking){
+			$bookDates[] = date('Y-n-j', strtotime($pBooking['priv_job_start_date']));  
+			}
+		}
+
+		/* Get current month Website job bookings */
+		$sqlGetBookings = "SELECT job_date FROM job_post WHERE job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) and MONTH (STR_TO_DATE(job_date, '%d/%m/%Y')) = MONTH(NOW()) "; 
+		//$sqlGetBookings = "SELECT job_date,job_post_desc FROM job_post WHERE job_date >= '$currentdate' AND job_status = 4 AND job_id IN (SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) ";
+		$getBooking = $adapter->query($sqlGetBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getCurrentBookings = $getBooking->toArray();
+		/* Gell All Website job bookings */
+		$sqlGetAllBookings = "SELECT job_date,job_post_desc FROM job_post WHERE job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) 
+		"; 
+
+
+		$getAllBooking = $adapter->query($sqlGetAllBookings, $adapter::QUERY_MODE_EXECUTE);
+		$getAllCurrentBookings = $getAllBooking->toArray();
+
+		if (!empty($getAllCurrentBookings)) {
+			foreach ($getAllCurrentBookings as $key => $allBooking) {
+				$timestamp = strtotime(str_replace('/', '-', $allBooking['job_date']) );
+				$bookDates[] = date('Y-n-j', $timestamp);
+			}
+		}
+		$count_book_date = 0;
+		foreach ($bookDates as $key => $bookDate) {
+			//echo "$job_date == $bookDate";
+			if ($job_date == $bookDate) {
+				$count_book_date = 1;
+				break;
+			}
+		}
+		return $count_book_date;
+	}
+
+
+	// 
+	public function userExpireCount($freelancer_id,$adapter){
+		$sqlString_expire="select * from user_package_details where user_id='".$freelancer_id."' and package_status=0";	
+		$results_expire = $adapter->query($sqlString_expire, $adapter::QUERY_MODE_EXECUTE); 
+		$count_expire = $results_expire->count();
+		return $count_expire;
+	}
+	// Job start time
+   	public function jobStartTime($emp_id,$adapter){
+		$sqlGetStartTime="SELECT store_unique_time FROM user_extra_info WHERE uid='$emp_id'";	
+	    $getStartTime = $adapter->query($sqlGetStartTime, $adapter::QUERY_MODE_EXECUTE);
+	    $startTimeObj = $getStartTime->current(); 
+	    $startTimeArray = unserialize($startTimeObj['store_unique_time']);
+		return $startTimeArray['start_time'];
+	}
+
+	/* Multi store time formater */
+	public function setTime($data,$index)
+    {
+    	$records = '';
+    	foreach ($data as $key => $value) {
+    		$records[] = array(
+    				$key =>$value[$index]
+    			);
+    	}
+    	return serialize($records);
+    }
+	
+ }

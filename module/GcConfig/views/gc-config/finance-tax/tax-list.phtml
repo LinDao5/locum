@@ -1,0 +1,97 @@
+<?php
+	/**
+	 * Develop by Suraj Wasnik (suraj.wasnik0126@gmail.com) at FuduGo Solutions.
+	 */
+
+	$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->financeTax));
+	$paginator->setItemCountPerPage(20);
+	$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<section class="add-new-record">
+	<div class="pull-right">
+		<a href="<?php echo $this->url('config/user/finance/tax/create'); ?>" class="btn btn-warning"><i class="glyphicon glyphicon-plus-sign"></i> Add New</a>
+	</div>
+</section>
+<?php if($paginator->count() == 0):?>
+	<div><h3 style="float: left;text-align: center;width: 100%;">No record found</h3></div>
+<?php else: ?>
+	<table class="table clickable table-striped table-hover">
+	    <colgroup>
+	        <col width="1%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	        <col width="10%">
+	    </colgroup>
+	    <thead>
+	        <tr>
+	            <th><?php echo $this->escapeHtml($this->translate('Sr.')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Finance Year')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Allowance Rate')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Allowance Rate Tax (%)')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Basic Rate')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Basic Rate Tax (%)')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Higher Rate')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Higher Rate Tax (%)')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Additional Rate')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Additional Rate Tax (%)')); ?></th>
+	            <th><?php echo $this->escapeHtml($this->translate('Ltd. Tax (%)')); ?></th>
+	            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+	            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+	        </tr>
+	    </thead>
+	    <tbody>
+	        <?php $i = 1; foreach ($paginator as $financeTax): ?>
+	            <tr>
+	                <td><?php echo $i++; ?></td>
+	                <td><?php echo $this->escapeHtml($financeTax->getFinanceYear()); ?></td>
+	                <td><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml($financeTax->getPersonalAllowanceRate()); ?></td>
+	                <td><?php echo $this->escapeHtml($financeTax->getPersonalAllowanceRateTax()); ?></td>
+	                <td><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml($financeTax->getBasicRate()); ?></td>
+	                <td><?php echo $this->escapeHtml($financeTax->getBasicRateTax()); ?></td>
+	                <td><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml($financeTax->getHigherRate()); ?></td>
+	                <td><?php echo $this->escapeHtml($financeTax->getHigherRateTax()); ?></td>
+	                <td><?php echo $this->config()->get('site_currency') ?><?php echo $this->escapeHtml($financeTax->getAdditionalRate()); ?></td>
+	                <td><?php echo $this->escapeHtml($financeTax->getAdditionalRateTax()); ?></td>
+	                <td><?php echo $this->escapeHtml($financeTax->getCompanyLimitedTax()); ?></td>
+	                <td class="text-center">
+	                    <a href="<?php echo $this->url('config/user/finance/tax/edit', array('id' => $financeTax->getId())); ?>" class="edit-line">
+	                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+	                    </a>
+	                </td>
+	                <td class="text-center">
+	                    <a href="<?php echo $this->url('config/user/finance/tax/delete', array('id' => $financeTax->getId())); ?>" class="delete-line">
+	                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+	                    </a>
+	                </td>
+	            </tr>
+	        <?php endforeach; ?>
+	    </tbody>
+	</table>
+	<div class="pagination">
+        <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/finance/tax'));?>
+    </div>
+<?php endif; ?>
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+
+<style type="text/css">
+	table tr th, table tr td{
+		text-align: center;
+	}
+	section.add-new-record {
+    	float: left;
+	    width: 100%;
+	    margin: 10px 0 0px;
+	    border-bottom: 2px solid #ccc;
+	    padding-bottom: 20px;
+	}
+</style>

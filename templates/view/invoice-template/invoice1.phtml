@@ -1,0 +1,216 @@
+<?php
+
+use GcFrontend\Controller\JobmailController as JobmailController;
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+use GcFrontend\Controller\DbController as DbController;
+use Gc\User\Finance\Bank\Collection as BankCollection;
+use Gc\Registry;
+
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$financeHelper = new FinanceHelper();
+$jobmailController = new JobmailController();
+$bankcollection = new BankCollection();
+$currency = $this->config()->get('site_currency');
+
+$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+$site_name = $configGet->get('site_name');
+$adminEmail = $configGet->get('mail_from');
+if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != '') {
+    $uid = $_SESSION['user_id'];
+} else {
+    exit;
+}
+$invoiceno = array();
+if ($action == 'sent') {                                      //todo i
+    foreach ($jobdata as $key => $job) {
+        $invoiceno[$key] = $financeHelper->generateInvoicenum($data['supplier_email'], $adminEmail, $job['job_rate'], $uid);
+    }
+
+} else {
+    $invoiceno = '--';
+}
+
+
+/*echo "<pre>";
+print_r($data);
+echo "</pre>";*/
+
+/*Get Bank Details */
+$bank_details_array = '';
+$is_bank_details = false;
+if ($uid) {
+    $bank_details_array = $bankcollection->getBankInfoByUserId($uid);
+}
+
+$tempalte = '<div style="width: 700px;margin:0 auto;"><div style=" border: 2px solid #dedede;float: left; width: 100%;" class="prevboxshadow"><div class="mail-header" style="width: 100%; float: left; clear: both; background: rgb(0, 169, 224) none repeat scroll 0px 0px; border-bottom:2px solid #dedede;">';
+
+$tempalte .= '</div><div style="margin-bottom: -5px; float: left; width: 100%;">';
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<section style="float: left; width: 100%;">';
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<div  style="text-align: center; float: left; width: 100%;">';
+$tempalte .= '<h1 style="margin: 0; border-bottom:2px solid #dedede; padding: 10px 0;text-transform: capitalize;font-size: 23px;font-weight: 600;background: #e0e0e0;color: #000;">Invoice</h1>';
+$tempalte .= '</div>';
+$tempalte .= '<div style="text-align: right;float: left;">';
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<table style="width: 100%;    border-spacing: 0;">';
+$tempalte .= '<tbody>';
+$tempalte .= '<tr>';
+$tempalte .= '<td style="padding: 15px; text-align:left;">';
+$tempalte .= '<div class="invoice-user-info" style="width: 315px;"><div style="font-weight: bold;border-bottom: 1px solid #ccc;padding-bottom: 5px;margin-bottom: 10px;">Supplier Information</div><div><span><b>Name :</b> </span>' . ucfirst($data['supplier_name']) . '</div>';
+$tempalte .= '<div><span><b>Address :</b> </span> ' . $data['supplier_address'] . ', ' . $data['supplier_address2'] . '<br/>' . $data['supplier_town'] . ', ' . $data['supplier_country'] . ', ' . $data['supplier_postcode'] . '</div><div><b>Email :</b> ' . $data['supplier_email'] . '</div></div>';
+$tempalte .= '</td>';
+//$tempalte .= '<td style=" width: 40%;text-align:left; padding:15px;"><div style="font-weight: bold;border-bottom: 1px solid #ccc;padding-bottom: 5px;margin-bottom: 10px;">Locum Information</div><div><span><b>Name :</b> </span>' . ucfirst($data['your_name']) . '</div><div><span><b>Email :</b> </span>' . $data['your_email'] . '</div><div><b>Invoice number : </b> ' . $invoiceno . '</div><div><b>Invoice Date :</b> ' . date("d/m/Y") . '</div><!--<div>Due Date :
+// ' . date("d/m/Y") . '</div>--></td>';
+
+
+if (!empty($invoiceno)) {                                      //todo i
+    foreach ($invoiceno as $key => $value) {
+        $tempalte .= '<td style=" width: 40%;text-align:left; padding:15px;"><div style="font-weight: bold;border-bottom: 1px solid #ccc;padding-bottom: 5px;margin-bottom: 10px;">Locum Information</div><div><span><b>Name :</b> </span>' . ucfirst($data['your_name']) . '</div><div><span><b>Email :</b> </span>' . $data['your_email'] . '</div><div><b>Invoice number : </b> ' . $value . '</div><div><b>Invoice Date :</b> ' . date("d/m/Y") . '</div><!--<div>Due Date :
+ ' . date("d/m/Y") . '</div>--></td>';
+    }
+
+} else {
+    $tempalte .= '<td style=" width: 40%;text-align:left; padding:15px;"><div style="font-weight: bold;border-bottom: 1px solid #ccc;padding-bottom: 5px;margin-bottom: 10px;">Locum Information</div><div><span><b>Name :</b> </span>' . ucfirst($data['your_name']) . '</div><div><span><b>Email :</b> </span>' . $data['your_email'] . '</div><div><b>Invoice number : </b> ' . $invoiceno . '</div><div><b>Invoice Date :</b> ' . date("d/m/Y") . '</div><!--<div>Due Date :
+ ' . date("d/m/Y") . '</div>--></td>';
+}
+
+
+$tempalte .= '</tr>';
+$tempalte .= '</tbody>';
+$tempalte .= '</table>';
+$tempalte .= '</div>';
+
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<table style="border-top: 2px solid #dedede; width: 100%;border-collapse:collapse;">'; //class="table table-striped"
+$tempalte .= '<thead style="background: #e0e0e0;">';
+$tempalte .= '<tr style="height: 45px; border-bottom: 2px solid #dedede;">';
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Job No.</th>';
+/*$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Title</th>';
+if($jobdata['description'] != '')
+    $tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Description</th>';*/
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Date</th>';
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Amount</th>';
+$tempalte .= '</tr>';
+$tempalte .= '</thead>';
+
+/* job test list items */
+
+
+foreach ($jobdata as $key => $job) {
+    $tempalte .= '<tbody>';
+    $tempalte .= '<tr style="height: 45px;">';
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $job['job_id'] . '</td>';
+    /*$tempalte .= '<td style="text-align: center; padding: 15px 0;">'.$jobdata['job_title'].'</td>';
+    if($jobdata['description'] != '')
+        $tempalte .= '<th style="text-align: center; padding: 15px 0;">'.$jobdata['description'].'</th>';*/
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . date('d/m/Y', strtotime($job['job_date'])) . '</td>';
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $currency . $financeHelper->setPriceFormate($job['job_rate']) . '</td>';
+    $tempalte .= '</tr>';
+
+    $tempalte .= '<input name="input2" type="text" value='.$job['id'].'/>';
+    $tempalte .= '<input name="input1"  type="checkbox" value='.$job['id'].'/>';
+
+    $tempalte .= '<input type="hidden" name="incomedata_ii[]" value='.$job['id'].'/>';
+
+}
+
+
+$allJobRate = 0;
+$count = count($jobdata);
+for ($i = 0; $i < $count; $i++) {
+    $allJobRate = $allJobRate + $jobdata[$i]['job_rate'];
+}
+//var_dump($allJobRate);
+
+$tempalte .= '<tr style="height: 45px;">';
+$tempalte .= '<td></td>';
+/*$tempalte  .= '<td></td>';
+if($jobdata['description'] != '')
+$tempalte  .= '<td></td>';*/
+$tempalte .= '<td  style="text-align: center;border-top: 2px solid black; padding: 20px 0;"><b>TOTAL DUE</b></td>';
+$tempalte .= '<td  style="text-align: center;border-top: 2px solid black; padding: 20px 0;"><b>' . $currency . $financeHelper->setPriceFormate($allJobRate) . '</b></td>';
+$tempalte .= '</tr>';
+$tempalte .= '</tbody>';
+$tempalte .= '</table>';
+$tempalte .= '</div>';
+
+$tempalte .= '</div>';
+
+if (!empty($data['acc_name'])) {
+    $is_bank_details = true;
+    $tempalte .= '<table style="border-top: 2px solid #dedede; width: 100%;border-collapse:collapse;">'; //class="table table-striped"
+    $tempalte .= '<thead style="background: #e0e0e0;">';
+    $tempalte .= '<tr style="height: 45px; border-bottom: 2px solid #dedede;">';
+    $tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;" colspan="2">Please remit to</th>';
+    $tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;"></th>';
+    $tempalte .= '</tr>';
+    $tempalte .= '</thead>';
+    $tempalte .= '<tbody>';
+    $tempalte .= '<tr style="height: 35px;">';
+    $tempalte .= '<td  style="text-align: right;border-bottom: 1px solid #e4e4e4;padding: 5px 0;width: 50%;"><b>Account name <span style="float: right; width: 10px;">:</span></b></td>';
+    $tempalte .= '<td  style="text-align: left;border-bottom: 1px solid #e4e4e4;padding: 5px;">' . $data['acc_name'] . '</td>';
+    $tempalte .= '</tr>';
+    $tempalte .= '<tr style="height: 35px;">';
+    $tempalte .= '<td  style="text-align: right;border-bottom: 1px solid #e4e4e4;padding: 5px 0;width: 50%;"><b>Account number <span style="float: right; width: 10px;">:</span></b></td>';
+    $tempalte .= '<td  style="text-align: left;border-bottom: 1px solid #e4e4e4;padding: 5px;">' . $data['acc_number'] . '</td>';
+    $tempalte .= '</tr>';
+    $tempalte .= '<tr style="height: 35px;">';
+    $tempalte .= '<td  style="text-align: right;padding: 5px 0;width: 50%;"><b>Account sort code <span style="float: right; width: 10px;">:</span></b></td>';
+    $tempalte .= '<td  style="text-align: left;padding: 5px;">' . $data['acc_sort_code'] . '</td>';
+    $tempalte .= '</tr>';
+    $tempalte .= '</tbody>';
+    $tempalte .= '</table>';
+
+}
+
+$tempalte .= '</section>';
+$tempalte .= '</div></div></div></div></div>';
+?>
+
+
+<?php
+
+if ($action == 'sent') {
+//    $sts = $jobmailController->invoiceMail($tempalte, $data['supplier_email'], $data['supplier_name'], $invoiceno, $uid, $is_bank_details, $adapter);
+//    if ($sts) {
+////        $financeHelper->updateIncomeInvoice($jobdata['id'], $invoiceno);
+//        foreach ($jobdata as $key => $value){
+//            $financeHelper->updateIncomeInvoice($value['id'], $invoiceno);   //todo i
+//        }
+//        header("Location: /send-invoice?success=true");
+//        exit();
+//    } else {
+//        header("Location: /send-invoice?success=false");
+//        exit();
+//    }
+//} else {
+//    /* responsible for Invoice part */
+//    echo $tempalte;
+
+
+//        foreach ($jobdata as $key => $job){
+//            $financeHelper->updateIncomeInvoice($job['id'],3);
+//        }
+
+
+    foreach ($jobdata as $key => $data) {
+        if (!empty($invoiceno)) {
+            $financeHelper->updateIncomeInvoice($data['id'], $invoiceno[0]);
+        } else {
+            $financeHelper->updateIncomeInvoice($data['id'], 1);
+        }
+    }
+
+
+    header("Location: /send-invoice?success=true");
+    exit();
+
+} else {
+    /* responsible for Invoice part */
+    echo $tempalte;
+}
+?>

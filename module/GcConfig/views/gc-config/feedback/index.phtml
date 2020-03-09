@@ -1,0 +1,191 @@
+<?php
+/**
+ * This source file is part of FUDUGO. *
+ * 
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User\Feedback
+ * @author     Suraj Wasnik (suraj.wasnik0126@gmail.com)
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.fudugo.com
+ */
+
+$paginatorEmp = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->fdQuestionsEmp));
+$paginatorEmp->setItemCountPerPage(20);
+$paginatorEmp->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+$paginatorFre = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->fdQuestionsFre));
+$paginatorFre->setItemCountPerPage(20);
+$paginatorFre->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<?php
+    $qus = 'fre';
+    if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+       $qus = 'emp';
+    }
+    
+    
+    
+    if (isset($_GET['c']) && $_GET['c'] != '') {
+        $cat = $_GET['c'];
+    }else{
+        $cat = 1;
+    }
+    
+?>
+<div class="question">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($qus == 'fre') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback?q=fre">Locum</a></li>
+            <li class="<?php if ($qus == 'emp') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback?q=emp">Employer</a></li>
+        </ul>
+    </div>
+    <?php if ($qus == 'emp') {?>
+        <div id="fre-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <?php foreach ($this->professions as $profession) { ?>
+                        <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback?q=emp&c=<?php echo $profession->getId(); ?>"><?php echo $profession->getName() ?></a></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>                    
+                    <col width="60%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="10%">                    
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>                   
+                        <th><?php echo $this->escapeHtml($this->translate('Status')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <?php
+                    if(!empty($paginatorEmp)):
+                    foreach ($paginatorEmp as $question): ?>
+                        <tr>
+                            <td><?php echo $this->escapeHtml($question->getFdQusEmp()); ?></td>
+                            <td>
+                                <?php 
+                                    switch ($question->getFdQusStatus()) {
+                                        case '0':
+                                            echo "<span style='color:red'>Deactive</span>";
+                                            break;
+                                        
+                                        case '1':
+                                            echo "<span style='color:green'>Active</span>";
+                                            break;
+                                    }                                    
+                                ?>
+                            </td>
+                            <td><?php echo $this->escapeHtml($question->getFdQusSortOrder()); ?></td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/edit', array('id' => $question->getFdQusId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/delete', array('id' => $question->getFdQusId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php 
+                        endforeach; 
+                        else:
+                            echo "<h3>No record found..!</h3>";
+                        endif;
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/feedback?q=emp&c='.$cat));?>
+            </div>
+        </div>
+    <?php }elseif($qus == 'fre'){ ?>
+        <div id="fre-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <?php foreach ($this->professions as $profession) { ?>
+                        <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/feedback?q=fre&c=<?php echo $profession->getId(); ?>"><?php echo $profession->getName() ?></a></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>                    
+                    <col width="60%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="10%">                    
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th> 
+                        <th><?php echo $this->escapeHtml($this->translate('Status')); ?></th>                  
+                        <th><?php echo $this->escapeHtml($this->translate('Sort Order')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <?php
+                    if(!empty($paginatorFre)):
+                    foreach ($paginatorFre as $question): ?>
+                        <tr>
+                            <td><?php echo $this->escapeHtml($question->getFdQusFre()); ?></td>
+                            <td>
+                                <?php 
+                                    switch ($question->getFdQusStatus()) {
+                                        case '0':
+                                            echo "<span style='color:red'>Deactive</span>";
+                                            break;
+                                        
+                                        case '1':
+                                            echo "<span style='color:green'>Active</span>";
+                                            break;
+                                    }                                    
+                                ?>
+                            </td>
+                            <td><?php echo $this->escapeHtml($question->getFdQusSortOrder()); ?></td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/edit', array('id' => $question->getFdQusId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/feedback/delete', array('id' => $question->getFdQusId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php 
+                        endforeach; 
+                        else:
+                            echo "<h3>No record found..!</h3>";
+                        endif;
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/feedback?q=fre&c='.$cat));?>
+            </div>
+        </div>
+    <?php } ?>
+
+
+    
+<script type="text/javascript">
+    
+    Gc.initTableList();
+</script>

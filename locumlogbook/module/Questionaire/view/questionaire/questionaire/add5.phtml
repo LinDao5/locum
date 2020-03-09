@@ -1,0 +1,395 @@
+    <div class="col-md-9" style="padding-right: 15px;padding-bottom: 25px;" >
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="add_item text-left pb30">
+                    <div class="col-md-12 pad0">
+                        <div class="text-center finance-page-head" style="font-size:20pt">
+                            PRACTICE CHECKLIST
+                        </div>
+                    </div>
+                    <div class="col-md-12 pad0">
+                        <div class="add_item_form form-inline">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="practice_name" style="padding-top: 6px;">
+                                            Pracitce name
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="practice_name" id="practice_name" placeholder="Enter name of the practice" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="parking" style="padding-top: 6px;">
+                                            Parking 
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="appointment_time_slots" id="appointment_time_slots" placeholder="Describe where you parked you car" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="record_keeping" style="padding-top: 6px;">
+                                            Train
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="record_keeping" id="record_keeping" placeholder="Describe walk from train station" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="trial_set" style="padding-top: 6px;">
+                                            Location
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="trial_set" id="trial_set" placeholder="Where is the store located in town" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="phoropeter" style="padding-top: 6px;">
+                                            Pre-screening
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="phoropeter" id="phoropeter" placeholder="Describe pre-screening process" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="test_chart_type" style="padding-top: 6px;">
+                                            OCT
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="test_chart_type" id="test_chart_type" placeholder="Yes or No" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="visualfield_machinetype" style="padding-top: 6px;">
+                                            Visual field
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="visualfield_machinetype" id="visualfield_machinetype" placeholder="Type of visual field used machine" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="funds_camera" style="padding-top: 6px;">
+                                            Fundus camera
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="funds_camera" id="funds_camera" placeholder="Yes or No" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="oct" style="padding-top: 6px;">
+                                            No. of clinics
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="oct" id="oct" placeholder="No. of clinics running" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="slit_lamp_type" style="padding-top: 6px;">
+                                            Testing time
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="slit_lamp_type" id="slit_lamp_type" placeholder="Please enter allocated time for appts" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="reading_chart" style="padding-top: 6px;">
+                                            Record keeping
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="reading_chart" id="reading_chart" placeholder="What record keeping process is in place" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="stereo_test_type" style="padding-top: 6px;">
+                                            Stereopsis
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="stereo_test_type" id="stereo_test_type" placeholder="What type of stereopsis test is used" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="colour_vision_type" style="padding-top: 6px;">
+                                            Colour vision 
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="colour_vision_type" id="colour_vision_type" placeholder="What type of colour vision test is used" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="pre_screening_procdure" style="padding-top: 6px;">
+                                            Handover
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="pre_screening_procdure" id="pre_screening_procdure" placeholder="Describe handover procedure" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="is_there_do" style="padding-top: 6px;">
+                                            Childrens glasses
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="is_there_do" id="is_there_do" placeholder="DO in place or is Optom responsible>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="contact_lenses" style="padding-top: 6px;">
+                                            Trial frame
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="contact_lenses" id="contact_lenses" placeholder="Yes or No" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="handover_procdure" style="padding-top: 6px;">
+                                            Opthal / Ret
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="handover_procdure" id="handover_procdure" placeholder="Yes or No" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="any_patient_leaflets" style="padding-top: 6px;">
+                                           Any patient leaflets
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="any_patient_leaflets" id="any_patient_leaflets" placeholder="Describe which leaflets are in place" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="primary_care_services" style="padding-top: 6px;">
+                                            Referral procedure
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="primary_care_services" id="primary_care_services" placeholder="Describe referral procedure" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="shop_floor_staff_members" style="padding-top: 6px;">
+                                            Staff info
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="shop_floor_staff_members" id="shop_floor_staff_members" placeholder="Please enter deatils/no. of shop floor staff" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <div class="col-md-4">
+                                        <label for="no_of_clinics_running" style="padding-top: 6px;">
+                                            Monitoring sales / CER
+                                        </label>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input class="form-control" name="no_of_clinics_running" id="no_of_clinics_running" placeholder="Describe how this can be checked" required>
+                                    </div>
+                                </div>
+                                <div id="error_div" class="has-error"></div>
+                            </div>
+                            <div class="col-md-12" style="padding-top: 20px;">
+                                <div class="form-group text-center">
+                                    <button id="submit" class="read-common-btn grad_btn" style="display: inline">Submit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+        <script type="text/javascript">
+            $('#qs_reminder_check').click(function(){
+                if (!$('#qs_reminder_check')[0].checked){
+
+                    $('#reminder_date').css('display', 'none');
+                }
+                else{
+                    $('#reminder_date').css('display', 'block');
+                }
+            })
+            $('#qs_tick_check').click(function(){
+                if (!$('#qs_tick_check')[0].checked){
+
+                    $('#qs_completed_ticks').attr('disabled', 'true');
+                    $('#qs_completed_ticks').val("");
+                }
+                else{
+                    $('#qs_completed_ticks').removeAttr('disabled');
+                }
+            });
+
+            $('#submit').click(function(){
+                var postdata = {
+                    'practice_name' : $('#practice_name').val(),
+                    'appointment_time_slots' : $('#appointment_time_slots').val(),
+                    'record_keeping' : $('#record_keeping').val(),
+                    'trial_set' : $('#trial_set').val(),
+                    'phoropeter' : $('#phoropeter').val(),
+                    'test_chart_type' : $('#test_chart_type').val(),
+                    'visualfield_machinetype' : $('#visualfield_machinetype').val(),
+                    'funds_camera' : $('#funds_camera').val(),
+                    'oct' : $('#oct').val(),
+                    'slit_lamp_type' : $('#slit_lamp_type').val(),
+                    'reading_chart' : $('#reading_chart').val(),
+                    'stereo_test_type' : $('#stereo_test_type').val(),
+                    'colour_vision_type' : $('#colour_vision_type').val(),
+                    'pre_screening_procdure' : $('#pre_screening_procdure').val(),
+                    'is_there_do' : $('#is_there_do').val(),
+                    'contact_lenses' : $('#contact_lenses').val(),
+                    'handover_procdure' : $('#handover_procdure').val(),
+                    'any_patient_leaflets' : $('#any_patient_leaflets').val(),
+                    'primary_care_services' : $('#primary_care_services').val(),
+                    'shop_floor_staff_members' : $('#shop_floor_staff_members').val(),
+                    'no_of_clinics_running' : $('#no_of_clinics_running').val()
+                }
+
+                $.ajax({
+                    url : '<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/add5post',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    async: true,
+                    data: {'data': postdata},
+                    beforeSend : function() {
+                        /* Logic before ajax request sent */
+                    },
+                    success: function(data){
+                        if (data.success && data.success == 1) window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/1');
+                        else confirm('error');
+                    },
+                    error : function(xhr, textStatus, errorThrown) {
+                        if (xhr.status === 0) {
+                            alert('Not connect.\n Verify Network.');
+                        } else if (xhr.status == 404) {
+                            alert('Requested page not found. [404]');
+                        } else if (xhr.status == 500) {
+                            alert('Server Error [500].');
+                        } else if (errorThrown === 'parsererror') {
+                            alert('Requested JSON parse failed.');
+                        } else if (errorThrown === 'timeout') {
+                            alert('Time out error.');
+                        } else if (errorThrown === 'abort') {
+                            alert('Ajax request aborted.');
+                        } else {
+                            alert('There was some error. Try again.');
+                        }
+                    }
+                });
+            });
+
+            $(document).ready(function() {
+                $('#questionaire1_listbtn').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list1');
+                });
+                $('#practice_matters').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list2');
+                });
+                $('#daytoday_practice').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list3');
+                });
+                $('#localarea_protocols').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list4');
+                });
+                $('#practice_checklist').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/1');
+                });
+                $('#follow_up').click(function(){
+                    window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list6');
+                });
+            })
+
+        </script>
+
+</html>

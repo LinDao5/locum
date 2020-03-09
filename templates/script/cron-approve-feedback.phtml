@@ -1,0 +1,16 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use Gc\User\Feedback ;
+$feedbackCollection = new Feedback\Collection();
+$feedbackModel = new Feedback\Model();
+$allFeedbackObj = $feedbackCollection->getFeedbacks();
+
+foreach ($allFeedbackObj as $key => $feedbackInfo) {
+	if ($feedbackInfo->getStatus() == 0) {
+		$feedbackPublishDate = date('Y-m-d H:i:s', strtotime("+48 hours", strtotime($feedbackInfo->getCreatedDate())));
+		if ($feedbackPublishDate <=  date('Y-m-d H:i:s')) {
+			$feedbackModel->setPublishFeedbackById($feedbackInfo->getFeedbackId());
+		}
+	}
+	
+}

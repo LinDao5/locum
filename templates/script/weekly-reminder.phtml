@@ -1,0 +1,17 @@
+<?php
+    date_default_timezone_set('Europe/London');
+    use Zend\Db\Sql\Sql;
+    use GcFrontend\Controller\JobmailController as MailController;
+    use GcFrontend\Controller\DbController as DbController;
+    $mailController = new MailController();
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $weekStartDate = date("d-m-Y");    
+    $weekEndDate = date('d-m-Y', strtotime('+1 week', strtotime($weekStartDate)));  
+
+    if(date('G') == '9' && date('D') == 'Sun'){ 
+	echo "<h1>Freelancer</h1>";
+        //$mailController->sendweeklyReminderToFreelancer($adapter,$weekStartDate,$weekEndDate);
+	echo "<h1>Employer</h1>";
+        //$mailController->sendweeklyReminderToEmployer($adapter,$weekStartDate,$weekEndDate);
+    }

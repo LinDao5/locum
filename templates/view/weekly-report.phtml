@@ -1,0 +1,118 @@
+<?php
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+    use GcFrontend\Controller\PackagePrivilegesController;
+    $packagePrivilegesController    = new PackagePrivilegesController();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2 && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+        $uid=$_SESSION['user_id'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+    }
+    $currency = $this->config()->get('site_currency');
+    $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+    $weeklyTransactionFilter = isset($_GET['weekly-transaction-filter']) ? $_GET['weekly-transaction-filter'] : 'year';
+    $weeklyJobFilter = isset($_GET['weekly-job-filter']) ? $_GET['weekly-job-filter'] : 'year';
+    $cyear[] = $financeHelper->getMonthFinancialYear($uid , $financialYear);
+    if($filter == 'year'){ $cyear = $financeHelper->Getlast3year($uid,$financialYear); }
+    foreach($cyear as $year){
+        $jobWeekdata = $financeHelper->chartGetJobWeekly($uid,$year);
+        $jobWeekchart[] = $jobWeekdata['chart'];
+        $jobWeek[] = $jobWeekdata['data'];
+    }
+    $m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/freelancer-reports">REPORTS</a></li>
+                    <li><a href="#">Weekly Job</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3><?php //echo $this->mainTitle; ?>Cash flow</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+                <section class="text-left">
+                    <div class="col-md-12 pad0">
+                        <div class="text-capitalize text-center finance-page-head"><?php echo $this->mainTitle; ?></div>
+                    </div>
+                    <div class="cash_man_chart2 wholeborder padb0 wekky-reprt">
+                        <form action="" class="add_item_form form-inline desktop clearfix">  
+                            <?php include 'select-financial-year.phtml'; ?> 
+                            <div class="col-md-6 col-sm-12 col-xs-12 pad0 mart30 desktop income">
+                                <div class="col-md-6 col-sm-6 col-xs-6">
+                                    <h1 class="mar0 text-capitalize" id="register_head_blue">Weekly income</h1>
+                                </div>
+                                <div class="col-md-6 col-sm-6 col-xs-6">
+                                    <div class="form-group mar0">
+                                        <select name="weekly-transaction-filter" class="form-control pull-right" onchange="this.form.submit()">
+                                            <option value="year" <?php echo @$weeklyTransactionFilter == 'year' ? 'selected' : '' ; ?>>Yearly</option>
+                                            <option value="month" <?php echo @$weeklyTransactionFilter == 'month' ? 'selected' : '' ; ?>>Monthly </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-sm-12 col-xs-12 pad0 mart30 desktop jobs hidden-xs hidden-sm">
+                                <div class="col-md-6 col-sm-6 col-xs-6">
+                                    <h1 class="mar0 text-capitalize" id="register_head_blue">No. of jobs</h1>
+                                </div>
+                                <div class="col-md-6 col-sm-6 col-xs-6">
+                                    <div class="form-group mar0">
+                                        <select name="weekly-job-filter" class="form-control pull-right" onchange="this.form.submit()">
+                                            <option value="year" <?php echo @$weeklyJobFilter == 'year' ? 'selected' : '' ; ?>>Yearly</option>
+                                            <option value="month" <?php echo @$weeklyJobFilter == 'month' ? 'selected' : '' ; ?>>Monthly </option>
+                                            
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="col-md-6">
+                            <?php echo $this->partial('weekly-transaction'); ?>
+                        </div>
+                        <div class="col-md-6">
+                             <form action="" class="add_item_form form-inline mobile hidden-md hidden-lg clearfix">  
+
+                            <div class="col-md-6 col-sm-12 col-xs-12 pad0 mart30 mobile jobs">
+                                <div class="col-md-6 col-sm-6 col-xs-6">
+                                    <h1 class="mar0 text-capitalize" id="register_head_blue">Weekly Jobs</h1>
+                                </div>
+                                <div class="col-md-6 col-sm-6 col-xs-6">
+                                    <div class="form-group mar0">
+                                        <select name="weekly-job-filter" class="form-control pull-right" onchange="this.form.submit()">
+                                            <option value="year" <?php echo @$weeklyJobFilter == 'year' ? 'selected' : '' ; ?>>Yearly</option>
+                                            <option value="month" <?php echo @$weeklyJobFilter == 'month' ? 'selected' : '' ; ?>>Monthly </option>
+                                            
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                            <?php echo $this->partial('weekly-job'); ?>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,509 @@
+<?php
+	use GcFrontend\Controller\DbController as DbController;
+	use Gc\User\Role\Model;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	
+    //$get_redirect= new Redirect();
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $sql = new Sql($adapter);
+    $update = $sql->update();
+    $select = $sql->select();
+	
+	$return = $this->script('user-edit-process');
+	$number_1 = mt_rand(1, 9);
+	$number_2 = mt_rand(1, 9);
+	$answer = substr(sha1($number_1+$number_2),5,10);
+	if($_SESSION['user_id']!=''){
+		$uid=$_SESSION['user_id'];
+	}
+
+	$sqlString_data="select u.* from user u where u.id='$uid'";	
+    $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	$result_data = $results_get->current();
+	if($result_data['id']!=''){
+		// user extra info
+		$sqlString_data22="select ux.* from user_extra_info ux where ux.uid='$uid'";	
+		$results_get22 = $adapter->query($sqlString_data22, $adapter::QUERY_MODE_EXECUTE);
+		$result_data22 = $results_get22->current();
+	}
+    /////
+	$roleTable = new Model();
+    $row       = $roleTable->fetchRow($roleTable->select(array('id' => (int) $result_data['user_acl_role_id'])));
+    
+    $professionalTable = new Model2();
+    $row2              = $professionalTable->fetchRow($professionalTable->select(array('id' => (int) $result_data['user_acl_profession_id'])));
+    
+	$packageTable = new Model3();
+	$row3       = $packageTable->fetchRow($packageTable->select(array('id' => (int) $result_data['user_acl_package_id'])));
+    $dob=date('d-m-Y',strtotime($result_data22['dob']))
+?>
+<?php 
+    $sqlstorelist = "SELECT * FROM site_town_table WHERE Lat != '' AND Lon != ''";    
+   $storeDetails = $adapter->query($sqlstorelist, $adapter::QUERY_MODE_EXECUTE); //print_r($storeDetails);
+    $storeResultset = $storeDetails->toArray();
+    $townListString = '';
+    foreach ($storeResultset as $key => $town) {        
+        $townListString .= '"'.$town['Town'].'",';
+    }
+   
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="/user-profile">My Dashboard</a></li>
+		    <li><a href="/user-edit">Edit Profile</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Edit Profile</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section> 
+<div id="primary-content" class="main-content register user-edit-wrapper"> 
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+
+                    <div class="col-md-12">
+					<?php echo $this->partial('flash-messages'); ?>
+                    <div class="one-page-box visible widget-box no-border col-xs-12">
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <h4 class="header">
+                                    <?php //echo $this->escapeHtml('Profile Edit'); ?>
+                                </h4>
+                    
+                                <form id="one-page-form" action="/user-edit" method="post" class="user_edit_form" enctype="multipart/form-data" autocomplete="off">
+                                <input type="hidden" id="u_id" name="id" value="<?php echo $result_data['id'];?>">
+                                 <?php if(!empty($return['error_message'])): ?>
+                                        <div class="notification error"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                                    <?php endif; ?>
+									<!--<div class="col-md-4 col-sm-4 margin-bottom">
+                                     	<p>Profile Picture</p>
+                                    </div>
+                                    <div class="col-md-6 col-sm-8 margin-bottom prof-img">
+                                        <script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.MultiFile.js');?>" type="text/javascript" language="javascript"></script>
+                                    <?php if($result_data22['profile_image']!=''){?>
+                                      <img src="<?php echo $result_data22['profile_image'];?>" class="img-responsive">
+                                      <?php } else{?>
+                                      <img src="<?php echo $this->cdn('/frontend/locumkit-template/img/no-photo-icon.png');?>" width="200" class="img-responsive">
+                                      <?php }?>
+                                    <div class="input-box-recipt" id="receipt_img">
+                                        <input type="file" name="profile_pic" class="wk_imagevalidate multi with-preview" />
+                                    </div>
+									</div>-->
+                                        <div class="col-md-4 col-sm-4 margin-bottom">
+                                        <p>FirstName</p>
+                                    </div>
+                                    <div class="col-md-6 col-sm-8">
+                                      <input name="firstname" type="text"  class="form-control margin-bottom" value="<?php echo $result_data['firstname'];?>" autofocus required />                         </div>
+                                    <div class="col-md-4 col-sm-4">
+                                        <p>LastName</p>
+                                    </div>
+                                    <div class="col-md-6 col-sm-8">
+                                      <input name="lastname" type="text" class="form-control margin-bottom" value="<?php echo $result_data['lastname'];?>" autofocus required />                         </div>
+                                    <div class="col-md-4 col-sm-4">
+                                        <p>Email</p>
+                                    </div>
+                                    <div class="col-md-6 col-sm-8">
+                                      <input name="email" type="text" readonly class="form-control margin-bottom" value="<?php echo $result_data['email'];?>" autofocus required />         
+                                    </div>
+									<div class="col-md-4 col-sm-4 margin-bottom ">
+											<p>Role</p>
+									</div>
+									<div class="col-md-6 col-sm-8">
+                                            <input type="text" readonly class="form-control margin-bottom" value="<?php echo $row['name'];?>" autofocus required>
+										 </div>
+
+									
+										<div class="col-md-4 col-sm-4 margin-bottom ">
+											<p>Profession</p>
+										</div>
+										<div class="col-md-6 col-sm-8">
+                                            <input type="text" readonly class="form-control margin-bottom" value="<?php echo $row2['name'];?>" autofocus required id="profession_type">
+										</div>
+									
+                                    <?php if($row3['name']!='' && $row['id'] == 2){?>
+
+										<div class="col-md-4 col-sm-4 margin-bottom">
+											<p>Package</p>
+										</div>
+										<div class="col-md-6  col-sm-8">
+                                            <input type="text" readonly class="form-control margin-bottom" value="<?php echo $row3['name']." (£".$row3['price'].')';?>" autofocus required>
+										</div>
+									
+									<?php }?>
+
+									
+                                    <div class="col-md-4 col-sm-4">
+                                     	<p>Login</p>
+                                    </div> 
+                                    <div class="col-md-6 col-sm-8">
+                                      <input name="login" type="text" readonly class="form-control margin-bottom" value="<?php echo $result_data['login'];?>" autofocus required />
+                                    </div>       
+                                     <div class="col-md-4 col-sm-4">
+                                     	<p>Password</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <p>If you want to change password, please <a href="<?php $this->serverUrl(); ?>/change-password">click here</a>.</p>
+                                     </div>
+									 <div class="col-md-4 col-sm-4">
+                                     	<p>Company/organization</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <input name="company" type="text" class="form-control margin-bottom" value="<?php echo $result_data22['company'];?>"/>
+                                     </div>
+									 <div class="col-md-4 col-sm-4">
+                                     	<p>Address</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <input name="address" type="text" class="form-control margin-bottom" value="<?php echo $result_data22['address'];?>" id="address"/>
+                                     </div>
+									 <div class="col-md-4 col-sm-4">
+                                     	<p>Town/City</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <input name="city" type="text" class="form-control margin-bottom" value="<?php echo $result_data22['city'];?>" id="city"/>
+                                     </div>
+									 <div class="col-md-4 col-sm-4">
+                                     	<p>Post Code</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <input name="zip" type="text" class="form-control margin-bottom" value="<?php echo $result_data22['zip'];?>" id="zip"/>
+                                     </div>
+									 <div class="col-md-4 col-sm-4">
+                                     	<?php if($_SESSION['user_role'] == 'locum' ) { ?><p>Home Telephone</p><?php }else{ ?><p>Store Telephone</p><?php } ?>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <input name="telephone" type="text" class="form-control margin-bottom" value="<?php if($result_data22['telephone']!=0){echo $result_data22['telephone'];}?>" maxlength="11" id="telephone"/>
+                                           <div class="css_error" id="telephone_error"></div>                  
+                                     </div>
+									 <div class="col-md-4 col-sm-4">
+                                     	<p>Mobile</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8"> 
+                                           <input name="mobile" type="text" class="form-control margin-bottom" value="<?php if($result_data22['mobile']!=0){echo $result_data22['mobile'];}?>" maxlength="11" id="mobile"/>
+                                           <div class="css_error" id="mobile_error"></div>
+                                     </div>
+									 <div class="col-md-4 col-sm-4" style="display:none;">
+                                     	<p>Date Of Birth</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8" style="display:none;"> 
+                                        <input name="dob" type="text" class="form-control margin-bottom" readonly value="<?php echo $dob;?>"/>
+                                     </div>
+									 <div class="col-md-4 col-sm-4" style="display:none;">
+                                     	<p>Gender</p>
+                                     </div>
+                                     <div class="col-md-6 col-sm-8" style="display:none;"> 
+                                           <input name="gender" type="text" class="form-control margin-bottom" readonly value="<?php echo ucfirst($result_data22['gender']);?>"/>
+                                     </div>
+                                     <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role']=="freelancer"){/*?>
+                                         <div class="col-md-4 col-sm-4">
+                                         	<p>Max Distance To Travel</p>
+                                         </div>
+                                          <div class="col-md-6 col-sm-8">
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="5" onclick="get_list(this.value);">5 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="10" onclick="get_list(this.value);">10 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="15" onclick="get_list(this.value);">15 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="20" onclick="get_list(this.value);">20 miles</span></div>
+                                                 <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="25" onclick="get_list(this.value);">25 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="30" onclick="get_list(this.value);">30 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="35" onclick="get_list(this.value);">35 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="40" onclick="get_list(this.value);">40 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="45" onclick="get_list(this.value);">45 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="50" onclick="get_list(this.value);">50 miles</span></div>
+                                                 <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="Over 50" onclick="get_list(this.value);">Over 50 miles</span></div>   
+                                               <input  type="hidden" id="max_distanc_to_traval" value="<?php if($result_data22['max_distance']!="0"){echo $result_data22['max_distance'];}?>"/>
+                                         </div>
+                                         <div class="col-md-4 col-sm-4">
+                                         	<p>Set Minimum Rate</p>
+                                         </div>
+                                         <div class="col-md-6 col-sm-8">
+                                            <?php
+                                                
+                                                #### Get min rate per day #
+                                                $min_rate = unserialize($result_data22['minimum_rate']);
+                                            ?>
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12"><span class="rate-day">Monday</span></div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Monday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div> 
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                                    <span class="rate-day">Tuesday</span>
+                                                </div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Tuesday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div> 
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                                    <span class="rate-day">Wednesday</span>
+                                                </div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Wednesday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div> 
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                                    <span class="rate-day">Thursday</span>
+                                                </div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Thursday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div> 
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                                    <span class="rate-day">Friday</span>
+                                                </div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Friday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div> 
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                                    <span class="rate-day">Saturday</span>  
+                                                </div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Saturday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div> 
+                                            <div class="row">
+                                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                                    <span class="rate-day">Sunday</span>
+                                                </div>
+                                                <div class="col-md-9 col-sm-6 col-xs-12">
+                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($result_data22['minimum_rate']!="0.00"){echo $min_rate['Sunday'];}else{ echo '0.00'; }?>" required />
+                                                </div>
+                                            </div>
+                                         </div>
+                                     <?php */}?>
+									 
+										<!-- <div class="col-md-4 col-sm-4 margin-bottom ">
+											<p>Update Profile Picture</p>
+										</div>
+										<div class="col-md-6 col-sm-8">
+											 <input type="file" name="profile_pic">
+										</div> -->
+									
+                                    <div class="col-sm-offset-4 col-md-6">
+                                       <button class="save-btn-edit-prof btn btn-small btn-warning">
+                                            <i class="glyphicon glyphicon-edit"></i>
+                                            <?php echo $this->escapeHtml('Save'); ?>
+                                       </button>
+                                    </div>
+                                </form>
+                                <!-- Store list pop up start-->
+                                <div id="getlist-section" class="modal fade" role="dialog">
+                                    <div class="list-popup">
+                                      <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content">
+                                          <div class="modal-header no-border-bottom">
+                                           <!-- <button type="button" class="close" data-dismiss="modal" onclick="close_dive('getlist-section');">&times;</button>-->
+                                            <h4 class="modal-title">Town list</h4>
+                                          </div>
+                                          <div class="modal-body">
+                                          <h3 id="load_list" style="display:none"><img src="public/frontend/locumkit-template/img/loader.gif"> Please wait... </h3>
+                                          <form id="store_list_div" name="store_frm" action="/ajax-request">
+                                            
+                                          </form>
+                                          </div>
+                                          <div class="modal-footer no-border-top">
+                                           <!--  <button type="button" class="btn btn-default" onclick="close_dive('profession_question');" data-dismiss="modal">Close</button> -->
+                                          </div>
+                                        </div>
+                                      </div>
+                                   </div>
+                                 </div>
+                                <!-- Store list pop up end -->
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- col-md-6 end -->
+            </div>
+        </div>
+   	</div>
+</div>
+<script type="text/javascript">
+    var max_dist_val = $("#max_distanc_to_traval").val();
+    $(".dist_list input[type=radio]").each( function(e){
+        if($(this).val() == max_dist_val){
+            $(this).prop('checked', true);
+        }
+    });
+    function get_list(id){
+        $('#getlist-section').show();
+        $('#getlist-section').addClass('in');
+        $('#getlist-section').css('display','block');
+        $("#load_list").show();
+        var town=$("#city").val();
+        var addr = $("input#address").val()+"+"+$("input#city").val()+",+UK";
+        var cat_id=$("#profession_type").val();
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'max_dis':id, 'get_list':'1','city':town,'cat_id':cat_id, 'full_addr':addr},
+                'success':function(result){ //alert(result);
+                    console.log(result);
+                    if(result!=""){ 
+                        $("#load_list").hide();
+                        $("#store_list_div").html(result);
+                        $('#getlist-section').show();
+                        $('#getlist-section').addClass('in');
+                        $('#getlist-section').css('display','block');   
+                    }
+                }
+            });
+    }
+    function save_list(){ //alert("save data");
+        var max_distance = $("input[name=max_distance]:checked").val();
+        var store_list   = $("input[name=store_list]:checked").val(); 
+        var data_all     = $("#store_list_div").serialize();
+        var store_id     = $("input[name^=store_id]:checked" ).serialize();
+        var store_data   = $("#storeinfo_div").serialize();
+        var u_id         = $("#u_id").val();
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'update_work_store_list':'1','store_id':store_id,'store_data':store_data,'store_list':store_list,'max_distance':max_distance,'data_all':data_all,'u_id':u_id},
+                'success':function(result){ //alert(result);
+                    console.log(result);
+                    if(result!=0){ 
+                        $('#formID').append(result);
+                        $("#getlist-section").hide(1000);
+                        $('.modal-backdrop').hide(1000);
+                    }else{
+                        alert("Please fill details.");
+                        return false;
+                    }
+                }
+        });
+    }
+</script>
+ <!-- jQuery -->
+
+<script type="text/javascript" src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+
+<!-- Fetch all toen and show in town text field autocomplate  -->
+<script type="text/javascript">
+    $(function() {
+        var availableTags = [<?php echo $townListString; ?>];
+        $( "#city" ).autocomplete({
+            source: availableTags
+        });
+    });
+
+    $('#mobile').on('keyup', function() {
+       check_mobile_number();
+    });
+    $('#telephone').on('keyup', function() {
+        check_telephone_number();
+    });
+
+    $('button.save-btn-edit-prof').click(function(){
+        <?php if($row['id'] == 2){ ?>
+            if(($('#mobile').val() == "" || $('#mobile').val() == null) || !check_mobile_number()){
+                $('#mobile_error').html('Please enter valid mobile number');
+                return false;                
+            }     
+            if (!check_locum_telephone()) {
+                $('#telephone_error').html('Please enter valid telephone number');
+                return false; 
+            };         
+        <?php }elseif($row['id'] == 3){ ?>            
+            if(($('#telephone').val() == "" || $('#telephone').val() == null)  || !check_telephone_number()){
+                $('#telephone_error').html('Please enter valid telephone number');
+                return false;                
+            }            
+            if (!check_emp_mobile()) {
+                $('#mobile_error').html('Please enter valid mobile number');
+                return false;   
+            }; 
+        <?php } ?>
+    });
+
+    function check_mobile_number(){
+        var mobile = $('#mobile').val();
+        var reg = /^[0-9]+$/;
+        var user_type=$("#user_type").val();
+        if(user_type==2){ // for freelancer
+            $('#mobile_note').html('This number is used to send you notifications of your jobs and finances.');
+        }
+        if ((mobile.length)< 11 && mobile.length != 0){
+            $('#mobile_error').html('Mobile number should be 11 digits.');
+            $("#mobile").focus();
+            //$(".full-process").hide();
+            return false;
+        }
+        else if ( !reg.test(mobile) && user_type==2){
+            $('#mobile_error').html('Mobile number should be numbers only.');
+            $("#mobile").focus();
+            //$(".full-process").hide();
+            return false;
+        }else{
+            $('#mobile_error').html('');
+            return true;
+        }
+    }
+
+    function check_telephone_number(){
+        var telephone = $('#telephone').val();        
+        var reg = /^[0-9]+$/;
+        if ((telephone.length)< 5){
+            $('#telephone_error').html('Please enter correct telephone number');
+            $("#telephone").focus();
+            //$(".full-process").hide();
+            return false;
+        }
+        if ( (!reg.test(telephone)) && (telephone.length > 0)){
+            $('#telephone_error').html('Please enter telephone should be numbers only.');
+            $("#telephone").focus();
+            //$(".full-process").hide();
+            return false;
+        }else{
+            $('#telephone_error').html('');
+            return true;
+        }
+    }
+
+    function check_locum_telephone(){
+        if ($('#telephone').val().length > 1 && !check_telephone_number()) {
+            $('#telephone_error').html('Please enter valid telephone number');
+            return false;
+        }else{
+            return true;
+        }
+    }
+    function check_emp_mobile(){
+        if ($('#mobile').val().length > 1 && !check_mobile_number()) {
+            $('#mobile_error').html('Please enter valid mobile number');
+            return false;
+        }else{
+            return true;
+        }
+    }
+</script>

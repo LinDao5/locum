@@ -1,0 +1,331 @@
+<?php
+    date_default_timezone_set('Europe/London');
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper; 
+    use GcFrontend\Controller\DbController as DbController;
+    $financeHelper = new FinanceHelper();
+    use GcFrontend\Controller\PackagePrivilegesController;
+    $packagePrivilegesController    = new PackagePrivilegesController();
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2 && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+		$uid=$_SESSION['user_id'];
+	}else{
+		echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+	}	
+	$currency = $this->config()->get('site_currency');	
+	$cat = @$_GET['cat'] ? $_GET['cat'] : null;
+    $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+	$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+    $cattype = $financeHelper->getExpencetype();
+	$expenseRecord = $financeHelper->getAllExpense($uid,$financialYear,$filter , $cat); 
+
+	
+	$expenseChart = $financeHelper->chart_getAllExpense($uid,$financialYear,$filter ,$cat ); 
+	//$catExpence = $financeHelper->GetchartExpenseBYcondition($uid,$financialYear);
+
+    $cat_year[] = $financeHelper->getMonthFinancialYear($uid , $financialYear);
+    if($filter == 'year'){ $cat_year = $financeHelper->Getlast3year($uid,$financialYear); }
+    foreach($cat_year as $year){ $catExpence[] = $financeHelper->GetchartExpenseBYcondition($uid,$year); }
+		$return = $this->script('finance_detail_process'); 
+		$m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+
+		$dbConfig = new DbController();
+        $adapter = $dbConfig->locumkitDbConfig();
+  
+?>
+	
+<section id="breadcrum" class="breadcrum">
+	<div class="breadcrum-sitemap">
+		<div class="container">
+			<div class="row">
+				<ul>         
+					<li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+						<li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+						<li><a href="/finance-detail">Finance</a></li>
+						<li><a href="<?php echo $this->serverUrl();?>/freelancer-reports">REPORTS</a></li>
+						<li><a href="#">Expense by category</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+	<div class="breadcrum-title">
+		<div class="container">
+			<div class="row">
+				<div class="set-icon registration-icon">
+					<i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+				</div>
+				<div class="set-title">
+					<h3>Cash Flow</h3>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+		<div class="row">
+			<div class="contents white-bg">
+				<section class="text-left">
+
+                <div class="col-md-12 pad0">
+                <div class="text-center finance-page-head">Expense by category</div>
+                </div>
+                <?php echo $this->partial('flash-messages'); ?>
+                <div class="cash_man_chart2 wholeborder padb0">
+                    <form action="" class="add_item_form form-inline">
+                    
+                    <?php include 'select-financial-year.phtml'; ?>    
+                    
+                                      
+                    <div class="col-md-12 pad0 mart30">
+                    
+                    <div class="col-md-8 cash_man_chart moreyearpie">                       				   
+                        <div class="form-group add_item_form form-inline marb0">
+                        <select name="filter" id="finance-year" class="form-control pull-right" onchange="this.form.submit()">
+                        <option value="month" <?php echo @$filter == 'month'  ? 'selected' : '' ?>>Monthly</option>
+                        <option value="year" <?php echo @$filter == 'year'  ? 'selected' : '' ?>>Yearly</option>
+                        </select>
+                        </div>
+                    <?php 
+					$cls = '';
+					if(count($cat_year) == 1){ $cls = "oneyear";}else if(count($cat_year) == 2){ $cls = "twoyear"; }elseif(count($cat_year) == 3){ $cls = "threeyear"; }
+					?>
+                    <div class="<?php echo $cls; ?> canvas-scroll-x">
+					<?php $j = 0 ; foreach($cat_year as $year){ ?> 
+                    
+                    <div class="mapdiv <?php if($j==0){ ?>topyear <?php } ?><?php if($j==1){ ?>midyear <?php } ?><?php if($j==2){ ?>loweryear <?php } ?>">
+                        <div class="canvascover">
+                            <div class="col-md-12">Total Expenses by category for the year <?php  echo $year ?></div>
+                            <canvas id="Chart_<?php echo $j  ?>" height="200" width="500" class="well"></canvas>
+                            <div id="js-legend_<?php echo $j  ?>" class="chart-legend"></div>
+                        </div>
+                    </div>
+                    
+                    <?php   $j++;  } ?>
+                    
+                    </div>
+                    </div>
+                    
+                        <div class="col-md-4 cash_man_chart">
+                            <div class="form-group add_item_form form-inline marb0">
+                            <select name="cat" class="form-control pull-right" onchange="this.form.submit()">
+                            <option value= ''>Choose Category </option>
+                            <?php foreach($cattype as $key => $type){ 										
+                            $key = @isset($type['id']) ? $type['id'] :  $key ; 
+                            $type = @isset($type['cat']) ? $type['cat'] :  $type ;
+                            if($key == $cat){ $catnm = $type;   }     ?>
+                            <option value='<?php echo $key ; ?>' <?php echo @$key == $cat  ? 'selected' :  '' ; ?>><?php echo $type ; ?></option>
+                            <?php } ?>													 
+                            </select>  
+                            </div>	
+                            <div class="mapdiv-wrap-sec canvas-scroll-x">
+								<div class="mapdiv">
+                            <?php if($catnm !='') { ?><div class="col-md-12 catefullname">Category :  <?php  echo  $catnm ?></div><?php } ?>
+                            <canvas id="myChart2" height="200" class="well"></canvas>
+                            <div id="myChart2-legend" class="chart-legend"></div>
+                            </div>
+							</div>
+                        </div>
+                    </div>
+                    </form>
+                    <div class="col-md-12 cash_table_box">
+                    <div class="col-md-12 cash_table_form pad0">
+                    </div>
+                    <div class="col-md-12 cash_table pad0">
+                    <div class="table-responsive table-responsive-scroll finance-scroller">                
+                    <table class="table table-striped income_sum_table" id="datatable">
+                    <thead>
+                    <tr>
+                    <th class="col-md-1">Date</th>
+                    <th class="col-md-1">Amount</th>
+                    <th class="col-md-2">Job No</th>
+                    <th class="col-md-2">Trans no</th>
+                    <th class="col-md-2">Description</th>
+                    <th class="col-md-1">Category</th>
+                    <th class="col-md-1">Bank</th>
+                    <th class="col-md-1">Bank date</th>
+                    <th class="col-md-1">Receipt</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    <?php   if (!empty($expenseRecord)) :
+                    foreach($expenseRecord as $alltran){ 
+                    $isBank = $alltran['bank'];
+                    $trans_type = $alltran['trans_type']; ?>			
+                    <tr>
+                    <td class="col-md-1" data-order="<?php echo $alltran['job_date'] ?>"><?php echo date_format(date_create($alltran['job_date']), 'd/m/Y'); ?></td>
+                    <td class="col-md-1"><?php echo $currency.$financeHelper->setPriceFormate($alltran['cost']); ?></td>
+                    <td class="col-md-2"><?php echo @$alltran['job_id'] ? $alltran['job_id'] : 'N/A'; ?></td>
+                    <td class="col-md-2" data-order="<?php echo $alltran['trans_id']; ?>"># <?php echo $alltran['trans_id']; ?></td>
+                    <td class="col-md-2">
+                    <a href="javascript:void(0);" onclick="detailDescription('<?php echo $alltran['description']; ?>')"><?php echo substr($alltran['description'], 0,8).'...' ?></a>
+                    </td>
+                    <td class="col-md-1"><?php echo  $financeHelper->getExpenseCategoryName($alltran['expense_type_id'],$adapter) ; ?></td>
+                    <td class="col-md-1"><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankexpanse('.$alltran['id'].')"><i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+                    <td class="col-md-1" data-order="<?php echo $alltran['bank_date'] ?>"><?php echo $alltran['bank_date'] != '' && $alltran['bank_date'] != '0000-00-00' ? date('d/m/Y',strtotime($alltran['bank_date'])) : 'N/A' ?></td>
+                        <td class="col-md-1">
+                            <?php if(isset($alltran['receipt_image'])) { ?>
+                                <img src="<?php echo $this->cdn('/media/icons/receipt.png');?>" alt="receipt" style="width:30px;" onclick="receiptImg('<?php echo($alltran['receipt_image'])?>');">
+                            <?php } else { ?>
+
+                            <?php } ?>
+                        </td>
+                    </tr>
+                    <?php   }  
+                    endif; ?> 	
+                    </tbody>
+                    </table>
+                    <?php  if (empty($expenseRecord)) {  '<h4 class="no-finance-record">Data Not Found</h4>';  } ?>
+                    </div>
+                    </div>
+                    </div>
+                </div>
+        </section>
+
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Modal content-->
+			<div id="detail-description" class="modal fade" role="dialog">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">Expense Description</h4>
+						</div>
+						<div class="modal-body">
+
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+<!-- Receipt Pop up -->
+<div class="modal fade" id="receipt-img-dialog" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Receipt Information</h4>
+            </div>
+            <div class="modal-body" style="text-align: center">
+            </div>
+        </div>
+    </div>
+</div>
+			<script>
+
+				function detailDescription(description) {
+				$('#detail-description .modal-body').html('<p>'+description+'</p>');
+				$('#detail-description').modal('show');
+				}
+
+				$(document).ready(function() {
+				$.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+
+				var data_x = <?php echo json_encode($expenseChart[0]) ?>;	 
+				var data1 = <?php echo json_encode($expenseChart[1]) ?>;
+				var data2 = <?php echo json_encode($expenseChart[2]) ?>;
+
+				var data = {
+				labels : data_x,
+				datasets : [
+				{
+				label : "Banked",
+				fillColor : "#A44442",
+				strokeColor : "#A44442",
+				pointColor : "#A44442",
+				pointStrokeColor : "#A44442",
+				data : data1
+				},
+				{
+				label : "Not banked",
+				fillColor : "rgba(164, 68, 66, 0.53)",
+				strokeColor : "rgba(164, 68, 66, 0.53)",
+				pointColor : "rgba(164, 68, 66, 0.53)",
+				pointStrokeColor : "rgba(164, 68, 66, 0.53)",
+				data : data2
+				}
+				]
+				}
+
+				var options = {
+						bezierCurve: false,
+						animation: true,
+						datasetFill: false,
+						segmentShowStroke: true,
+						animateRotate: true,
+						animateScale: false,
+						tooltipTemplate: "<%= label %> : <?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+						multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+					};	  
+
+					  //Get the context of the canvas element we want to select
+						var c = $('#myChart2');
+						var ct = c.get(0).getContext('2d');
+						var ctx = document.getElementById("myChart2").getContext("2d");
+						/*********************/
+						var myChartr2 =  new Chart(ctx).Line(data,options);      
+						document.getElementById('myChart2-legend').innerHTML = myChartr2.generateLegend();
+				
+				
+				
+                    // Pie chart
+                    <?php 
+	                    $j = 0 ; 
+	                    foreach($cat_year as $year){ ?>
+		                    var PieData = <?php echo json_encode($catExpence[$j]); ?>;
+		                    console.log(PieData);
+		                    if (PieData == '') {
+		                    	PieData = [{
+		                    		color:"#f0f0f0", 
+		                    		highlight:"#fdfdfd",
+		                    		label:"No records found", 
+		                    		value:100
+		                    	}];
+		                    	options = {
+									bezierCurve: false,
+									animation: true,
+									datasetFill: false,
+									segmentShowStroke: true,
+									animateRotate: true,
+									animateScale: false,
+									tooltipTemplate: "<%= label %>",
+									multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> 0.00",
+								};	
+		                    	console.log(PieData);
+		                    };
+
+		                    var ctx = document.getElementById('Chart_<?php echo $j;?>').getContext("2d");
+		                    var myChartr = new Chart(ctx).Pie(PieData, options);
+		                    document.getElementById('js-legend_<?php echo $j;?>').innerHTML = myChartr.generateLegend();
+                    <?php   $j++;  }  ?>
+				
+
+			});  
+
+		});
+
+
+    $(document).ready(function() {
+        $('#datatable').DataTable( {
+            searching: false,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]]
+        } );
+    } );
+
+                function receiptImg(receiptImgPath) {
+                    var available_html = '';
+                    available_html += '<img src="<?php echo $this->serverUrl().'/';?>'+receiptImgPath+'" alt="receipt">';
+                    $('#receipt-img-dialog .modal-body').html(available_html);
+                    $('#receipt-img-dialog').modal('show');
+                }
+					</script>
+<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>" charset="UTF-8"></script>

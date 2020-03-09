@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="Developed by J-Solutions, Muhammad Usman, +92-334-5266444, musman5264@gmail.com , http://usman.jmobiles.pk">
+  <meta name="keywords" content="LocumKit, Locumkit, J-Solutions, Muhammad Usman">
+  <title>Locumkit - Find a LocumKit</title>
+    
+    <script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
+    <!-- Send Email -->
+    <script type="text/javascript" src="js/sendemail.js"></script>
+
+  <!-- SweetAlert -->
+  <script src="js/sweetalert.min.js"></script>
+  <!-- ========== Css Files ========== -->
+  <link href="css/root.css" rel="stylesheet">
+  <style type="text/css">
+    body{background: #fff;}
+	#form1{ float: center; width: 750px; }
+	.cust{
+		  color: #00b4ec;
+		  font-size: 15px;
+		  font-family: 'Montserrat', 'sans-serif';
+		  margin-top: 14px;
+		  margin-right: 14px;
+		  }
+	.center-fit {
+            max-width: 100%;
+            max-height: 100vh;
+            margin: auto;
+        }
+.login-form{
+margin: 40px auto;
+box-shadow: 0px 0px 4px 0px #ececec;
+}
+  </style>
+  </head>
+  <body>
+    <div class="top" align="center" style="height: 50px; width: 1080px; background-color: #fff; display: inline;">
+          <div align="left" style="display:inline; margin-left: 50px;  position: absolute; top: 10%; left:8%;"><img src="img/Logo.png" width="70%"></div>
+	</div>
+	<div align="center">
+		<img class="center-fit" src="img/1.jpg" width='auto' style="width: 100%; height: 400px;">
+	</div>
+	
+	
+	
+	<div class="login-form" id="findlocum" align="center">
+	
+	<form method="post" action="send-email.php">
+		<div class="top">
+          <h1>Find a Locum</h1>
+		</div>
+		<div class="form-area" align="left" >
+		 <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Contact Name</label>
+				<div class="col-sm-8">
+					<input name="contactname" type="text" class="form-control" id="contantname" placeholder="Contact Name" />
+				</div>
+         </div><br><br>
+ <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Email</label>
+				<div class="col-sm-8">
+					<input name="email" type="email" class="form-control" id="email" placeholder="example@example.com" />
+				</div>
+         </div><br><br>
+          <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Date</label>
+				<div class="col-sm-8">
+				<div class="input-group">
+                      <div class="input-group-addon"><i class="fa fa-calendar"></i></div>
+                      <input name="date" type="date" class="form-control" id="date" placeholder="dd/mm/yyyy" />
+                    </div>
+			</div>
+         </div><br><br>
+          <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Rate</label>
+				<div class="col-sm-8">
+				<div class="input-group">
+                      <div class="input-group-addon"><i> £ </i></div>
+                      <input name="rate" type="number" class="form-control" id="rate" placeholder="" />
+                    </div>
+			</div>
+         </div><br><br>
+          <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Store name & Address</label>
+				<div class="col-sm-8">
+			<textarea name="store" id="store" class="form-control" style="height: 80px; padding-left:10px;" cols="45" rows="" placeholder="Please Enter Store Name and Address here"></textarea>
+			</div>
+         </div><br><br><br><br>
+          <div class="form-group" >
+          <div class="form-group" >
+				<label class="col-sm-3 control-label form-label">Store Timings</label>
+				<div class="col-sm-8">
+				<table style="font-size: 20px" ><tr>
+					<td width="auto" style="height: 10px">
+						
+						<div align="center" style="margin-top: 15px;font-size: 12pt;">Opening Time
+						<input type="time" class="form-control" name="open" id="open" >
+						   <!-- <select class="form-control" name="open" id="open" >
+								<option disabled>Select Time</option>
+								<option>05:00</option>
+								<option>06:00</option>
+								<option>07:00</option>
+								<option>08:00</option>
+								<option>09:00</option>
+								<option>10:00</option>
+								<option>11:00</option>
+								<option>12:00</option>
+						   </select> -->
+						 </div>
+					</td>
+					<td width="auto">
+						<div align="center" style="margin-top: 15px; font-size: 12pt;">Closing Time
+						<input type="time" class="form-control" name="close" id="close" >
+						   <!-- <select class="form-control" name="close" id="close" >
+								<option disabled>Select Time</option>
+								<option>13:00</option>
+								<option>14:00</option>
+								<option>15:00</option>
+								<option>16:00</option>
+								<option>17:00</option>
+								<option>18:00</option>
+								<option>19:00</option>
+								<option>20:00</option>
+								<option>21:00</option>
+								<option>22:00</option>
+								<option>23:00</option>
+								<option>24:00</option>
+						   </select> -->
+						 </div>
+					</td>
+					<td width="auto">
+						<div align="center" style="margin-top: 15px;font-size: 12pt;">Lunch Break
+						   <select class="form-control" name="break" id="break" >
+								<option disabled>Select duration</option>
+								<option>10 Mins</option>
+								<option>20 Mins</option>
+								<option>30 Mins</option>
+								<option>40 Mins</option>
+								<option>50 Mins</option>
+								<option>60 Mins</option>
+						   </select>
+						 </div>
+					</td>
+				</tr></table>
+				</div>
+         </div><br><br><br><br>
+          <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Testing Times</label>
+				<div class="col-sm-8">
+				<input name="testTime" type="text" class="form-control" id="testTime" placeholder="Please enter your testing time" />
+			</div>
+         </div><br><br>
+          <div class="form-group">
+				<label class="col-sm-3 control-label form-label">Any other special requirements/notes for the locum to be aware of</label>
+				<div class="col-sm-8">
+			<textarea name="speReq" id="speReq" class="form-control" style="height:100px; padding-left:10px;" cols="45" rows="5" placeholder="i.e must be able to use OCT / supervise a pre reg etc; if none, please type in none" value="N/A"></textarea>
+			
+			</div>
+         </div><br><br>
+		 <div class="form-group">
+				 <div class="col-sm-offset-6 col-sm-2" style="padding: 10px;">
+				<input type="submit" style="background-color: #00b4ec; height: 50px; width: 100px; font-size: 20px" class="btn btn-default" value="Submit ">
+			</div>
+         </div><br><br><br><br>
+		<div id="successmsg" ></div>
+	  </form>
+	  
+    </div>
+    </div>
+	
+	
+
+</body></html>

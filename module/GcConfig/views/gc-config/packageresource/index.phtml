@@ -1,0 +1,77 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->packageResources));
+$paginator->setItemCountPerPage(20);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+?>
+<table class="table clickable table-striped table-hover">
+    <colgroup>       
+        <col width="5%">       
+        <col width="85%">       
+        <col width="5%">
+        <col width="5%">
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('#')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Privileges')); ?></th>                    
+            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php 
+        $i = 1;
+        foreach ($paginator as $packageresource): ?>
+            <tr>
+                <td><?php echo $i++; ?></td>
+                <td><?php echo $this->escapeHtml($packageresource->getResourceValue()); ?></td>                
+                <td class="text-center">
+                    <?php //if ($packageresource->getAllowCount() >  0) { ?>
+                        <a href="<?php echo $this->url('config/user/packageresource/edit', array('id' => $packageresource->getId())); ?>" class="edit-line">
+                            <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                        </a>
+                    <?php /*}else{ ?>
+                        <span class="glyphicon glyphicon-ban-circle" style="color:red"></span>
+                    <?php }*/ ?>
+                </td>
+                <td class="text-center">
+                    <a href="<?php echo $this->url('config/user/packageresource/delete', array('id' => $packageresource->getId())); ?>" class="delete-line">
+                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/packageresource'));?>
+</div>
+<script type="text/javascript">
+    Gc.initTableList();
+</script>

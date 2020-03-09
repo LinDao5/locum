@@ -1,0 +1,369 @@
+<style>
+    th{
+        padding: 10px 15px !important;
+    }
+</style>	
+<?php
+    date_default_timezone_set('Europe/London');
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper; 
+    use GcFrontend\Controller\DbController as DbController; 
+    use GcFrontend\Controller\EndecryptController as Ecryption;
+    use GcFrontend\Controller\PackagePrivilegesController;
+	$dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $financeHelper = new FinanceHelper();
+    $encypt = new Ecryption();
+	$packagePrivilegesController    = new PackagePrivilegesController();
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+		$uid=$_SESSION['user_id'];
+	}else{
+    	echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+	}	
+	$currency = $this->config()->get('site_currency');
+	$financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+	$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+	$transchart = $financeHelper->chart_getAlltrans($uid,$financialYear,$filter); 
+	$show = @$_GET['show'] ? $_GET['show'] : '';
+	$cat = @$_GET['cat'] ? $_GET['cat'] : null;
+	if(isset($_GET['show']) && $_GET['show'] == 'income'){		
+	$cattype = $financeHelper->getIncometype();
+	$incomeRecord = $financeHelper->getAllIncome($uid,$financialYear,$filter,null, $cat); 	
+	//$chart = $financeHelper->chart_getAllIncome($uid,$financialYear,$filter, $cat); 	
+	$alltrans = $incomeRecord;
+	}else if(isset($_GET['show']) && $_GET['show'] == 'expense'){
+	$cattype = $financeHelper->getExpencetype();
+	$expenseRecord = $financeHelper->getAllExpense($uid,$financialYear,$filter, $cat);
+	//$chart = $financeHelper->chart_getAllExpense($uid,$financialYear,$filter, $cat); 	
+	$alltrans = $expenseRecord;	
+	}else{		
+		$cattype = '';
+		$incomeRecord = $financeHelper->getAllIncome($uid,$financialYear,$filter ); 
+		$expenseRecord = $financeHelper->getAllExpense($uid,$financialYear,$filter); 
+		$alltrans = array_merge($incomeRecord , $expenseRecord);
+		//$transchart = $financeHelper->chart_getAlltrans($uid,$financialYear,$filter); 
+	}
+	
+	$return = $this->script('finance_detail_process'); 
+	    $m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+	?>
+	
+	<section id="breadcrum" class="breadcrum">
+	<div class="breadcrum-sitemap">
+		<div class="container">
+			<div class="row">
+				<ul>         
+					<li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+						<li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+							<li><a href="/finance-detail">Finance</a></li>
+<li><a href="/freelancer-reports">REPORTS</a></li>
+							<li><a href="#">All Transactions</a></li>
+				</ul>
+					</div>
+				</div>
+			</div>
+			<div class="breadcrum-title">
+				<div class="container">
+					<div class="row">
+						<div class="set-icon registration-icon">
+							<i class="glyphicon glyphicon-list-alt" aria-hidden="true"></i>
+						</div>
+						<div class="set-title">
+							<h3>All Transactions <?php echo @$show !='' ? '/' : '' ?> <?php echo strtoupper($show);  ?></h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section><div class="col-md-12 pad0">
+                        <div class=" text-center finance-page-head marb0">All transactions</div>
+                        </div></section>
+
+<?php echo $this->partial('finance-summary'); ?>
+
+
+                        <form action="" class="add_item_form form-inline">
+                          <input type="hidden" name="show" value="<?php echo isset($_GET['show']) ? $_GET['show'] 
+: ''; ?>">
+                          <?php include 'select-financial-year.phtml'; ?>  
+                        </form>
+               <section id="open-invoice" class="open-invoice">
+                           <!-- <h3>ALL TRANSACTION <?php // echo strtoupper($show);  ?></h3>-->
+						<?php	if($show != ''){ ?>
+                            <div class="col-md-12 pad0">
+             <form action="">
+              
+                  
+                  <div class="col-md-12 tra_filter mart30 select-year-wrapper">
+			<div class="financial-year-title col-sm-6 col-md-6 bglightgrey">
+				<h4 class="text-right">Please Select Category &nbsp;&nbsp;&nbsp;&nbsp;: </h4>
+			</div>
+			<div class="financial-year-select col-sm-6 col-md-6 bglightgrey">
+                                <input type="hidden" value="<?php echo $show ?>" name='show'/>	
+                                <input type="hidden" value="<?php echo isset($_GET['year']) ? $_GET['year'] : ''; ?>" name='year'/>	
+				<select name="cat" onchange="this.form.submit()" class="filter-selection">
+                                 <option value= ''>Choose Category </option>
+                                 <?php foreach($cattype as $key => $type){ 
+                                 $key = @isset($type['id']) ? $type['id'] :  $key ; 
+                                 $type = @isset($type['cat']) ? $type['cat'] :  $type ; ?>
+    							<option value='<?php echo $key ; ?>' <?php echo @$key == $cat  ? 'selected' :  '' ; ?>><?php echo $type ; ?></option>
+                                 <?php } ?>													 
+                            </select>
+									</div>
+                                </div>
+                                
+                                
+                                
+                  
+                  </form>
+              </div>
+						<?php } ?>        
+             </section>
+              <section id="latest-expense" class="latest-expense-half">
+              <div class="col-md-12 pad0 income_tra_sc all_transection_sc">
+              		<?php echo $this->partial('flash-messages'); ?>
+                            <div class="col-md-12 col-sm-12 income padl0">
+                            <div class="col-md-12 income-btn income-btn-scroll">
+								<div class="blue-tab-scroll"> 
+									<div class="col-xs-4 col-sm-4 col-md-4 pad0 <?php if($show == ''){ echo 'active'; }  ?>">
+                               <div class="profile-edit-btn incomee-btn">
+                                              <a class="gradient-threeline incomm" href="<?php echo $this->serverUrl() ;?>/all-transaction">ALL</a>
+                                </div>
+                           </div> 
+                            <div class="col-xs-4 col-sm-4 col-md-4 pad0 <?php if($show == 'income'){ echo 'active'; }  ?>">
+                               <div class="profile-edit-btn incomee-btn">
+                                              <a class="gradient-threeline incomm" href="<?php echo $this->serverUrl() ;?>/all-transaction?show=income">INCOME</a>
+                                </div>
+                           </div> 
+                            <div class="col-xs-4 col-sm-4 col-md-4 pad0">
+                               <div class="profile-edit-btn incomee-btn <?php if($show == 'expense'){ echo 'active'; }  ?>">
+                                              <a class="gradient-threeline incomm" href="<?php echo $this->serverUrl() ;?>/all-transaction?show=expense">EXPENSES</a>
+                                </div>
+                           </div>
+								</div>
+                           </div> 
+                            <div class="col-md-12 all_tra_tab">
+                              <div class="table-responsive table-responsive-scroll finance-scroller"> <!--table-responsive-scroll-->
+                                 <table class="table table-striped" id="all-transaction">
+                                        <thead>
+                                          <tr>
+                                            <th>Tran&nbsp;No</th>
+                                            <th>Job&nbsp;No</th>
+                                            <th>Date</th>
+				  							<?php if($show != ''){ ?>
+					   							<!-- <th>Net</th> -->
+	                                            <!---<th>Vat</th>-->   
+                                            <?php } ?>
+                                            <th>Amount</th>
+			 <?php if($show != 'income'){ ?><th style="width:30%;">Desciption</th><?php } ?>
+			 <?php if($show == 'income'){ ?><th>Store</th>
+                                            <th>Location</th><?php } else{ ?><th style="min-width:0px; width:0px;"></th><th style="min-width:0px; width:0px;"></th><?php } ?>
+											<th>Category</th>										
+		     <?php if($show == 'income'){ ?><th>Supplier</th><?php } ?>
+                                            <th>Bank</th>
+                                            <th>Bank&nbsp;Date</th>
+                                            <th>Action</th>
+                                            <th>Receipt</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+										
+				<?php
+				$totalin = $totalout =0;
+				if (!empty($alltrans)) :
+				foreach($alltrans as $alltran){ 
+				$grossCost = @$alltran['job_rate'] ? $alltran['job_rate']  : $alltran['cost']; 	
+				$grossCost = @$alltran['job_rate'] ? $alltran['job_rate']  : $alltran['cost']; 	
+				$isBank = $alltran['bank'];
+				$trans_type = $alltran['trans_type'];
+				 ?>
+					<tr>
+						<td data-order="<?php echo $alltran['trans_id']; ?>"># <?php echo $alltran['trans_id']; ?></td>
+						<td><?php echo @$alltran['job_id'] ? $alltran['job_id'] : 'N/A'; ?></td>		
+						<td data-order=<?php echo $alltran['job_date'] ; ?>><?php echo date_format(date_create($alltran['job_date']), 'd/m/Y'); ?></td>
+						<?php if($show != ''){ ?>
+							<!-- <td><?php echo $currency.$financeHelper->getNetRate($grossCost); ?></td> -->
+							<!--<td><?php // echo $currency.$financeHelper->getVatRate($grossCost);?></td>-->
+						<?php } ?>
+						<td><?php echo $currency.$financeHelper->setPriceFormate($grossCost); ?></td>
+						<?php if($show != 'income'){ ?><td style="width: 30%;">
+						<?php if(isset($alltran['description'])){?> 
+						<a href="javascript:void(0);" onclick="detailDescription('<?php echo $alltran['description']; ?>')"><?php echo substr($alltran['description'], 0,20).'...' ?></a>
+						<?php }else{ echo '--'; }?>
+						</td><?php	} ?>
+						<?php if($show == 'income'){ ?>
+						<td><?php echo @$alltran['store'] ? $alltran['store'] : 'N/A'; ?></td>
+						<td><?php echo $alltran['location']; ?></td>
+						<?php }else{ ?><td style="min-width:0px; width:0px;"></td><td style="min-width:0px; width:0px;"></td> <?php } ?>
+						<td><?php echo @$alltran['income_type'] ? $financeHelper->getIncometype($alltran['income_type']) :  $financeHelper->getExpencetype($alltran['expense_type_id']); ?></td>
+						<?php if($show == 'income'){ ?><td><?php echo $alltran['supplier']; ?></td><?php } ?>
+						<td>
+						
+						
+						
+						<?php
+						
+						if($trans_type == 1){
+							  echo @$isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankincome('.$alltran['id'].')"><i class="fa fa-close" aria-hidden="true"></i></a>' ;
+						}elseif($trans_type == 2){
+							  echo @$isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankexpanse('.$alltran['id'].')"><i class="fa fa-close" aria-hidden="true"></i></a>' ; 
+						}
+						
+						?>
+					
+						
+						</td>
+						<td data-order=<?php echo $alltran['bank_date'] ; ?>><?php echo $alltran['bank_date'] != '' && $alltran['bank_date'] != '0000-00-00' ? date('d/m/Y',strtotime($alltran['bank_date'])) : 'N/A' ?></td>
+						<td>
+							<?php if($trans_type == 1){ ?>
+					           	<a href="<?php echo $this->serverUrl().'/add-income?e='.$encypt->encryptIt($alltran['id']) ;?>" class="btn btn-xs btn-info"><i class="fa fa-fw fa-edit"></i></a>
+					          	<form role="form" action="<?php echo $this->escapeHtml($this->document('all-transaction')->getUrl()); ?>" method="post" id="delete-in<?php echo $alltran['id'] ?>" >       
+					                <input type="hidden" value="<?php echo $encypt->encryptIt($alltran['id']) ; ?>" name="delincomeId"/>
+									<input type="hidden" value="in_data_delete" name="in_data_delete"/>
+					                <button type="button" class="btn btn-xs btn-danger" name="in_data_delete" value="in_data_delete" onclick="confirm_delete_in(<?php echo $alltran['id'] ?>)"><i class="fa fa-fw fa-close"></i></button>	                
+					            </form>
+					        <?php }elseif($trans_type == 2){ ?>
+					        	<a href="<?php echo $this->serverUrl().'/add-expense?e='.$encypt->encryptIt($alltran['id']) ;?>" class="btn btn-xs btn-info"><i class="fa fa-fw fa-edit"></i></a>
+								<form role="form" action="<?php echo $this->escapeHtml($this->document('all-transaction')->getUrl()); ?>" method="post" id="delete-ex<?php echo $alltran['id'] ?>">  
+				                    <input type="hidden" value="<?php echo $encypt->encryptIt($alltran['id']) ; ?>" name="delexpenseId"/>
+									<input type="hidden" value="ex_data_delete" name="ex_data_delete"/>
+				                    <button type="button" class="btn btn-xs btn-danger" name="ex_data_delete" value="ex_data_delete" onclick="confirm_delete_ex(<?php echo $alltran['id'] ?>)"><i class="fa fa-fw fa-close"></i></button>
+				                </form>
+					        <?php } ?>
+				        </td>
+                        <td>
+                            <?php if(isset($alltran['receipt_image'])) { ?>
+                                <img src="<?php echo $this->cdn('/media/icons/receipt.png');?>" alt="receipt" style="width:30px;" onclick="receiptImg('<?php echo($alltran['receipt_image'])?>');">
+                            <?php } else { ?>
+
+                            <?php } ?>
+                        </td>
+					</tr>	
+				<?php  
+				if($show == ''){
+				$totalin = @$alltran['job_rate'] ? $alltran['job_rate']+$totalin :  $totalin ;
+				$totalout = @$alltran['cost'] ? $alltran['cost']+$totalout :  $totalout ;	
+				}else{
+				$totalpaid = @$isBank == 1 ? $grossCost+$totalpaid :  $totalpaid ;
+				$totalpending = @$isBank != 1 ? $grossCost+$totalpending :  $totalpending ;						
+				}
+				}  
+				endif; ?> 	
+									      
+			  </tbody>
+                                </table>
+                              </div> 
+                              
+                            
+                            <div class="action-btn">
+                            	<?php if($show == 'income'): ?>
+                            		<a href="<?php echo $this->serverUrl().'/add-income';?>" class="read-common-btn grad_btn pull-right">ADD INCOME</a>                            		
+                            	<?php elseif($show == 'expense'): ?>
+                            		<a href="<?php echo $this->serverUrl().'/add-expense';?>" class="read-common-btn grad_btn pull-right">ADD EXPENSE</a> 
+                            	<?php else: ?>
+                            		<a href="<?php echo $this->serverUrl().'/add-expense';?>" class="read-common-btn grad_btn pull-right">ADD EXPENSE</a> 
+                            		<a href="<?php echo $this->serverUrl().'/add-income';?>" class="read-common-btn grad_btn pull-right">ADD INCOME</a> 
+                            		
+                            	<?php endif; ?>
+                            </div>
+                            </div>
+                            </div>                          
+                </div>
+                </section>
+                
+            </div>
+        </div>
+   	</div>
+</div>
+    						<!-- Modal content-->
+    <div id="detail-description" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Expense Description</h4>
+                </div>
+                <div class="modal-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Pop up -->
+    <div class="modal fade" id="receipt-img-dialog" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Receipt Information</h4>
+                </div>
+                <div class="modal-body" style="text-align: center">
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+	function detailDescription(description) {
+        $('#detail-description .modal-body').html('<p>'+description+'</p>');
+        $('#detail-description').modal('show');
+    }
+</script>
+
+<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>" charset="UTF-8"></script>
+
+<script>
+	$(document).ready(function() {
+    $('#all-transaction').DataTable( {		
+		searching: false,
+		paging: false,	
+		"bInfo": false,
+		"order": [[ 2, "desc" ]],
+		<?php if(isset($_GET['show']) && $_GET['show'] == 'income'){ ?>
+			columnDefs: [ { orderable: false, targets: [4,5,6,7,8,9,10] } ]
+		<?php }else{ ?>
+			columnDefs: [ { orderable: false, targets: [4,5,6,7,8] } ]
+		<?php } ?>
+		
+		/* order: [],
+                columnDefs: [ { orderable: false, targets: [0] } ]*/
+    } );
+} );
+
+	function confirm_delete_in(id){
+    //    event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Do you really want to delete this transaction?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#delete-in"+id).submit();
+            messageBoxClose();
+        });
+    };
+    function confirm_delete_ex(id){
+    //    event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Do you really want to delete this transaction?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#delete-ex"+id).submit();
+            messageBoxClose();
+        });
+    }
+
+    function receiptImg(receiptImgPath) {
+        var available_html = '';
+        available_html += '<img src="<?php echo $this->serverUrl().'/';?>'+receiptImgPath+'" alt="receipt">';
+        $('#receipt-img-dialog .modal-body').html(available_html);
+        $('#receipt-img-dialog').modal('show');
+    }
+</script>

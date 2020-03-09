@@ -1,0 +1,113 @@
+<div class="qus-tabs financead" style="text-align: center;border: 1px solid #ccc;display: -webkit-box;margin-bottom: 10px;">
+    <div class="col-md-12">
+        <div class="col-md-4"><h5>Year: <?php echo $year ; ?></h5></div>
+        <div class="col-md-4"><h5>User No. <?php echo $userData->getId() ; ?></h5></div>
+        <div class="col-md-4"><h5><?php echo $userData->getLogin();  ?></h5></div>
+    </div>
+</div>
+<div class="qus-tabs financead" style="display: flow-root;margin-bottom: 20px;">
+    <div>
+        <button type="button" class="btn btn-info pull-right" onclick="fnExcelReport('Supplier list <?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?> <?php echo date('d-m-y');?>');">Export To xls </button>
+    </div>
+</div>
+
+
+<div id="tabs">
+    <div id="fre-tab">
+
+        <table class="table clickable table-striped table-hover table-responsive"  id="table_wrapper" width="100%">
+                <thead>
+                <tr>
+                    <th class="col-md-1">Contact name</th>
+                    <th class="col-md-1">Store name</th>
+                    <th class="col-md-3">Address</th>
+                    <th class="col-md-1">Contact No</th>
+                    <th class="col-md-1">Email address</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+                $dataSupplier = $supplier;
+                foreach($dataSupplier as $data) {
+                    if($data['created_by'] ==  $userData->getId()) {
+                        ?>
+                        <tr>
+                            <td class="col-md-1"><?php echo ucfirst($data['name']) ; ?> </td>
+                            <td class="col-md-1"><?php echo ucfirst($data['store_name']); ?> </td>
+                            <td class="col-md-3">
+                                <?php echo $data['address'] ; ?> .<br/>
+                                <?php if($data['addresssec'] != ''){ echo @$data['addresssec'].'<br/> '; } ; ?>
+                                <?php echo @$data['town'] ? $data['town'].',' : '' ; ?>
+                                <?php echo @$data['country'] ? $data['country'].',' : '' ; ?>
+                                <?php echo $data['postcode'] ; ?>
+                            </td>
+                            <td class="col-md-1"><?php echo $data['contact_no'] ; ?> </td>
+                            <td class="col-md-1"><?php echo $data['email'] ; ?> </td>
+                        </tr>
+                    <?php }} ?>
+                </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    function fnExcelReport(filename = 'Supplier list')
+    {
+        var tab_text="<table border='2px'>";
+
+        tab_text +="<tr><td bgcolor='#87AFC6' colspan='5' align='center'><h3> User No. <?php echo $userData->getId() ; ?> , <?php echo $userData->getLogin();  ?><h3/></td></tr><tr>";
+
+
+        var textRange; var j=0;
+        tab = document.getElementById('table_wrapper'); // id of table
+
+        for(j = 0 ; j < tab.rows.length ; j++)
+        {
+            tab_text=tab_text+tab.rows[j].innerHTML+"</tr>";
+        }
+
+        tab_text=tab_text+"</table>";
+        tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, "");//remove if u want links in your table
+        tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+        tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // reomves input params
+
+        var ua = window.navigator.userAgent;
+        var msie = ua.indexOf("MSIE ");
+
+        if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+        {
+            txtArea1.document.open("txt/html","replace");
+            txtArea1.document.write(tab_text);
+            txtArea1.document.close();
+            txtArea1.focus();
+            link=txtArea1.document.execCommand("SaveAs",true,"Say Thanks to Sumit.xls");
+        }
+        else{
+            //other browser not tested on IE 11
+            var isChrome = !!window.chrome && !!window.chrome.webstore;
+            if(isChrome == true){
+                var link = document.createElement('a');
+                link.download = filename+".xls";
+                link.href = 'data:application/vnd.ms-excel,' + encodeURIComponent(tab_text);
+                link.click();
+            }else{
+                link = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+            }
+            return (link);
+        }
+    }
+</script>
+<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>" charset="UTF-8"></script>
+<script>
+    $(document).ready(function() {
+        $('#table_wrapper').DataTable( {
+            language: { search: "" },
+            searching: true,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]]
+        } );
+        $('#table_wrapper_filter input').addClass('form-control');
+        $('#table_wrapper_filter input').attr("placeholder", "Search For Export");
+        $('#table_wrapper_filter').addClass('pull-right');
+    } );
+</script>

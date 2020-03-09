@@ -1,0 +1,66 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('resource_key')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('resource_key')); ?>
+            <?php echo $this->formElementErrors($this->form->get('resource_key'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('resource_value')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('resource_value')); ?>
+            <?php echo $this->formElementErrors($this->form->get('resource_value'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('resource_allow_count')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('resource_allow_count')); ?>
+            <?php echo $this->formElementErrors($this->form->get('resource_allow_count'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    
+
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save & add new')); ?>" name="addNew">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+</script>

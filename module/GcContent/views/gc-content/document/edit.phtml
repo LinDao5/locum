@@ -1,0 +1,503 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Content
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+
+/** @var $this \Zend\View\Renderer\PhpRenderer */
+
+use GcFrontend\Controller\DbController as DbController;
+
+?>
+<?php echo $this->form()->openTag($this->form); ?>
+<button class="btn-in-tab btn btn-warning btn-sm" id="input-save" type="submit">
+    <i class="glyphicon glyphicon-floppy-disk"></i>
+    <?php echo $this->escapeHtml($this->translate('Save')); ?>
+</button>
+<div id="tabs" style="margin-bottom:20px">
+    <?php echo $this->tabs; ?>
+
+    <?php $fieldsets = $this->form->getFieldsets(); ?>
+    <?php foreach ($fieldsets as $tab_id => $fieldset): ?>
+        <div id="<?php echo $this->escapeHtml($tab_id); ?>" class="form-horizontal">
+            <?php $elements = $fieldset->getElements(); ?>
+            <?php foreach ($elements as $element): ?>
+                <div class="form-group">
+                    <?php if ($element->getName() == 'more_information'): ?>
+                        <div class="col-lg-2">
+                            <label class="control-label"><?php echo $this->escapeHtml($this->translate('Preview')); ?></label>
+                        </div>
+
+                        <div class="col-lg-10">
+                            <a class="btn btn-link" target="_blank"
+                               href="<?php echo $this->escapeHtml($this->document->getUrl()); ?>?preview=true"><?php echo $this->escapeHtml($this->document->getUrl()); ?></a>
+                        </div>
+                    <?php else: ?>
+                        <?php if ($element->getLabel()): ?>
+                            <div class="col-lg-2">
+                                <?php echo $this->formLabel($element); ?>
+                                <?php if ($element->getOption('required')): ?>
+                                    <p class="text-danger pull-right">
+                                        (<?php echo $this->escapeHtml($this->translate('Mandatory')); ?>)</p>
+                                <?php endif; ?>
+
+                                <?php $description = $element->getOption('description'); ?>
+                                <?php if (!empty($description)): ?>
+                                    <p class="help-block"><?php echo $this->escapeHtml($this->translate($description)); ?></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php $content = $element->getAttribute('content'); ?>
+                        <?php if (!empty($content)): ?>
+                            <?php echo $content; ?>
+                        <?php else: ?>
+                            <div class="col-lg-10">
+                                <?php echo $this->formElement($element); ?>
+                                <?php echo $this->formElementErrors($element, array('class' => 'text-danger')); ?>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endforeach; ?>
+</div>
+<?php echo $this->form()->closeTag($this->form); ?>
+
+
+
+<?php
+$url = $_SERVER['REQUEST_URI'];
+$editId = explode("/", $url);
+if ($editId[5] == 23) {
+    ?>
+    <div id="tabs-package">
+        <ul>
+            <li><a href="#tabs-1">Package Content</a></li>
+        </ul>
+        <div id="tabs-1">
+            <div class="row heading-class">
+                <div class="col-md-3"><h4>Label</h4></div>
+                <div class="col-md-3"><h4>Bronze</h4></div>
+                <div class="col-md-3"><h4>Silver</h4></div>
+                <div class="col-md-3"><h4>Gold</h4></div>
+            </div>
+            <form id="pkg-form">
+                <input type="hidden" name="package_form_id" value="1">
+                <div id="pkg-row">
+                    <div class="row" id="pkg-item">
+                        <div class="col-md-3">
+                            <input type="text" name="pkg_label[]" class="form-control" id="pkg_label">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="pkg_bronze[]" class="form-control" id="pkg_bronze">
+                                <option value="0">Not Available</option>
+                                <option value="1">Available</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="pkg_silver[]" class="form-control" id="pkg_silver">
+                                <option value="0">Not Available</option>
+                                <option value="1">Available</option>
+                            </select>
+
+                        </div>
+                        <div class="col-md-3">
+                            <select name="pkg_gold[]" class="form-control" id="pkg_gold">
+                                <option value="0">Not Available</option>
+                                <option value="1">Available</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="allData"></div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <a href="javascript:void(0)" id="add_field">Add</a> | <a href="javascript:void(0)"
+                                                                             id="remove_field">Remove</a>
+                </div>
+                <div>
+                    <a href="javascript:void(0);" class="btn-in-tab btn btn-warning btn-sm" id="update-pkg-info"><i
+                                class="glyphicon glyphicon-floppy-disk"></i>Update Package Info</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <style type="text/css">
+        .heading-class {
+            margin-bottom: 10px;
+            background: #ddd;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .row.heading-class .col-md-3 h4 {
+            text-align: center;
+        }
+
+        div#tabs-package {
+            margin-bottom: 68px;
+        }
+
+        #pkg-item {
+            margin-bottom: 10px;
+        }
+
+        input[type="checkbox"] {
+            box-shadow: none;
+        }
+
+        input[type="checkbox"]:focus {
+            outline: 0 !important;
+            box-shadow: none;
+        }
+    </style>
+    <script type="text/javascript">
+        var j = 2;
+        $("#add_field").click(function () {
+            var nEle = '<div class="row" id="pkg-item"><div class="col-md-3"><input type="text" name="pkg_label[]" class="form-control" required></div><div class="col-md-3"><select name="pkg_bronze[]" class="form-control"><option value="0">Not Available</option><option value="1">Available</option></select></div><div class="col-md-3"><select name="pkg_silver[]" class="form-control"><option value="0">Not Available</option><option value="1">Available</option></select></div><div class="col-md-3"><select name="pkg_gold[]" class="form-control"><option value="0">Not Available</option><option value="1">Available</option></select></div></div> ';
+            $("#pkg-row").append(nEle).show(1000);
+        });
+        $("#remove_field").click(function () {
+            var lenghtEle = $("div#pkg-item").length;
+            if (lenghtEle > 1) {
+                $("div#pkg-item").last().remove();
+            } else {
+                alert("cant remove this");
+            }
+        });
+        $("#update-pkg-info").click(function (e) {
+            var pkgData = $("#pkg-form").serialize();
+            $.ajax({
+                'url': '/ajax-request',
+                'type': 'POST',
+                'data': pkgData,
+                'success': function (result) {
+                    alert(result);
+                    location.reload();
+                }
+            });
+        });
+    </script>
+    <?php
+
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $sqlInserPkgInfo = "SELECT * FROM pkg_privilege_info";
+    $getPkgInfo = $adapter->query($sqlInserPkgInfo, $adapter::QUERY_MODE_EXECUTE);
+    $getAllPkgInfo = $getPkgInfo->toArray();
+    foreach ($getAllPkgInfo as $key => $value) {
+        $label = $value['p_label'];
+        $bronze = $value['p_bronze'];
+        $silver = $value['p_silver'];
+        $gold = $value['p_gold'];
+        if ($key == 0) {
+            ?>
+            <script type="text/javascript">
+                $("#pkg_label").val("<?php echo $label ?>");
+                $("#pkg_bronze").val("<?php echo $bronze ?>");
+                $("#pkg_silver").val("<?php echo $silver ?>");
+                $("#pkg_gold").val("<?php echo $gold ?>");
+            </script>
+            <?php
+        } else {
+            ?>
+            <script type="text/javascript">
+                var nEle = '<div class="row" id="pkg-item"><div class="col-md-3"><input type="text" name="pkg_label[]" class="form-control" value="<?php echo $label ?>"></div><div class="col-md-3"><select name="pkg_bronze[]" class="form-control" value="<?php echo $bronze ?>" id="pkg_bronze_<?php echo $key ?>"><option value="0">Not Available</option><option value="1">Available</option></select></div><div class="col-md-3"><select name="pkg_silver[]" class="form-control" value="<?php echo $silver ?>" id="pkg_silver_<?php echo $key ?>"><option value="0">Not Available</option><option value="1">Available</option></select></div><div class="col-md-3"><select name="pkg_gold[]" class="form-control" value="<?php echo $gold ?>" id="pkg_gold_<?php echo $key ?>"><option value="0">Not Available</option><option value="1">Available</option></select></div></div> ';
+                $("#allData").append(nEle).show(1000);
+                $("#pkg_bronze_<?php echo $key ?>").val("<?php echo $bronze ?>");
+                $("#pkg_silver_<?php echo $key ?>").val("<?php echo $silver ?>");
+                $("#pkg_gold_<?php echo $key ?>").val("<?php echo $gold ?>");
+            </script>
+            <?php
+        }
+    }
+    //print_r($getAllPkgInfo);
+    ?>
+<?php } ?>
+
+
+<!-- LocumKit Team -->
+<?php
+$url = $_SERVER['REQUEST_URI'];
+$editId = explode("/", $url);
+if ($editId[5] == 2) {
+
+    ?>
+    <div id="tabs-package">
+        <ul>
+            <li><a href="#tabs-1">LocumKit Team</a></li>
+        </ul>
+        <div id="tabs-1">
+            <div class="row heading-class">
+                <div class="col-md-3"><h4>Image</h4></div>
+                <div class="col-md-3"><h4>Name</h4></div>
+                <div class="col-md-3"><h4>Designation</h4></div>
+                <div class="col-md-3"><h4>Display position</h4></div>
+            </div>
+            <form id="team-form" method="POST" action="<?php echo $url; ?>?save=team-info"
+                  enctype="multipart/form-data">
+                <div id="team-row">
+                    <?php
+                    $dbConfig = new DbController();
+                    $adapter = $dbConfig->locumkitDbConfig();
+                    $sqlInserteamInfo = "SELECT * FROM locumkit_team_info ORDER BY position ASC";
+                    $getteamInfo = $adapter->query($sqlInserteamInfo, $adapter::QUERY_MODE_EXECUTE);
+                    $getAllteamInfo = $getteamInfo->toArray();
+                    //print_r($getAllteamInfo);
+                    if (!empty($getAllteamInfo)) {
+                        foreach ($getAllteamInfo as $key => $teamInfo) {
+                            ?>
+                            <div class="row" id="team-item">
+                                <div class="col-md-3" style="text-align:center;">
+                                    <?php if ($teamInfo['image'] != '') { ?>
+                                        <img src="<?php echo $teamInfo['image']; ?>"
+                                             alt="<?php echo $teamInfo['name']; ?>"
+                                             style="width: 100px; height: 100px;">
+                                    <?php } ?>
+                                    <input type="file" name="team_image[]" class="form-control" id="team_image"
+                                           style="display:none;">
+                                    <label for="team_image" style="cursor: pointer;"><span
+                                                class="glyphicon glyphicon-edit"></span></label>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" name="team_name[]" class="form-control" id="team_name"
+                                           placeholder="Enter member name" value="<?php echo $teamInfo['name']; ?>">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" name="team_designation[]" class="form-control"
+                                           id="team_designation" placeholder="Enter member designation"
+                                           value="<?php echo $teamInfo['designation']; ?>">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" name="team_position[]" class="form-control" id="team_position"
+                                           value="<?php echo $teamInfo['position']; ?>">
+                                </div>
+                            </div>
+                            <hr/>
+                        <?php } ?>
+                    <?php } else { ?>
+                        <div class="row" id="team-item">
+                            <div class="col-md-3">
+                                <input type="file" name="team_image[]" class="form-control" id="team_image_1">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_name[]" class="form-control" id="team_name"
+                                       placeholder="Enter member name">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_designation[]" class="form-control" id="team_designation"
+                                       placeholder="Enter member designation">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_position[]" class="form-control" id="team_position">
+                            </div>
+                        </div>
+                        <div class="row" id="team-item">
+                            <div class="col-md-3">
+                                <input type="file" name="team_image[]" class="form-control" id="team_image_1">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_name[]" class="form-control" id="team_name"
+                                       placeholder="Enter member name">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_designation[]" class="form-control" id="team_designation"
+                                       placeholder="Enter member designation">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_position[]" class="form-control" id="team_position">
+                            </div>
+                        </div>
+                        <div class="row" id="team-item">
+                            <div class="col-md-3">
+                                <input type="file" name="team_image[]" class="form-control" id="team_image_1">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_name[]" class="form-control" id="team_name"
+                                       placeholder="Enter member name">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_designation[]" class="form-control" id="team_designation"
+                                       placeholder="Enter member designation">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_position[]" class="form-control" id="team_position">
+                            </div>
+                        </div>
+                        <div class="row" id="team-item">
+                            <div class="col-md-3">
+                                <input type="file" name="team_image[]" class="form-control" id="team_image_1">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_name[]" class="form-control" id="team_name"
+                                       placeholder="Enter member name">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_designation[]" class="form-control" id="team_designation"
+                                       placeholder="Enter member designation">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="team_position[]" class="form-control" id="team_position">
+                            </div>
+                        </div>
+                    <?php } ?>
+                    <div id="team-allData"></div>
+                </div>
+                <!-- <div style="margin-top: 10px;">
+                    <a href="javascript:void(0)" id="add_team_field">Add</a> | <a href="javascript:void(0)" id="remove_team_field">Remove</a>
+                </div> -->
+                <div>
+                    <a href="javascript:void(0);" class="btn-in-tab btn btn-warning btn-sm" id="update-team-info"
+                       onclick="document.getElementById('team-form').submit();"><i
+                                class="glyphicon glyphicon-floppy-disk"></i>Update Team Info</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <style type="text/css">
+        .heading-class {
+            margin-bottom: 10px;
+            background: #ddd;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .row.heading-class .col-md-3 h4 {
+            text-align: center;
+        }
+
+        div#tabs-package {
+            margin-bottom: 68px;
+        }
+
+        #team-item {
+            margin-bottom: 10px;
+        }
+
+        input[type="checkbox"] {
+            box-shadow: none;
+        }
+
+        input[type="checkbox"]:focus {
+            outline: 0 !important;
+            box-shadow: none;
+        }
+    </style>
+    <script type="text/javascript">
+        var j = 2;
+        $("#add_team_field").click(function () {
+            var nEle = '<div class="row" id="team-item"><div class="col-md-3"><input type="text" name="team_label[]" class="form-control" required></div><div class="col-md-3"><select name="team_bronze[]" class="form-control"><option value="0">Not Available</option><option value="1">Available</option></select></div><div class="col-md-3"><select name="team_silver[]" class="form-control"><option value="0">Not Available</option><option value="1">Available</option></select></div><div class="col-md-3"><select name="team_gold[]" class="form-control"><option value="0">Not Available</option><option value="1">Available</option></select></div></div> ';
+            $("#team-row").append(nEle).show(1000);
+        });
+        $("#remove_team_field").click(function () {
+            var lenghtEle = $("div#team-item").length;
+            if (lenghtEle > 1) {
+                $("div#team-item").last().remove();
+            } else {
+                alert("cant remove this");
+            }
+        });
+        $("#update-team-info").click(function (e) {
+            var team_img_data = new Array();
+            var team_name_data = new Array();
+            var team_designation_data = new Array();
+            var team_position_data = new Array();
+            var team_data = new Array();
+
+            $('input[name="team_image[]"]').each(function () {
+                var img_file = $(this).prop('files');
+                var form_data = new FormData();
+                form_data.append('file', img_file);
+                console.log(form_data);
+                $.ajax({
+                    'url': '/ajax-request',
+                    'type': 'POST',
+                    'enctype': 'multipart/form-data',
+                    'data': {'team_info': '1', form_data},
+                    'success': function (result) {
+                        console.log(result);
+                        //location.reload();
+                    }
+                });
+
+            });
+            $('input[name="team_name[]"]').each(function () {
+                team_name_data.push($(this).val());
+            });
+            $('input[name="team_designation[]"]').each(function () {
+                team_designation_data.push($(this).val());
+            });
+            $('input[name="team_position[]"]').each(function () {
+                team_position_data.push($(this).val());
+            });
+
+            team_data.push({
+                'team_img': team_img_data,
+                'team_name': team_name_data,
+                'team_designation': team_designation_data,
+                'team_position': team_position_data,
+            });
+
+
+            console.log(team_img_data);
+
+
+            $.ajax({
+                'url': '/ajax-request',
+                'type': 'POST',
+                'data': {'team_info': '1', 'team_data': JSON.stringify(team_data)},
+                'success': function (result) {
+                    console.log(result);
+                    //location.reload();
+                }
+            });
+        });
+    </script>
+
+<?php } ?>
+
+<script type="text/javascript">
+    $(function () {
+        jQuery('#tabs').tabs();
+        jQuery('#tabs-package').tabs();
+        Gc.saveCommand();
+        Gc.checkDataChanged();
+    });
+
+    $("div#pkg-item select").each(function () {
+        if ($(this).val() == '1') {
+            $(this).addClass("active-pack");
+        }
+    });
+</script>
+<style type="text/css">
+    .active-pack {
+        background: #d1f984 !important;
+        color: #333;
+    }
+
+    div#pkg-item select {
+        background: #ff9191;
+        color: #333;
+    }
+</style>

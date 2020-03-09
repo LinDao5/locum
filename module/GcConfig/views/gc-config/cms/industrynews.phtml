@@ -1,0 +1,103 @@
+<?php
+$qus = 'fre';
+if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+    $qus = 'emp';
+}elseif(isset($_GET['q']) && $_GET['q'] == 'adm'){
+    $qus = 'adm';
+}
+
+if (isset($_GET['c']) && $_GET['c'] != '') {
+    $cat = $_GET['c'];
+}else{
+    $cat = 1;
+}
+?>
+<div style=" display: flow-root;">
+<div class="form-group pull-right">
+             <div class="input-group pull-right">
+<a class="btn btn-warning pull-right" href="<?php echo $this->serverUrl() ?>/admin/config/industry-news/add">Add Industry News</a>
+             </div>
+             </div>
+</div>
+
+<div id="tabs">
+<div class="qus-tabs">
+   <!--- <ul>
+        <li class="<?php if ($qus == 'fre') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/industry-news?q=fre">Freelancer</a></li>
+        <li class="<?php if ($qus == 'emp') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/industry-news?q=emp">Employer</a></li>
+    </ul>-->
+</div>
+    <div id="fre-tab">
+        <div class="cat-tabs">
+          <!--  <ul>
+                <?php foreach ($this->professions as $profession) { ?>
+                    <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/industry-news?q=<?php echo $qus ; ?>&c=<?php echo $profession->getId()  ?>"><?php  echo $profession->getName() ?></a></li>
+                <?php } ?>
+            </ul>-->
+        </div>
+        <?php if(!empty($newsdata)): ?>
+            <table class="table clickable table-striped table-hover">
+               <!-- <colgroup>
+                    <col width="1%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                </colgroup>-->
+                <thead>
+                <tr>
+                    <th>Sno.</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Image</th>
+                    <!---<th>User Type</th>
+                    <th>Profession</th>-->
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+$i = 1 ;
+                foreach ($newsdata as $news):  ?>
+                    <tr>
+                        <td><?php echo $this->escapeHtml($i); ?></td>
+                        <td><?php echo $news['title']; ?></td>
+                        <td><?php echo $news['description']; ?></td>
+                        <td>
+                            <?php  $this->escapeHtml($news['image_path']); ?>
+                            <img width="50" height="50" src="<?php echo $this->serverUrl().'/'.$news['image_path'] ?>" />
+
+                        </td>
+                        <!---<td><?php echo $this->escapeHtml($news['user_type']); ?></td>
+                        
+<td>
+<?php foreach ($this->professions as $profession) { ?>
+                                <?php if ($news['category_id'] == $profession->getId()) {
+                                    echo $profession->getName() ;
+                                } ?>
+                            <?php } ?></td>-->
+                        <td><?php echo $this->escapeHtml( @$news['status']== 1 ? 'Active' : 'In Active'); ?></td>
+                        <td>
+                            <a href="<?php echo $this->url('config/industry-news/edit', array('id' => $news['id'])); ?>" class="edit-line">
+                                <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                            </a>
+                            <!--&nbsp;
+                            <a href="" class="delete-line">
+                                <img // src="<?php // echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php // echo $this->escapeHtml($this->translate('Delete')); ?>">
+                            </a>-->
+                        </td>
+                    </tr>
+                <?php $i++ ; endforeach; ?>
+
+                </tbody>
+            </table>
+        <?php
+        else:
+            echo "<h3>No record found..!</h3>";
+        endif;
+        ?>
+    </div>

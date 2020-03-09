@@ -1,0 +1,97 @@
+<?php
+
+$userCollection = new Gc\User\Lastlogin\Collection();
+$userData = new Gc\User\Collection();
+$userProfessional = new Gc\User\Professional\Collection();
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($userCollection->getLastLoginUsers()));
+$paginator->setItemCountPerPage(30);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+if($paginator->count() > 0): 
+?>
+<form id="filter" action="/report" method="GET">
+    <input type="hidden"  name="type" value="last_login_user">
+    <input id="user_record" type="submit" value="export" style="margin-top: 0px; float:left;  border: 1px solid #0a9aca;  padding: 5px 10px;  text-decoration: none;  background: #00a9e0;  color: #fff;  font-size: 16px; margin-right: 10px; border-radius: 3px;">
+</form>
+<?php 
+endif;
+    if (isset($_GET['user_record']) && $_GET['user_record']) {
+       echo "<script>alert('No record were found.')</script>";
+    }
+?>
+<hr style="clear:both" />
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="10%">        
+        <col width="15%">
+        <col width="15%">
+        <col width="20%">
+        <col width="10%">
+        <col width="10%">        
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('User ID')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Last Login Date')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('User Type')); ?></th>
+            <!--<th><?php echo $this->escapeHtml($this->translate('IP Address')); ?></th>-->
+            
+        </tr>
+    </thead>
+    <tbody>
+        <?php 
+            if($paginator->count() > 0): 
+            foreach ($paginator as $lastloginusers): 
+            
+            $userPresonalData = $userData->getUserById($lastloginusers->getUid());
+            if (!empty($userPresonalData)) {
+            /*echo "<pre>";
+            print_r($userPresonalData);
+            echo "</pre>";*/
+        ?>
+            <tr>
+                <td><?php echo $this->escapeHtml($lastloginusers->getUid()); ?></td>
+                <?php ?>
+                <td><?php echo date('d-m-Y', strtotime($lastloginusers->getLastLoginAt())); ?></td>
+                <?php foreach ($userPresonalData as $key => $value) {
+                    ?>
+                    <td><?php echo $this->escapeHtml($value->getName()); ?></td>
+                    <td><?php echo $this->escapeHtml($value->getEmail()); ?></td>
+                    <?php 
+                        if ($value->getUserAclProfessionId() != '') {
+                            $profInfo = $userProfessional->getProfessionalById($value->getUserAclProfessionId());
+                            foreach ($profInfo as $key => $profInfo) {
+                                $profName = $profInfo->getName();
+                            }
+                        }
+                    ?>
+                    <td><?php echo $this->escapeHtml($profName); ?></td>
+                    <?php 
+                        if($value->getUserAclRoleId() == 2){
+                            $userType = 'Freelancer';
+                        }elseif ($value->getUserAclRoleId() == 3) {
+                            $userType = 'Employer';
+                        } 
+                    ?>
+                    <td><?php echo $this->escapeHtml($userType); ?></td>
+                <?php } ?>
+                <!--<td><?php echo $this->escapeHtml($lastloginusers->getIpAddress()); ?></td>-->
+                               
+            </tr>
+        <?php } endforeach; else: ?>
+            <tr><td colspan="6" style="text-align:center">No records were found.</td></tr>
+        <?php endif; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/last-login-user'));?>
+</div>
+
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+
+

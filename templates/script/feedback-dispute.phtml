@@ -1,0 +1,130 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+use Gc\Registry;
+use GcConfig\Controller\FeedbackController as FeedbackController;
+use GcFrontend\Controller\EndecryptController as Ecryption;
+$encypt = new Ecryption();
+$feedbackController = new FeedbackController();
+$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+if($this->params()->fromQuery('feedbackId')){
+    $feedbackId = $encypt->decryptIt($this->params()->fromQuery('feedbackId'));
+}else{
+    echo "<script type='text/javascript'>window.location='".$serverUrl()."/404'</script>";
+}
+
+if (isset($_SESSION['user_role_id']) && isset($_SESSION['user_id']) && $_SESSION['user_id'] == $encypt->decryptIt($this->params()->fromQuery('u'))){
+	$userType = $_SESSION['user_role_id'];
+	$userId = $_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$serverUrl()."/login-form'</script>";	
+}
+$feedbackDataObj = $feedbackController->getFeedbackById($feedbackId);
+$feedbackFrom = '';
+$feedbackTo = '';
+$feedbackJobId = '';
+foreach ($feedbackDataObj as $key => $feedbackData) {
+	if ($feedbackData->getFreId() == $userId) {
+		$feedbackFrom 		= $feedbackData->empUserInfo;
+		$feedbackTo 		= $feedbackData->freUserInfo;		
+	}elseif($feedbackData->getEmpId() == $userId){
+		$feedbackFrom     = $feedbackData->freUserInfo;
+		$feedbackTo       = $feedbackData->empUserInfo;
+	}
+    $feedbackJobId      = $feedbackData->getJId();
+    $feedbackJobUserType= $feedbackData->getUserType();
+	$feedbacAveRate 	= $feedbackData->getRating();
+	$feedbackDetails 	= $feedbackData->getFeedback();
+	$feedbackComment 	= $feedbackData->getComments();
+
+	/*echo $feedbackFrom.'<br/>';
+	echo $feedbackTo.'<br/>';
+	echo $feedbacAveRate.'<br/>';
+	echo $feedbackDetails.'<br/>';
+	echo $feedbackComment.'<br/>';*/
+	?>
+    <input type="hidden" name="feedback_id" value="<?php echo $feedbackId; ?>">
+    <input type="hidden" name="feedback_fre_id" value="<?php echo $feedbackData->getFreId(); ?>">
+    <input type="hidden" name="feedback_emp_id" value="<?php echo $feedbackData->getEmpId(); ?>">
+    <input type="hidden" name="feedback_job_id" value="<?php echo $feedbackJobId; ?>">
+    <input type="hidden" name="feedback_avg_rate" value="<?php echo $feedbacAveRate; ?>">
+    <input type="hidden" name="feedback_user_type" value="<?php echo $feedbackJobUserType; ?>">
+    <input type="hidden" name="feedback_status" value="<?php echo '2'; ?>">
+	<div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_from">Feedback By</label>        
+        <div class="col-lg-10">
+            <p class="form-control" readonly style="text-transform: capitalize;"><?php echo $feedbackFrom; ?></p>                 
+        </div>
+    </div>
+    <!--<div class="form-group">
+        <label class="required control-label col-lg-2" for="feedback_to">Feedback To</label>        
+        <div class="col-lg-10">
+            <p class="form-control" readonly style="text-transform: capitalize;"><?php echo $feedbackTo; ?></p>                            
+        </div>
+    </div>-->
+    <div class="form-group">
+        <label class="required control-label col-lg-2" for="average_rate">Average Rate</label>        
+        <div class="col-lg-10">
+            <div id="stars-rating col-lg-5" class="user-rating" style="width: 130px;  float: left;  padding: 6px 0;   text-align: left;">
+                <?php 
+                    $totalStar = 5;
+                    $ratingStar = $feedbacAveRate;
+                    $currentStar = 1;
+                    while($totalStar > 0){ 
+                        if($ratingStar >= $currentStar){
+	                        $starClass = 'fa-star';
+	                    }else{                                                 
+	                        $starClass = 'fa-star-o'; 
+	                    }
+                ?>
+                    <i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+                <?php $totalStar--; $currentStar++; } ?>                
+            </div> 
+            <div id="stars-rating col-lg-5" style="width: 130px;  float: left;  padding: 8px 0; text-align: left;">
+            	<a href="javascript:void(0)" id="show-details-feedback">Show Details</a>
+            </div>
+            <div id="details-feedback" style="display:none;">
+                <?php 
+                    $qusFeedbackRateArray = unserialize($feedbackDetails);
+                    $qusCount = 1;
+                    foreach ($qusFeedbackRateArray as $qusId => $feedbackRate) {
+                        /*echo "<pre>";
+                        print_r($feedbackRate);
+                        echo "</pre>";*/
+                ?>
+                    <div class="feedback-qus-ans">
+                        <p class="qus"><span>Qus. <?php echo $qusCount++; ?>)</span><?php echo $feedbackRate['qus'] ?></p>
+                        <div class="user-rating">                            
+                            <?php 
+                                $totalStar = 5;
+                                $ratingStar = $feedbackRate['qusRate'];
+                                $currentStar = 1;
+                                while($totalStar > 0){ 
+                                    if($ratingStar >= $currentStar){
+                                        $starClass = 'fa-star';
+                                    }else{                                                 
+                                        $starClass = 'fa-star-o'; 
+                                    }
+                            ?>
+                                <i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+                            <?php $totalStar--; $currentStar++; } ?>     
+                        </div>
+                    </div>
+                <?php } ?>
+                <!--<div class="feedback-comment">
+                    <label class="required control-label " for="feedback_comment">Feedback Comment</label>        
+                    <div class="f-comment">
+                        <p class="form-control" readonly><?php echo  $feedbackComment != '' ?  $feedbackComment : 'No comments...'; ?></p>                            
+                    </div>
+                </div>-->            	
+            </div>
+        </div>
+    </div>
+	<?php
+
+		
+	
+}
+
+?>
+
+

@@ -1,0 +1,794 @@
+<?php
+    use Zend\Db\Sql\Sql;
+    use Zend\Db\TableGateway\TableGateway;
+    use Zend\Db\Sql\Where;
+    use Gc\Registry;
+    use Gc\User\Collection as UserCollection;
+    use Gc\User\UserExtraInfo as UserExtraInfo;
+    $userCollection = new UserCollection();
+    use GcConfig\Controller\ReportController as ReportController;
+    use GcFrontend\Controller\DbController as DbController;
+    $dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();
+    $sql = new Sql($adapter);
+    $select = $sql->select();
+    $select1 = $sql->select();
+    //execute the SQL query and return records
+    $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+    $currency = $configGet->get('site_currency');
+    $type = $_GET['type'];
+
+    /* User Report */
+    if ($type == 'Block_User') {
+        $startdate = $_GET['startdate'];
+        $enddate = $_GET['enddate'];
+
+        $select->from('user');
+        if ($startdate != $enddate) {            
+            $select->where("active = '2' AND created_at BETWEEN '$startdate' AND '$enddate' ");
+        }else{            
+            $startdate = '%'.$startdate.'%';
+            $select->where("active = '2' AND created_at LIKE '$startdate'");
+        }
+        
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $results = $statement->execute();        
+        $allrecord = $results->getResource()->fetchAll();
+        if (empty($allrecord)) { 
+            ?>
+                <script type="text/javascript">
+                    window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report?user_record=1";
+                </script>  
+            <?php
+            exit();
+        } 
+        //fetch tha data from the database
+                 
+        // Write data to file
+        $newArray = '';
+        $flag = false;
+        foreach ($allrecord as $key => $value) {
+            $newArray[] = array(
+                    'id'        =>  $value['id'],                    
+                    'lastname'  =>  $value['lastname'],
+                    'firstname' =>  $value['firstname'],
+                    'email'     =>  $value['email'],                 
+                );
+        }
+            
+            //exit();
+        $filename =  $type.'_Report_'.date('Y-m-d').'.xls'; // File Name
+         
+        // Download file
+        header("Content-Type: application/xls");    
+        header("Content-Disposition: attachment; filename=\"$filename\"");  
+        header("Pragma: no-cache"); 
+        header("Expires: 0");
+        $k = 0;
+        $count = count($newArray);            
+        foreach ($newArray as $key => $value) {  
+            if(!$flag) {
+                // display field/column names as first row
+                echo implode("\t", array_keys($value)) . "\r\n";
+                $flag = true;
+            }
+            echo implode("\t", array_values($value)) . "\r\n";  
+            $k++;
+            if ($k >= $count) {
+                exit();
+            }
+        }
+        
+    }elseif ($type == 'Package_User') {
+        $package_name = $_GET['package_name'];
+
+        $select->from('user');
+        if ($package_name) {            
+            $select->where("user_acl_package_id = '$package_name' AND user_acl_role_id = '2'");
+        }
+        
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $results = $statement->execute();        
+        $allrecord = $results->getResource()->fetchAll();
+
+        $select1->from('user_acl_package');
+        $select1->where("id = '$package_name'");
+        $statement1 = $sql->prepareStatementForSqlObject($select1);
+        $results1 = $statement1->execute();        
+        $allrecord1 = $results1->getResource()->fetchAll();
+        
+        if (empty($allrecord1) || empty($allrecord)) { 
+            ?>
+                <script type="text/javascript">
+                    window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/package-report?user_record=1";
+                </script>  
+            <?php
+            exit();
+        } 
+        //fetch tha data from the database
+                 
+        // Write data to file
+        $newArray = '';
+        $flag = false;
+        foreach ($allrecord as $key => $value) {
+            foreach ($allrecord1 as $k => $v) { 
+                $pkName = $v['name'];                   
+                $newArray[] = array(
+                    'User Id'    =>  $value['id'],                    
+                    'Last Name'  =>  $value['lastname'],
+                    'First Name' =>  $value['firstname'],
+                    'Email'      =>  $value['email'],                 
+                    'Package'    =>  $v['name'],                 
+                );
+            }
+        }
+        /*print_r($newArray) ;
+        exit();*/
+        $filename =  $pkName.'_Package_User_Report_'.date('Y-m-d').'.xls'; // File Name
+         
+        // Download file
+        header("Content-Type: application/xls");    
+        header("Content-Disposition: attachment; filename=\"$filename\"");  
+        header("Pragma: no-cache"); 
+        header("Expires: 0");
+        $k = 0;
+        $count = count($newArray);            
+        foreach ($newArray as $key => $value) {  
+            if(!$flag) {
+                // display field/column names as first row
+                echo implode("\t", array_keys($value)) . "\r\n";
+                $flag = true;
+            }
+            echo implode("\t", array_values($value)) . "\r\n";  
+            $k++;
+            if ($k >= $count) {
+                exit();
+            }
+        }
+    }elseif($type == 'New_User') {
+        $startdate = $_GET['startdate'];
+        $enddate = $_GET['enddate'];
+
+        $select->from('user');            
+        if ($startdate != $enddate) {            
+            $select->where("created_at BETWEEN '$startdate' AND '$enddate' AND (active < 3 )");
+        }else{            
+            $startdate = '%'.$startdate.'%';
+            $select->where("created_at LIKE '$startdate' AND (active < 3 )");
+        }
+        $select->order('created_at DESC');
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $results = $statement->execute();        
+        $allrecord = $results->getResource()->fetchAll();
+        if (empty($allrecord)) { 
+            ?>
+                <script type="text/javascript">
+                    window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/new-user-report?user_record=1";
+                </script>  
+            <?php
+            exit();
+        } 
+        //fetch tha data from the database
+                 
+        // Write data to file
+        $newArray = '';
+        $flag = false;
+        foreach ($allrecord as $key => $value) {
+            $newArray[] = array(
+                    'id'        =>  $value['id'], 
+                    'Sign up date' =>  date('d/m/Y', strtotime($value['created_at'])),                    
+                    'lastname'  =>  $value['lastname'],
+                    'firstname' =>  $value['firstname'],
+                    'email'     =>  $value['email'],                
+                );
+        }
+
+            
+            //exit();
+        $filename =  $type.'_Report_'.date('Y-m-d').'.xls'; // File Name
+         
+        // Download file
+        header("Content-Type: application/xls");    
+        header("Content-Disposition: attachment; filename=\"$filename\"");  
+        header("Pragma: no-cache"); 
+        header("Expires: 0");
+        $k = 0;
+        $count = count($newArray);            
+        foreach ($newArray as $key => $value) {  
+            if(!$flag) {
+                // display field/column names as first row
+                echo implode("\t", array_keys($value)) . "\r\n";
+                $flag = true;
+            }
+            echo implode("\t", array_values($value)) . "\r\n";  
+            $k++;
+            if ($k >= $count) {
+                exit();
+            }
+        }
+        
+    }elseif($type == 'Leave_User') {
+        $startdate = $_GET['startdate'];
+        $enddate = $_GET['enddate'];
+
+        $select->from('user_leavers_table');
+        if ($startdate != $enddate) {            
+            $select->where("created_at BETWEEN '$startdate' AND '$enddate'");
+        }else{            
+            $startdate = '%'.$startdate.'%';
+            $select->where("created_at LIKE '$startdate'");
+        }
+        
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $results = $statement->execute();        
+        $allrecord = $results->getResource()->fetchAll();
+        if (empty($allrecord)) { 
+            ?>
+                <script type="text/javascript">
+                    window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/leave-user?user_record=1";
+                </script>  
+            <?php
+            exit();
+        } 
+        //fetch tha data from the database
+                 
+        // Write data to file
+        $newArray = '';
+        $flag = false;
+        foreach ($allrecord as $key => $value) {
+            $reason = implode(', ',unserialize($value['user_reason_to_leave']));
+            $newArray[] = array(
+                    'id'               =>  $value['uid'],   
+                    'Date of leave' =>  date('d/m/Y', strtotime($value['created_at'])),                  
+                    'Name'             =>  $value['user_name'],                        
+                    'Email'            =>  $value['user_email'],                 
+                    'Reson Of Leaving' =>  $reason,                 
+                );
+        }
+            
+            //exit();
+        $filename =  $type.'_Report_'.date('Y-m-d').'.xls'; // File Name
+         
+        // Download file
+        header("Content-Type: application/xls");    
+        header("Content-Disposition: attachment; filename=\"$filename\"");  
+        header("Pragma: no-cache"); 
+        header("Expires: 0");
+        $k = 0;
+        $count = count($newArray);            
+        foreach ($newArray as $key => $value) {  
+            if(!$flag) {
+                // display field/column names as first row
+                echo implode("\t", array_keys($value)) . "\r\n";
+                $flag = true;
+            }
+            echo implode("\t", array_values($value)) . "\r\n";  
+            $k++;
+            if ($k >= $count) {
+                exit();
+            }
+        }
+        
+    }elseif ($type == 'last_login_user') {
+        $select->from('last_login_user');
+        $select->order("last_login_at DESC");
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $results = $statement->execute();        
+        $allrecord = $results->getResource()->fetchAll();
+        $arrayLastLogin = array();
+        foreach ($allrecord as $key => $lastLoginRecord) {
+            $user_id = $lastLoginRecord['uid'];
+            $user_record = $userCollection->getUserById($user_id);
+            foreach ($user_record as $key => $value) {
+                $newArray[] = array(
+                    'Last login Date' =>  date('d-m-Y', strtotime($lastLoginRecord['last_login_at'])),
+                    'User Id'    =>  $lastLoginRecord['uid'], 
+                    'First Name'  =>  $value->getFirstname(),
+                    'Last Name'  =>  $value->getLastname(),
+                    'User Email' =>  $value->getEmail(),
+                    'Ip address'    =>  $lastLoginRecord['ip_address'],                 
+                );
+            }
+        }
+        
+        
+        if (empty($newArray)) { 
+            ?>
+                <script type="text/javascript">
+                    window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/package-report?user_record=1";
+                </script>  
+            <?php
+            exit();
+        } 
+        //fetch tha data from the database
+                 
+        // Write data to file
+        
+        $flag = false;
+        
+        $filename = 'Last_Login_User_Report_'.date('Y-m-d').'.xls'; // File Name
+         
+        // Download file
+        header("Content-Type: application/xls");    
+        header("Content-Disposition: attachment; filename=\"$filename\"");  
+        header("Pragma: no-cache"); 
+        header("Expires: 0");
+        $k = 0;
+        $count = count($newArray);            
+        foreach ($newArray as $key => $value) {  
+            if(!$flag) {
+                // display field/column names as first row
+                echo implode("\t", array_keys($value)) . "\r\n";
+                $flag = true;
+            }
+            echo implode("\t", array_values($value)) . "\r\n";  
+            $k++;
+            if ($k >= $count) {
+                exit();
+            }
+        }
+    }elseif($type == 'all_emp_job') {
+            $jobPostReport = new ReportController();
+             if (isset($_GET['startdate']) && $_GET['startdate'] != '' && isset($_GET['enddate']) && $_GET['enddate'] != '') {
+                
+                $startdate = $_GET['startdate'];
+                $date = strtotime("+1 day", strtotime($_GET['enddate']));
+                $enddate = date('Y-m-d', $date);
+                $allrecord = $jobPostReport->empMonthJobReport($startdate,$enddate);
+            }else{
+                //$month = 'All_Month';
+                $allrecord = $jobPostReport->empJobReportAction();
+            }
+            
+            
+            
+            if (empty($allrecord)) { 
+                ?>
+                    <script type="text/javascript">
+                        window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/leave-user?user_record=1";
+                    </script>  
+                <?php
+                exit();
+            } 
+            //fetch tha data from the database
+                     
+            // Write data to file
+            $newArray = '';
+            $flag = false;
+            foreach ($allrecord as $key => $value1) {
+                foreach ($value1 as $key => $value) {
+                    $newArray[] = array(
+                        'Name'           =>  $value['name'],
+                        'Job Listed'     =>  $value['job_list'],
+                        'Jobs accepted'  =>  $value['job_accepted'],
+                        'Success rate (%)'   =>  $value['success_rate'],
+                        'Cancellation rate (%)'   =>  $value['cancel_rate'],
+                        'Number of private job requests sent'=> $value['private_user_req'],
+                    );
+                }
+            }
+                
+                //exit();
+            $filename =  'Employer_Job_Status_Report_'.date('Y-m-d').'.xls'; // File Name
+             
+            // Download file
+            header("Content-Type: application/xls");    
+            header("Content-Disposition: attachment; filename=\"$filename\"");  
+            header("Pragma: no-cache"); 
+            header("Expires: 0");
+            $k = 0;
+            $count = count($newArray);            
+            foreach ($newArray as $key => $value) {  
+                if(!$flag) {
+                    // display field/column names as first row
+                    echo implode("\t", array_keys($value)) . "\r\n";
+                    $flag = true;
+                }
+                echo implode("\t", array_values($value)) . "\r\n";  
+                $k++;
+                if ($k >= $count) {
+                    exit();
+                }
+            }
+            
+        }elseif($type == 'single_emp_job') {
+           $jobPostReport = new ReportController();
+            if (isset($_GET['emp_year']) && $_GET['emp_year'] != '') {
+                $year = $_GET['emp_year'];
+                $allrecord = $jobPostReport->singleEmpJobRecordByYear($year);
+            }else{
+                $year = 'All_year';
+                $allrecord = $jobPostReport->singleEmpJobRecordByYear(date('Y'));
+            }
+            
+            if (empty($allrecord)) { 
+                ?>
+                    <script type="text/javascript">
+                        window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/leave-user?user_record=1";
+                    </script>  
+                <?php
+                exit();
+            } 
+            //fetch tha data from the database
+                     
+            // Write data to file
+            $newArray = '';
+            
+            $flag = false;
+            foreach ($allrecord['allRecord']['record'] as $key => $value) {
+                $newArray[] = array(
+                    'Month'          =>  $value['month'],
+                    'Job Listed'     =>  $value['job_list'],
+                    'Jobs accepted'  =>  $value['job_accepted'],
+                    'Success rate (%)'   =>  $value['success_rate'],
+                    'Number of private job requests sent'=> $value['private_user_req'],
+                );
+                
+            }
+            
+            $empName = str_replace(' ', '_', $allrecord['empName']);
+            $filename =  'Employer_'.$empName.'_'.$year.'_Job_Report.xls'; // File Name
+
+            
+            // Download file
+            header("Content-Type: application/xls");    
+            header("Content-Disposition: attachment; filename=\"$filename\"");  
+            header("Pragma: no-cache"); 
+            header("Expires: 0");
+            $k = 0;
+            $count = count($newArray);            
+            foreach ($newArray as $key => $value) {  
+                if(!$flag) {
+                    // display field/column names as first row
+                    echo implode("\t", array_keys($value)) . "\r\n";
+                    $flag = true;
+                }
+                echo implode("\t", array_values($value)) . "\r\n";  
+                $k++;
+                if ($k >= $count) {
+                    exit();
+                }
+            }
+            
+        }elseif($type == 'all_fre_job') {
+            $jobPostReport = new ReportController();
+            if (isset($_GET['startdate']) && $_GET['startdate'] != '' && isset($_GET['enddate']) && $_GET['enddate'] != '') {
+                
+                $startdate = $_GET['startdate'];
+                $date = strtotime("+1 day", strtotime($_GET['enddate']));
+                $enddate = date('Y-m-d', $date);
+                $allrecord = $jobPostReport->freMonthJobReport($startdate,$enddate);
+            }else{
+                $month = 'All_Month';
+                $allrecord = $jobPostReport->freJobReportAction();
+            }
+            
+            
+
+            if (empty($allrecord)) { 
+                ?>
+                    <script type="text/javascript">
+                        window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/leave-user?user_record=1";
+                    </script>  
+                <?php
+                exit();
+            } 
+            //fetch tha data from the database
+                     
+            // Write data to file
+            $newArray = '';
+            $flag = false;
+            foreach ($allrecord as $key => $value1) {
+                foreach ($value1 as $key => $value) {
+                    $newArray[] = array(
+                        'Name'           =>  $value['name'],
+                        'Job Applied'     =>  $value['job_applied'],
+                        'Jobs accepted'  =>  $value['job_accepted'],
+                        'Success rate (%)'   =>  $value['job_success_rate'],
+                        'Jobs frozen'   =>  $value['job_freeze'],
+                        'Jobs frozen and accepted'   =>  $value['job_freeze_accepted'],
+                        'Frozen Success rate (%)'   =>  $value['job_freeze_success_rate'],
+                        'Number of private jobs added into system'=> $value['private_job'],
+                    );
+                }
+            }
+                
+                //exit();
+            $filename =  'Freelancer_Job_Status_Report_'.date('Y-m-d').'.xls'; // File Name
+             
+            // Download file
+            header("Content-Type: application/xls");    
+            header("Content-Disposition: attachment; filename=\"$filename\"");  
+            header("Pragma: no-cache"); 
+            header("Expires: 0");
+            $k = 0;
+            $count = count($newArray);            
+            foreach ($newArray as $key => $value) {  
+                if(!$flag) {
+                    // display field/column names as first row
+                    echo implode("\t", array_keys($value)) . "\r\n";
+                    $flag = true;
+                }
+                echo implode("\t", array_values($value)) . "\r\n";  
+                $k++;
+                if ($k >= $count) {
+                    exit();
+                }
+            }
+            
+        }elseif($type == 'single_fre_job') {
+            
+            if (isset($_GET['fre_year']) && $_GET['fre_year'] != '') {
+                $year = $_GET['fre_year'];
+            }else{
+                $year = date('Y');
+            }
+            
+            
+            $jobPostReport = new ReportController();
+            $allrecord = $jobPostReport->singleFreJobRecordByYear($year);
+            
+           
+
+            if (empty($allrecord)) { 
+                ?>
+                    <script type="text/javascript">
+                        window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/leave-user?user_record=1";
+                    </script>  
+                <?php
+                exit();
+            } 
+            //fetch tha data from the database
+                     
+            // Write data to file
+            $newArray = '';
+            
+            $flag = false;
+            foreach ($allrecord['allRecord'] as $key => $value) {
+                $newArray[] = array(
+                    'Month'           =>  $value['month'],
+                    'Job Applied'     =>  $value['job_applied'],
+                    'Jobs accepted'  =>  $value['job_accepted'],
+                    'Success rate (%)'   =>  $value['success_rate'],
+                    'Jobs frozen'   =>  $value['job_freeze'],
+                    'Jobs frozen and accepted'   =>  $value['job_freeze_accepted'],
+                    'Frozen Success rate (%)'   =>  $value['job_freeze_success_rate'],
+                    'Number of private jobs added into system'=> $value['private_job'],
+                );
+                
+            }
+            
+            $freName = str_replace(' ', '_', $allrecord['freName']);
+            $filename =  'Freelancer_'.$freName.'_'.$year.'_Job_Report.xls'; // File Name
+
+            
+            // Download file
+            header("Content-Type: application/xls");    
+            header("Content-Disposition: attachment; filename=\"$filename\"");  
+            header("Pragma: no-cache"); 
+            header("Expires: 0");
+            $k = 0;
+            $count = count($newArray);            
+            foreach ($newArray as $key => $value) {  
+                if(!$flag) {
+                    // display field/column names as first row
+                    echo implode("\t", array_keys($value)) . "\r\n";
+                    $flag = true;
+                }
+                echo implode("\t", array_values($value)) . "\r\n";  
+                $k++;
+                if ($k >= $count) {
+                    exit();
+                }
+            }
+            
+        }elseif($type == 'pkg_income') {
+
+            $jobPostReport = new ReportController();
+            if (isset($_GET['pkg_year']) && isset($_GET['pkg_month']) && $_GET['pkg_year'] != '' && $_GET['pkg_month'] != '') {
+                $year = $_GET['pkg_year'];
+                $month = $_GET['pkg_month'];
+                $startdate = date('Y-m-01', strtotime($year.'-'.$month));
+                $lastDate = date('Y-m-t', strtotime($year.'-'.$month));
+                $date = strtotime("+1 day", strtotime($lastDate));
+                $enddate = date('Y-m-d', $date);
+                $allrecord = $jobPostReport->pkgIncomeReportByFilter($startdate,$enddate);
+            }else{
+             $year = 'All_Year';
+                $month = 'All_Months';
+                $allrecord = $jobPostReport->pkgIncomeReportAction();
+            }
+
+            if (empty($allrecord)) { 
+                ?>
+                    <script type="text/javascript">
+                        window.location.href = "http://locumkit.fudugosolutions.com/admin/config/report/leave-user?user_record=1";
+                    </script>  
+                <?php
+                exit();
+            } 
+            //fetch tha data from the database
+                     
+            // Write data to file
+            $newArray = '';
+            $flag = false;
+            $totalIncome = 0;
+            foreach ($allrecord['allRecord'] as $key => $value) {
+                $newArray[] = array(
+                    'Package'      =>  $value['pkg_name'],
+                    'Rate'     =>  $currency.''.$value['pkg_rate'],
+                    'Number of User'  =>  $value['pkg_user_count'],
+                    'Income Expected' =>  $currency.''.$value['pkg_income'],
+                );
+
+                $totalIncome += $value['pkg_income'];
+            }
+            $newArray[] = array();
+            $newArray[] = array(
+                    'Package'      =>  'Total Income',
+                    'Rate'     =>  $currency.''.$totalIncome,
+                ); 
+            
+            
+            $filename =  $month.'_'.$year.'_Package_Income_Report.xls'; // File Name
+
+            
+            // Download file
+            header("Content-Type: application/xls");    
+            header("Content-Disposition: attachment; filename=\"$filename\"");  
+            header("Pragma: no-cache"); 
+            header("Expires: 0");
+            $k = 0;
+            $count = count($newArray);            
+            foreach ($newArray as $key => $value) {  
+                if(!$flag) {
+                    // display field/column names as first row
+                    echo implode("\t", array_keys($value)) . "\r\n";
+                    $flag = true;
+                }
+                echo implode("\t", array_values($value)) . "\r\n";  
+                $k++;
+                if ($k >= $count) {
+                    exit();
+                }
+            }
+            
+        }elseif($type == 'user_extra_info_export'){
+            
+                $userId = $_GET['uid'];
+                $role = $_GET['user_acl_role_id'];
+                $userExtraInfo = new UserExtraInfo();
+                $extraInfo = $userExtraInfo->getUserExtraInfo($userId);
+                
+                $extraInfoArray = array();
+                foreach ($extraInfo as $key => $value) {
+                    if ($value->getGender() && $value->getGender() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Gender',
+                            'Answer' => $value->getGender(),
+                        );
+                    }
+                    if ($value->getDob() && $value->getDob() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Date Of Birth',
+                            'Answer' => $value->getDob(),
+                        );
+                    }
+                    if ($value->getMobile() && $value->getMobile() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Mobile Number',
+                            'Answer' => $value->getMobile(),
+                        );
+                    }
+                    if ($value->getTelephone() && $value->getTelephone() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Telephone Number',
+                            'Answer' => $value->getTelephone(),
+                        );
+                    }
+                    if ($value->getAocId() && $value->getAocId() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'AOC ID',
+                            'Answer' => $value->getAocId(),
+                        );
+                    }
+                    if ($value->getAddress() && $value->getAddress() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Address',
+                            'Answer' => $value->getAddress(),
+                        );
+                    }
+                    if ($value->getCity() && $value->getCity() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Region',
+                            'Answer' => $value->getCity(),
+                        );
+                    }
+                    if ($value->getZip() && $value->getZip() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Post Code',
+                            'Answer' => $value->getZip(),
+                        );
+                    }
+                    if ($value->getMaxDistance() && $value->getMaxDistance() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Maximum distance to traval',
+                            'Answer' => $value->getMaxDistance(),
+                        );
+                    }
+                    if ($value->getMinimumRate() && $value->getMinimumRate() != '') {
+                        $minRate = unserialize($value->getMinimumRate());
+                        $mRateStr = '';
+                        foreach ($minRate as $key => $mRate) {
+                            $mRateStr .= $key.':'.$mRate.', ';
+                        }
+                        if ($mRateStr && $mRateStr != '') {
+                            $extraInfoArray[] = array(
+                                'Question' => 'Minimum rate',
+                                'Answer' => $mRateStr,
+                            );
+                        }
+                        
+                    }
+                    if ($value->getCompany() && $value->getCompany() != '') {
+                        $extraInfoArray[] = array(
+                            'Question' => 'Company',
+                            'Answer' => $value->getCompany(),
+                        );
+                    }
+                   
+                   
+                }
+
+                $sqlString_data="select qu.fquestion as fq,qu.equestion as eq,qu.type_key as tk,qu.type_value as tv,qu.id as qid,ua.* from user_question qu, user_answer ua where ua.user_id='$userId' and ua.question_id=qu.id";  
+                $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+                $result_data = $results_get->toArray();
+                $answer_value = array();
+                foreach($result_data as $resultset){
+                    if($role==2){
+                        if ($resultset['type_value'] && $resultset['type_value'] != '') {
+                            $extraInfoArray[] = array(
+                                'Question' => $resultset['fq'],
+                                'Answer' => $resultset['type_value'],
+                            );
+                        }
+                        
+                    }else{
+                         if ($resultset['type_value'] && $resultset['type_value'] != '') {
+                            $extraInfoArray[] = array(
+                                'Question' => $resultset['eq'],
+                                'Answer' => $resultset['type_value'],
+                            );
+                        }
+                    }
+                }
+                /*echo "<pre>";
+                print_r($extraInfoArray);
+                echo "</pre>";*/
+                //exit();
+                $filename =  'User_Info_'.date('Y-m-d').'.xls'; // File Name
+                 
+                // Download file
+                header("Content-Type: application/xls");    
+                header("Content-Disposition: attachment; filename=\"$filename\"");  
+                header("Pragma: no-cache"); 
+                header("Expires: 0");
+                $flag = false;
+                $k = 0;
+                $count = count($extraInfoArray);            
+                foreach ($extraInfoArray as $key => $value) {  
+                    if(!$flag) {
+                        // display field/column names as first row
+                        echo implode("\t", array_keys($value)) . "\r\n";
+                        $flag = true;
+                    }
+                    echo implode("\t", array_values($value)) . "\r\n";  
+                    $k++;
+                    if ($k >= $count) {
+                        exit();
+                    }
+                }
+            
+        }
+    
+?>

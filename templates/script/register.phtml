@@ -1,0 +1,630 @@
+<?php
+	date_default_timezone_set('Europe/London');
+	use GcFrontend\Controller\DbController as DbController;
+	use Zend\Db\Sql\Sql;
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	use GcFrontend\Controller\FunctionsController as FunctionsController;
+	use Gc\Registry;
+	use GcFrontend\Controller\JobsmsController as JobsmsController;
+    $jobsmsController = new JobsmsController();
+
+	$encypt = new Ecryption();
+	$functionsController = new FunctionsController(); 
+	$dbConfig = new DbController();
+  	$adapter = $dbConfig->locumkitDbConfig();
+	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	$config = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+	$sql = new Sql($adapter);
+	
+	/*$select = $sql->select();
+	$select->from('user');
+	$statement = $sql->prepareStatementForSqlObject($select);
+	$results = $statement->execute();
+	$row = $results->current();
+	$name = $row['firstname']; // working
+	//print_r($results->getResource()->fetchAll());*/
+	if(!isset($_SESSION['user_id'])){
+		//$this->redirect()->toUrl('/login-form');
+		//return true;
+	}if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$this->redirect()->toUrl('/user-profile');
+		return true;
+	}
+	$host = $this->getRequest()->getUri()->getHost();
+	
+	use GcFrontend\Controller\JobmailController as MailController;
+	$mailController = new MailController();
+	$header = $mailController->mailHeader();
+	$footer = $mailController->mailFooter();
+
+	$request = $this->getRequest();
+	if($request->isPost()){
+    $post 			= $request->getPost();   
+    $role_id 		= $post->get('role'); //role id
+	$package 		= $post->get('package');
+	$fname 			= $post->get('fname');
+	$lname 			= $post->get('lname');
+	$login 			= $post->get('login');
+    $email 			= $post->get('email');
+	$company 		= $post->get('company');
+	$address 		= $post->get('address');
+	$city 			= str_replace("'", "", $post->get('city'));	
+	$zip 			= $post->get('zip');
+	$dob22 			= $post->get('dob'); // dd-mm-yyyy
+	if(isset($dob22)){$dob=date('Y-m-d',strtotime($dob22)); }else{$dob="";}// yyyy-mm-dd
+    $upassword 		= $post->get('upassword');
+	$password 		= sha1($post->get('upassword'));
+	//$cpassword 	= $post->get('cpassword');
+	$telephone 		= $post->get('telephone');
+	$mobile 		= $post->get('mobile');
+	$profession_id 	= $post->get('profession');
+	$package_id 	= $post->get('package_id');
+	$package_final 	= $post->get('package-final');
+	$package_val 	= $post->get('package_val');
+	$gender 		= $post->get('gender');
+	$form_id 		= $post->get('form_id');
+	$role_pack 		= $post->get('role_pack');
+	$no_role_pack 	= $post->get('no_role_pack');
+    $answer_hash 	= $post->get('answer_hash');
+    $answer 		= substr(sha1($post->get('answer')), 5, 10);
+	$paymentAmount 	= $post->get('PAYMENTREQUEST_0_AMT');
+	$paypalMethod 	= $post->get('paypal_method');
+	$cet 			= $post->get('cet');
+	if($paypalMethod == 'direct_debit'){ $paytype = 'Billing';  }else{ $paytype = 'Login'; } 
+		
+	if($profession_id != ''){
+      	$sqlPro 		= "SELECT name , description from user_acl_professional WHERE id='$profession_id'";
+      	$sqlProData 	= $adapter->query($sqlPro, $adapter::QUERY_MODE_EXECUTE);
+        $sqlProval 	= $sqlProData->current();
+	}
+
+
+	// minimum rate for freelancer
+	$min_rate=$post->get('minimum_rate');
+	if(isset($min_rate)){
+		$day_with_rate = array();
+		$day_with_rate = array(
+				'Monday' 	=> $min_rate[0],
+				'Tuesday' 	=> $min_rate[1],
+				'Wednesday' => $min_rate[2],
+				'Thursday' 	=> $min_rate[3],
+				'Friday' 	=> $min_rate[4],
+				'Saturday' 	=> $min_rate[5],
+				'Sunday' 	=> $min_rate[6],
+			);	
+		$minimum_rate=serialize($day_with_rate);
+	}
+	
+	
+
+	//employer store list
+	$emp_store_name 	= $post->get('emp_store_name');
+	$emp_store_address 	= $post->get('emp_store_address');
+	$emp_store_region 	= $post->get('emp_store_region');
+	$emp_store_zip 		= $post->get('emp_store_zip');
+	$emp_start_time 	= $post->get('emp_store_zip');
+	$emp_end_time 		= $post->get('emp_store_zip');
+	$emp_start_time 	= $post->get('job_start_time');
+	$emp_end_time 		= $post->get('job_end_time');
+	$emp_lunch_time 	= $post->get('job_lunch_time');
+	
+	$emp_store_result 	= array();
+	foreach ( $emp_store_name as $key=>$name ) {
+		$emp_store_result[] = array( 
+			'emp_store_name' 	=> $name, 
+			'emp_store_address' => $emp_store_address[$key], 
+			'emp_store_region' 	=> $emp_store_region[$key], 
+			'emp_store_zip' 	=> $emp_store_zip[$key],
+			'start_time'		=> $functionsController->setTime($emp_start_time,$key),
+			'end_time' 			=> $functionsController->setTime($emp_end_time,$key),
+			'lunch_time'		=> $functionsController->setTime($emp_lunch_time,$key) 
+		);
+	}
+	//employer min rate and weekday time & lunch
+	//new unique time for store
+	$job_new_start_time 	= $post->get('job_new_start_time');
+	$job_new_end_time 		= $post->get('job_new_end_time');
+	$job_new_lunch_time 	= $post->get('job_new_lunch_time');
+	$store_unique_time_arr 	= array('start_time'=>$job_new_start_time,'end_time'=>$job_new_end_time,'lunch_time'=>$job_new_lunch_time);
+	
+	$week_days_emp 			= $post->get('week_days_emp');
+	$job_day_time_frm 		= $post->get('job_day_time_frm');
+	$job_day_time_to 		= $post->get('job_day_time_to');
+	$job_lunch_time 		= $post->get('job_lunch_time');
+	$week_days_emp_rate 	= $post->get('week_days_emp_rate');
+	$min_rate 				= $post->get('min_rate');
+	$week_days_emp_arr 		= array(); // week days lunch,time from-to
+	$week_days_emp_rate_arr = array(); // minimum rate employer
+	foreach ( $week_days_emp as $key=>$name ) {
+		$week_days_emp_arr[] = array( $name, $job_day_time_frm[$key], $job_day_time_to[ $key ],$emp_store_zip[ $key ] );
+		
+	}
+	foreach ( $week_days_emp_rate as $key=>$name ) {
+		$week_days_emp_rate_arr[] = array($name,$min_rate[$key]);
+	}
+	// if not isset variable
+	$question_id = array();
+	$ans_val = array();
+	
+	// question variable
+	if($post->get('ques_id')){
+		$question_id = $post->get('ques_id');		  
+	}
+	if($post->get('ans_text')){
+		$ans_val = $post->get('ans_text');		  
+	}
+    //if($post->get('store_id')){
+		//$store_id 		= $post->get('store_id');
+		//$store_data 	= $post->get('store_data');			
+		$aoc_id			= $post->get('aoc_id');
+		$store_id 		= '';
+		$store_data 	= '';
+		//$aoc_id 		= '';
+		$max_distance 	= $post->get('max_distance');
+		$store_list 	= $post->get('store_list');
+		$goc 			= $post->get('goc');
+		$aop 			= $post->get('aop');
+		$inshurance_company = $post->get('inshurance_company'); 
+		$inshurance_no 	= $post->get('inshurance_no'); 
+		$inshurance_renewal_date = $post->get('inshurance_renewal_date');  
+	//}
+	
+	$host=$this->getRequest()->getUri()->getHost();
+	$sqlString_get="select * from user where email='$email'";	
+    $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+	$row111 = $results0->current();
+    $id = $row111['id'];
+
+    /* Get last id */
+    $sqlGetLastId="select id from user ORDER BY id DESC";
+    $getLastId = $adapter->query($sqlGetLastId, $adapter::QUERY_MODE_EXECUTE);
+	$lastIdArray = $getLastId->current();
+    $lastId = $lastIdArray['id']+1;
+
+    if((empty($role_id) or empty($fname) or empty($lname) or empty($email) or empty($upassword) or empty($mobile) or($id!='')) && ( !isset($_SESSION['is_guest'])) && $role_id != 3)
+    {
+        if($id!=''){
+			$message_txt="Email already exists";
+		}else{
+			$message_txt="Please fill all fields";
+		}
+		return array('role' => $role_id,'fname' => $fname, 'lname' => $lname, 'email' => $email, 'upassword' => $upassword,'mobile' => $mobile,'error_message' => $message_txt);
+    }
+    else
+    {
+		//fileupload section
+		$target_dir = "public/media/files/profile_pic/";
+        $target_filenew = md5(uniqid().time())."_". basename($_FILES["profile_pic"]["name"]);
+		$target_file = $target_dir . $target_filenew;
+				
+		if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
+			$profile_image=$target_file;
+       	                //echo "The file ". basename( $_FILES["profile_pic"]["name"]). " has been uploaded.";
+        }
+		
+		$user_type=""; $package_price="";
+		if($role_id == $role_pack){
+			$user_type="Freelancer";
+			$sub2 = 'New Locum';	
+			$infoLine = 'This is an email to confirm a new Locum has just registered';	
+			$package_price='<tr>
+			<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Package</th>
+			<td style=" border: 1px solid black;  text-align:left;  padding:5px;">£'.$package_final.'</td>
+		  </tr>';
+		}else{
+			$user_type="Employer";
+			$sub2 = 'New Employer';
+		}
+		
+		$message2=$header.'
+					<div style="padding: 25px 50px 5px; text-align: left; width:84.2%">
+					<p>Hello <b>Admin</b>,</p>
+					<h3>'.$infoLine.'</h3>
+					<table width="100%" style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">First Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$fname.'</td>
+					  </tr>
+					   <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Last Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$lname.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">ID</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$lastId.'</td>
+					  </tr>					  
+					  '.$package_price.'					  
+					</table><br/>
+					<p><p>
+					</div>'.$footer;
+					
+		// eamil message
+		$date = date('Y-m-d');
+		$activation_key = $encypt->encryptIt($email).'-'.sha1($date);
+		$activation_key2 = $encypt->encryptIt($email);
+		$message = $header.'
+					<div style="padding: 25px 50px 5px; text-align: left;">
+					<p>Hi <b>'.$fname.' '.$lname.'</b>,</p>
+					<p>Thank you registering.<p></p> You are now one step away from benefiting all that LocumKit has.</p>
+					<p>Please <a href="http://'.$host.'/email-activate?'.$activation_key.'">click here</a> to verify your email address and start recieveing notifications for jobs and reminders for your income and expenses. </p>
+					<!--<h3>Registration Details</h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Email</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$email.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$fname.' '.$lname.'</td>
+					  </tr>
+					   <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Activate Email using this link</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;"><a href="http://'.$host.'/email-activate?'.$activation_key.'">'.$host.'/email-activate?'.$activation_key.'</a></td>
+					  </tr>
+					 </table><br/>-->
+					<p><p>
+					</div>'.$footer;
+		
+		
+		if($role_id == $role_pack){
+			if (isset($_SESSION['user_email']) && $_SESSION['user_email'] != '' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) {
+				$guest_email = $_SESSION['user_email'];
+				
+				if($password != '' || $password != '0'){
+					$sqlString_insert="UPDATE  user SET password = '$password',user_acl_package_id='$package_id', active = 3 WHERE email='$guest_email'";
+				}else{
+					$sqlString_insert="UPDATE  user SET user_acl_package_id='$package_id', active = 3 WHERE email='$guest_email'";				
+				}
+
+				/* Membership renew request */
+				if ($_SESSION['renew_membership'] == 1) {
+					$sqlString_insert="UPDATE  user SET  user_acl_package_id='$package_id', active = 1 WHERE email='$guest_email'";
+				}
+
+			}else{
+				$sqlString_insert="UPDATE  user SET created_at = NOW(),firstname ='$fname',lastname='$lname',email='$email',login='$login',password='$password',retrieve_password_key='$activation_key2',active =0,user_acl_role_id='$role_id',user_acl_profession_id='$profession_id',user_acl_package_id='$package_id'";
+			}
+		}else{
+			if (isset($_SESSION['user_email']) && $_SESSION['user_email'] != '' && isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1) {
+				$guest_email = $_SESSION['user_email'];
+				
+				if($password != '' || $password != '0'){
+					$sqlString_insert="UPDATE  user SET password = '$password', active = 3 WHERE email='$guest_email'";
+				}else{
+					$sqlString_insert="UPDATE  user SET active = 3 WHERE email='$guest_email'";		
+				}
+				
+				
+			}else{
+				$sqlString_insert="insert into user (created_at,firstname,lastname,email,login,password,retrieve_password_key,active,user_acl_role_id,user_acl_profession_id) values(NOW(),'$fname','$lname','$email','$login','$password','$activation_key2',0,'$role_id',$profession_id)";
+			}
+		}
+		
+		$results2 = $adapter->query($sqlString_insert, $adapter::QUERY_MODE_EXECUTE);
+		//$row_user = $results2->current();
+		//$uid = $row_user['id'];
+		
+		$sqlString_get99="select * from user where email='$email'";	
+        $results99 = $adapter->query($sqlString_get99, $adapter::QUERY_MODE_EXECUTE);
+	    $row99 = $results99->current();
+        $uid = $row99['id'];
+		
+		// delete temporary_user_data table data
+		$sqltmp_del="delete from temporary_user_data where uid='$uid'";	
+        $resulttmp_del = $adapter->query($sqltmp_del, $adapter::QUERY_MODE_EXECUTE);
+		
+		//check for record exist or not 
+		$sql_extra_chk="select * from user_extra_info where uid='$uid'";
+		$results_extra_chk = $adapter->query($sql_extra_chk, $adapter::QUERY_MODE_EXECUTE);
+		$results_chk_count =$results_extra_chk->count();
+		// insert into users extra table
+		
+		if($role_id == $role_pack){
+			
+			if($results_chk_count > 0){
+				if(isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 && isset($aop) && $aop!=''){
+					$sql_extra="update user_extra_info set aoc_id='$aoc_id',gender='$gender',dob='$dob',mobile='$mobile',address='$address',city='$city',zip='$zip',telephone='$telephone',company='$company',profile_image='$profile_image',max_distance='$max_distance',store_id='$store_id',store_data='$store_data',cet='$cet',goc='$goc',aop='$aop',inshurance_company='$inshurance_company',inshurance_no='$inshurance_no',inshurance_renewal_date='$inshurance_renewal_date' where uid='$uid'";
+					$results77 = $adapter->query($sql_extra, $adapter::QUERY_MODE_EXECUTE);
+				}
+				if(!isset($_SESSION['is_guest'])){
+					$sql_extra="update user_extra_info set aoc_id='$aoc_id',gender='$gender',dob='$dob',mobile='$mobile',address='$address',city='$city',zip='$zip',telephone='$telephone',company='$company',profile_image='$profile_image',max_distance='$max_distance',store_id='$store_id',store_data='$store_data',cet='$cet',goc='$goc',aop='$aop',inshurance_company='$inshurance_company',inshurance_no='$inshurance_no',inshurance_renewal_date='$inshurance_renewal_date' where uid='$uid'";
+					$results77 = $adapter->query($sql_extra, $adapter::QUERY_MODE_EXECUTE);
+				}
+				
+				//Update CET point
+				$sql_extra = "UPDATE user_extra_info SET cet = '$cet' WHERE uid = '$uid'" ;
+				$results77 = $adapter->query($sql_extra, $adapter::QUERY_MODE_EXECUTE);
+
+				
+			}else{
+				if(($mobile || $telephone ) && $address && $city && $zip && $max_distance){					
+				 	$sql_extra="insert into user_extra_info (uid,aoc_id,gender,dob,mobile,address,city,zip,telephone,company,profile_image,max_distance,form_id,store_id,store_data,cet,goc,aop,inshurance_company,inshurance_no,inshurance_renewal_date) values('$uid','$aoc_id','$gender','$dob','$mobile','$address','$city','$zip','$telephone','$company','$profile_image','$max_distance','$form_id','$store_id','$store_data','$cet',$goc','$aop','$inshurance_company','$inshurance_no','$inshurance_renewal_date')";
+					//die();
+					$results77 = $adapter->query($sql_extra, $adapter::QUERY_MODE_EXECUTE);
+				}
+			}
+			//insert into user package table 
+			$pkg_active_date = date("Y-m-d"); 
+			
+			$sql_package="insert into user_package_details (user_id,package_id,package_active_date) values('$uid','$package_id','$pkg_active_date')";
+			$results_package = $adapter->query($sql_package, $adapter::QUERY_MODE_EXECUTE);
+			
+
+
+			$sql_storeg99="select * from user_store_list where s_uid='$uid'";
+			$results_storeg99 = $adapter->query($sql_storeg99, $adapter::QUERY_MODE_EXECUTE);
+			$count_stg99=$results_storeg99->count();
+			if(isset($store_list) && $store_list!=""){
+				if($count_stg99>0){
+					$sql_store="Update user_store_list set store_list ='$store_list' where s_uid='$uid'";
+				}else{
+					$sql_store="insert into user_store_list (s_uid,store_list,date_created) values('$uid','$store_list',NOW())";
+				}
+				$results_store = $adapter->query($sql_store, $adapter::QUERY_MODE_EXECUTE);
+			}
+			
+		}else{
+			if($results_chk_count>0){
+				if(isset($week_days_emp_rate_arr)|| isset($week_days_emp_arr)){
+					$minimum_rate=serialize($week_days_emp_rate_arr);
+					$store_week_time=serialize($week_days_emp_arr);
+					$store_unique_time=serialize($store_unique_time_arr);
+					$sql_extra="update user_extra_info set gender='$gender',dob='$dob',mobile='$mobile',address='$address',city='$city',zip='$zip',telephone='$telephone',company='$company', store_id='$store_id',	store_week_time='$store_week_time',store_unique_time='$store_unique_time',profile_image='$profile_image' where uid='$uid'";	
+				}elseif(isset($store_unique_time_arr)){
+					$store_unique_time=serialize($store_unique_time_arr);
+					$sql_extra="update user_extra_info set gender='$gender',dob='$dob',mobile='$mobile',address='$address',city='$city',zip='$zip',telephone='$telephone',company='$company', store_id='$store_id',	store_unique_time='$store_unique_time',profile_image='$profile_image' where uid='$uid'";
+				}else{
+					$sql_extra="update user_extra_info set gender='$gender',dob='$dob',mobile='$mobile',address='$address',city='$city',zip='$zip',telephone='$telephone',company='$company',profile_image='$profile_image' where uid='$uid'";}
+			}else{
+				if(isset($week_days_emp_rate_arr) || isset($week_days_emp_arr)){
+					$sql_extra="insert into user_extra_info (uid,gender,dob,mobile,address,city,zip,telephone,company,store_id,store_week_time,store_unique_time,profile_image,form_id) values('$uid','$gender','$dob','$mobile','$address','$city','$zip','$telephone','$company','$store_id','$store_week_time','$store_unique_time','$profile_image','$form_id')";
+				}elseif(isset($store_unique_time_arr)){
+					$sql_extra="insert into user_extra_info (uid,gender,dob,mobile,address,city,zip,telephone,company,store_id,store_unique_time,profile_image,form_id) values('$uid','$gender','$dob','$mobile','$address','$city','$zip','$telephone','$company','$store_id','$store_unique_time','$profile_image','$form_id')";
+				}else{
+					$sql_extra="insert into user_extra_info (uid,gender,dob,mobile,address,city,zip,telephone,company,profile_image,form_id) values('$uid','$gender','$dob','$mobile','$address','$city','$zip','$telephone','$company','$profile_image','$form_id')";
+				}
+			}
+			$results77 = $adapter->query($sql_extra, $adapter::QUERY_MODE_EXECUTE);
+			// employer store list insert query
+			if(isset($emp_store_result)){
+				foreach($emp_store_result as $emp_store){
+				$sql_emp_store="insert into employer_store_list (emp_id,emp_store_name,emp_store_address,emp_store_region,emp_store_zip,store_start_time,store_end_time,store_lunch_time,date_added) values('".$uid."','".$emp_store['emp_store_name']."','".$emp_store['emp_store_address']."','".str_replace("'", "", $emp_store['emp_store_region'])."','".$emp_store['emp_store_zip']."','".$emp_store['start_time']."','".$emp_store['end_time']."','".$emp_store['lunch_time']."',NOW())";
+				$resultsemp = $adapter->query($sql_emp_store, $adapter::QUERY_MODE_EXECUTE);
+				}
+			}
+			
+		}
+		
+
+		$newData = array();
+		foreach ($question_id as $qKey => $qValue) {
+			foreach ($ans_val as $akey => $aValue) {
+				if ($qKey == $akey) {
+					$newData[$qValue] = $aValue;
+				}
+			}
+		}
+		
+		//check for inserted
+		// check for user ans stored or not
+		$sqlString_userans ="select user_id from user_answer where user_id='$uid'";
+		$results_userans = $adapter->query($sqlString_userans, $adapter::QUERY_MODE_EXECUTE);
+		$results_useransdata=$results_userans->current();
+		$count_useransdata=$results_userans->count();
+		
+		if(!empty($newData)){
+			foreach ($newData as $key => $value) {
+				if($count_useransdata>0){
+					$sqlString_ansup="update user_answer set type_value='$value' where user_id='$uid' and question_id='$key'";
+					$results_ansup = $adapter->query($sqlString_ansup, $adapter::QUERY_MODE_EXECUTE);
+				}else{
+					if($role_id == 3){
+						$sqlFreQues = "SELECT * from user_question WHERE  id = '$key' ORDER BY sort_order ASC";	
+					    $freQuesData = $adapter->query($sqlFreQues, $adapter::QUERY_MODE_EXECUTE);
+					    $rows=$freQuesData->current();
+						$count=$freQuesData->count();
+					    $count = count($rows);
+					    if($count==1){					    	
+					    	if($rows['type_key']==2){
+					    		$value='Yes';
+					    	}
+					    }
+				    }elseif($role_id == 2){
+				    	$sqlFreQues = "SELECT * from user_question WHERE  id = '$key' ORDER BY sort_order ASC";	
+					    $freQuesData = $adapter->query($sqlFreQues, $adapter::QUERY_MODE_EXECUTE);
+					    $rows=$freQuesData->current();
+						$count=$freQuesData->count();
+					    $count = count($rows);					    
+					    if($count==1){
+					    	if($rows['type_key']==2 && $value==''){
+					    		$value='Yes';
+					    	}
+					    }
+					    
+				    }
+					$sqlString_insert_ans="insert into user_answer (user_id,question_id,type_value) values('$uid','$key','$value')";
+					$results_ans = $adapter->query($sqlString_insert_ans, $adapter::QUERY_MODE_EXECUTE);
+				}
+			}			
+			
+		}
+	    
+		if(($role_id==2) || (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 && $role_id==2)){
+			function crypto_rand_secure($min, $max) {
+		        $range = $max - $min;
+		        if ($range < 0) return $min; // not so random...
+		        $log = log($range, 2);
+		        $bytes = (int) ($log / 8) + 1; // length in bytes
+		        $bits = (int) $log + 1; // length in bits
+		        $filter = (int) (1 << $bits) - 1; // set all lower bits to 1
+		        do {
+		            $rnd = hexdec(bin2hex(openssl_random_pseudo_bytes($bytes)));
+		            $rnd = $rnd & $filter; // discard irrelevant bits
+		        } while ($rnd >= $range);
+		        return $min + $rnd;
+			}
+
+			function getToken($length=32){
+			    $token = "";
+			    $codeAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			    $codeAlphabet.= "abcdefghijklmnopqrstuvwxyz";
+			    $codeAlphabet.= "0123456789";
+			    for($i=0;$i<$length;$i++){
+			        $token .= $codeAlphabet[crypto_rand_secure(0,strlen($codeAlphabet))];
+			    }
+			    return $token;
+			}
+			$token = getToken();
+		     //send email to freelancer
+			/* try{	
+				$mail = new \Gc\Mail('utf-8', $message);
+				$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+				$mail->setSubject('Locumkit Account Email Verification');
+				$mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+				$mail->addTo($email, $fname);
+				$mail->send();
+					
+				$mail2 = new \Gc\Mail('utf-8', $message2);
+				$mail2->getHeaders()->addHeaderLine('Content-type','text/html');
+				$mail2->setSubject($sub2);
+				$mail2->setFrom($email, $fname);
+				//$mail->addTo('pallavi.fwork@gmail.com', 'Admin');
+				$mail2->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+				$mail2->send();	
+				}
+				catch (Exception $e) {
+				} */
+			?>
+			<?php 
+				$payment_mode = $config->get('payment_mode');
+				$payment_email = $config->get('payment_email');
+				$payment_api_user_name = $config->get('payment_api_user_name');
+				$payment_api_pass = $config->get('payment_api_pass');
+				$payment_api_key = $config->get('payment_api_key');
+				if ($payment_mode == 'live') {
+					$payment_action_url = 'https://www.paypal.com/cgi-bin/webscr';
+				}else{
+					$payment_action_url = "https://www.sandbox.paypal.com/cgi-bin/webscr";
+				}
+			?>
+
+			<!-- //Check if package is free -->
+			<?php if($package_final != 0) : ?>
+	            <form action="<?php echo $payment_action_url ?>" method="post" id="paypal-form">
+	              <input type="hidden" name="cmd" value="_xclick">
+	              <INPUT TYPE="hidden" NAME="return" value="<?php echo $serverUrl(); ?>/paypal-process?token=<?php echo $token; ?>&p=<?php echo $paymentAmount ?>&u=f&membership=<?php echo $_SESSION['renew_membership']; ?>">
+	              <input type="hidden" name="cancel_return" value="<?php echo $serverUrl(); ?>/paypal-cancel">  
+	              <INPUT TYPE="hidden" NAME="currency_code" value="GBP">
+	              <input type="hidden" name="business" value="<?php echo $payment_email; ?>">
+	              <input type="hidden" name="item_name" value="<?php echo $package_val; ?> Package">
+	              <input type="hidden" name="item_number" value="#locumkit<?php echo $package_val; ?>">
+	              <!-- <input type="hidden" name="invoice" value="LocumkitInvoice123123"> -->
+	              <input type="hidden" name="amount" value="<?php echo $package_final ?>">
+	              <input type="hidden" name="first_name" value="<?php echo $fname ?>">
+	              <input type="hidden" name="last_name" value="<?php echo $lname ?>">
+	              <input type="hidden" name="address1" value="<?php echo $address ?>">  
+	              <input type="hidden" name="city" value="<?php echo $city ?>">  
+	              <input type="hidden" name="zip" value="<?php echo $zip ?>">
+	              <input type="hidden" name="night_phone_a" value="<?php echo $mobile ?>">
+	              <input type="hidden" name="email" value="<?php echo $email ?>"> 
+	              <input type="hidden" name="landing_page" value="<?php echo $paytype ;?>">
+	              <h3><img src="<?php echo $serverUrl().'/public/frontend/images/loader.gif';?>"> Please wait! Redirecting to payapl..</h3>
+	            </form>
+	            <script>$("#paypal-form").submit();</script>
+			   <?php 
+				$_SESSION['get_token']=$token;
+				$_SESSION['get_id']=$uid;
+				
+				// insert into user_payment_info table
+				$sqlString_insert_paypal="insert into user_payment_info (uid,package_id,payment_type,payment_data,price,payment_status) values('$uid','$package_id','paypal','$token','$package_final','0')";
+				$results_ans_paypal = $adapter->query($sqlString_insert_paypal, $adapter::QUERY_MODE_EXECUTE);
+				return true;
+			else:	
+				//If free subscription allow 90 days only 
+				$package_expire_date = date('Y-m-d', strtotime('+730 days'));
+				$sql_package="UPDATE user_package_details SET package_expire_date = '$package_expire_date', package_status = '1' WHERE user_id = '$uid' AND package_id = '$package_id' AND package_active_date = '$pkg_active_date'";
+				$results_package = $adapter->query($sql_package, $adapter::QUERY_MODE_EXECUTE);
+				// insert into user_payment_info table
+				$sqlString_insert_paypal="insert into user_payment_info (uid,package_id,payment_type,payment_data,price,payment_status) values('$uid','$package_id','FREE','Free Subscription','$package_final','1')";
+				$results_ans_paypal = $adapter->query($sqlString_insert_paypal, $adapter::QUERY_MODE_EXECUTE);
+				$mailController->sendVerifyEmailtofreelancer($uid,$package_final,$adapter) ;
+
+				$this->redirect()->toUrl('/thank-you?u=f');
+			endif;
+		}if($role_id==3){
+			$message = $header.'
+					<div style="padding: 25px 50px 5px; text-align: left;">
+					<p>Hello '.$fname.' '.$lname.',</p>					
+							<p>Thank you for joining Locumkit.</p><p> We have received your account application and your details are currently being verified by our team. Verification can take up to 48 hours and once this process is complete we will notify you.</p><p> Please note that during this process you will be unable to access any of the features of the site</p>
+							<!--<p>Thank you for using Locumkit.</p>
+							<p>Please do not respond to this email, if you have any queries please contact us <a href="http://'.$host.'/contact">here</a>.</p>-->
+							<p><p>					
+					</div>'.$footer;
+
+			if($profession_id != ''){
+				$Professiontr = '<tr><th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Profession</th>
+					<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$sqlProval['name'].'</td></tr>';
+
+			}else{
+				$Professiontr = '';
+			}
+
+
+			$message2=$header.'
+					<div style="padding: 25px 50px 5px; text-align: left; width:84.2%">
+					<p>Hello <b>Admin</b>,</p>
+					<p>A new employer account has been created which needs to be verified. The employer details are listed below:</p>
+					<table width="100%" style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					<tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Email</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$email.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">First Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$fname.'</td>
+					  </tr>
+					   <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Last Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$lname.'</td>
+					  </tr>                                         
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">ID</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$lastId.'</td>
+					  </tr>'.$Professiontr.'
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Store Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$company.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Telephone number</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$telephone.'</td>
+					  </tr>					  
+					  					  
+					</table><br/>
+					<p><p>
+					</div>'.$footer;
+			try{	
+		        	$from = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+				$mailController->sendSMTPMail($message,$from,$email,$fname,'Welcome to LocumKit');
+					
+			
+				$to = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from');
+				$to_name = $this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name');
+				$mailController->sendSMTPMail($message2,$email,$to,$to_name,'New employer registration - Needs to be verified');
+			}
+				catch (Exception $e) {
+			}
+			
+		  	// send sms start
+      		// $jobsmsController->afterRegisterdEmpSms($mobile,$fname);
+            // send sms end
+	        	
+			$this->flashMessenger()->addSuccessMessage('You Have Successfully registered.');
+						
+	        //$this->redirect()->toUrl('/thank-you');
+		header("Location: http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/thank-you"); /* Redirect browser */
+		exit();
+		}
+    }
+}
+?>

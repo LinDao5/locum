@@ -1,0 +1,1310 @@
+<?php 
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+	$uid=$_SESSION['user_id'];
+    }else{ 	echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>";}
+	
+	use GcFrontend\Controller\DbController as DbController;	
+	use Gc\User\Role\Model;
+	use Gc\User\Professional\Model as Model2;
+	use Gc\User\Package\Model as Model3;
+	use Gc\Db\AbstractTable;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Zend\Db\Sql\Where;
+	$dbConfig = new DbController();
+    $adapter = $dbConfig->locumkitDbConfig();	
+    $sql = new Sql($adapter);
+    $update = $sql->update();
+    $select = $sql->select();
+    $return = $this->script('user-question-process');
+	if(isset($_SESSION['user_role_id'])){
+		$role_id = $_SESSION['user_role_id'];
+		$cat_id  = $_SESSION['user_profession_id'];
+	}
+	$sqlString_data="select u.* from user u where u.id='$uid'";	
+    $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	$result_data = $results_get->current();
+	if($result_data['id']!=''){
+		// user extra info
+		$sqlString_data22="select ux.* from user_extra_info ux where ux.uid='$uid'";	
+		$results_get22 = $adapter->query($sqlString_data22, $adapter::QUERY_MODE_EXECUTE);
+		$result_data22 = $results_get22->current();
+	}
+	$result_arr="";
+	$sqlString_data="select qu.fquestion as fq,qu.equestion as eq,qu.type_key as tk,qu.type_value as tv,qu.id as qid,qu.required_status,qu.range_type_unit,qu.range_type_condition from user_question qu where cat_id='$cat_id' order by sort_order ASC";	
+    $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	$result_data = $results_get->toArray(); //print_r($result_data);
+	$result_count = $results_get->count();
+	$txt_ans="";
+	$sel_ans="";
+	$chk_ans="";
+	$req_status="";
+	if($result_count>0){  
+		foreach($result_data as $resultset){ //type_key  1:text_field ,2:select option, 3:checkbox
+		
+		     $sql_ans="select * from user_answer where user_id='$uid' and question_id='".$resultset['qid']."'";
+			 $results_ans = $adapter->query($sql_ans, $adapter::QUERY_MODE_EXECUTE);
+	         $result_data_ans = $results_ans->current(); //print_r($result_data_ans);
+			 
+			 $required=$resultset['required_status'];
+			
+			if($role_id==2){
+				$question=$resultset['fq'];
+			}else{
+				$question=$resultset['eq'];
+			}
+
+			$ans_qus_id = $result_data_ans['question_id'];
+			
+			if($resultset['tk']==1 && $question!=''){ // text field
+			    // comapre user_answer and user_question table question id
+				if($result_data_ans['question_id']==$resultset['qid']){ $txt_ans=$result_data_ans['type_value'];}
+				if($required==1){ 
+					$answer_value='<input type="text" name="textans_'.$resultset['qid'].'" required class="form-control margin-bottom " value="'.$txt_ans.'" '.$req_status.' id="qus-'.$ans_qus_id.'">';
+				}else{
+					$answer_value='<input type="text" name="textans_'.$resultset['qid'].'" class="form-control margin-bottom" value="'.$txt_ans.'" '.$req_status.'>';}
+			}
+			if($resultset['tk']==2 && $question!=''){ // select option
+			    if($required==1){ $req_status2="required";}
+				if($required==1){ 
+					$answer_value='<select name="selectans_'.$resultset['qid'].'" class="form-control margin-bottom" '.$req_status2.' required id="qus-'.$ans_qus_id.'" id="qus-'.$ans_qus_id.'"><option value="">Please select</option>';}else{
+					$answer_value='<select name="selectans_'.$resultset['qid'].'" class="form-control margin-bottom" '.$req_status2.'><option value="">Please select</option>';
+				}
+				$question_data=unserialize($resultset['tv']); //print_r($question_data);
+				foreach($question_data as $value){
+					if($result_data_ans['question_id']==$resultset['qid']){ $sel_ans=$result_data_ans['type_value'];}
+					if($value!=""){
+						$answer_value.='<option value="'.$value.'" '.(($sel_ans==$value)? 'selected':'').'>'.$value.'</option>';
+					}
+				}
+				$answer_value.='</select>';
+
+			}
+			if($resultset['tk']==3 && $question!=''){ // multiselect option
+				$question_data2=unserialize($resultset['tv']); //print_r($question_data2);
+				$answer_value='<div class="multi_select">';
+				foreach($question_data2 as $key => $value2){
+					// compare user_answer and user_question table for question id
+					if($result_data_ans['question_id']==$resultset['qid']){ $get_arr=explode(',',$result_data_ans['type_value']);}
+					//$search=array_search($value,$get_arr); //echo $value.'/--'.$search.'--<pre>';print_r($get_arr); echo '</pre>';
+					if(isset($get_arr)){ $inarr=in_array($value2, $get_arr); }else{ $inarr=""; }
+					
+					$checked=(($inarr=='1')? 'checked':'');
+					if ($key == 0) {						
+						$answer_value.='<div style="float:left;width:50%;"><input type="checkbox" name="checkboxans_'.$resultset['qid'].'[]" value="'.$value2.'" checked onclick="return false;"><span class="margin-left">'.$value2.'</span></div>';
+					}else{			
+						$answer_value.='<div style="float:left;width:50%;"><input type="checkbox" name="checkboxans_'.$resultset['qid'].'[]" value="'.$value2.'" '.$checked.'><span class="margin-left">'.$value2.'</span></div>';
+					}
+					
+				}
+			    $answer_value.='</div>';
+			}
+			if($resultset['tk']==4 && $question!=''){ // select option for range
+			     $range_type_unit=$resultset['range_type_unit'];
+				 $range_type_condition=$resultset['range_type_condition'];  //1. Greater than 2. Greater than OR equel to 3. Less than 4. Less than OR equel to 5. Equel to
+				//condition_arr
+				$condition_arr=array("1"=>"Greater than","2"=>"Greater than OR equal to","3"=>"Less than","4"=>"Less than OR equal","5"=>"Equal to");
+			    
+				if($required==1){ $req_status4="required";}
+				if($required==1){ 
+					$answer_value='<select name="selectans2_'.$resultset['qid'].'" class="form-control margin-bottom" '.$req_status4.' required id="qus-'.$ans_qus_id.'"><option value="">Please select</option>';}else{
+					$answer_value='<select name="selectans2_'.$resultset['qid'].'" class="form-control margin-bottom" '.$req_status4.'><option value="">Please select</option>';
+				}
+				$question_data=unserialize($resultset['tv']); //print_r($question_data);
+				foreach($question_data as $value){
+					if($result_data_ans['question_id']==$resultset['qid']){ $sel_ans=$result_data_ans['type_value'];}
+					if($value!=""){
+						$answer_value.='<option value="'.$value.'" '.(($sel_ans==$value)? 'selected':'').'>'.$condition_arr[$range_type_condition].' '.$value.' '.$range_type_unit.'</option>';
+					}
+				}
+				$answer_value.='</select>';
+			}
+			if($resultset['tk']==5 && $question!=''){ // select option
+			    if($required==1){ $req_status4="required";}
+				if($role_id==2){$type_sel="";} if($role_id==3){$type_sel="multiple";}
+				if($required==1 && $role_id==2){ 
+					$answer_value='<select name="selectans4_'.$resultset['qid'].'[]" class="form-control margin-bottom" '.$req_status4.' required '.$type_sel.' id="qus-'.$ans_qus_id.'"><option value="">Please select</option>';}else{
+					$answer_value='<select name="selectans4_'.$resultset['qid'].'[]" class="form-control margin-bottom" '.$req_status4.' '.$type_sel.'><option value="">Please select</option>';
+				}
+				if($required==1 && $role_id==3){ 
+					$answer_value='<select name="selectans4_'.$resultset['qid'].'[]" class="form-control margin-bottom" '.$req_status4.' required '.$type_sel.' id="qus-'.$ans_qus_id.'">';}else{
+					$answer_value='<select name="selectans4_'.$resultset['qid'].'[]" class="form-control margin-bottom" '.$req_status4.' '.$type_sel.'>';
+				}
+				$question_data=unserialize($resultset['tv']); //print_r($question_data);
+				foreach($question_data as $value){
+					if($result_data_ans['question_id']==$resultset['qid']){ $get_arr=explode(',',$result_data_ans['type_value']);}
+					if(isset($get_arr)){ $inarr=in_array($value, $get_arr); }else{ $inarr=""; }
+					$sel_ans=(($inarr=='1')? 'selected':'');
+					if($value!=""){
+						$answer_value.='<option value="'.$value.'" '.$sel_ans.'>'.$value.'</option>';
+					}
+				}
+				$answer_value.='</select>';
+			}
+
+			/* YEs No question type*/
+			if($resultset['tk']==6 && $question!=''){  
+				if($result_data_ans['question_id']==$resultset['qid']){ $txt_ans=$result_data_ans['type_value'];}
+				$select_yes = '';
+				$select_no = '';
+				if ($txt_ans =='Yes') {
+					$select_yes = 'selected';
+				}elseif ($txt_ans =='No') {
+					$select_no = 'selected';
+				}
+				if($required==1){ 
+					$answer_value='<input type="text" name="textans_'.$resultset['qid'].'" required class="form-control margin-bottom" value="'.$txt_ans.'" '.$req_status.' id="qus-'.$ans_qus_id.'">';
+					$answer_value="<select name='selectans6_".$resultset['qid']."[]' id='ans_option_".$i."' required class='form-control margin-bottom'>";
+					/*if ($role_id == 3) {
+						$answer_value.="<option value='Yes' ".$select_yes.">Yes</option>";
+						$answer_value.="<option value='Yes' ".$select_no.">No</option>";
+					}else{
+						$answer_value.="<option value='Yes' ".$select_yes.">Yes</option>";
+						$answer_value.="<option value='No' ".$select_no.">No</option>";
+					}*/
+					$answer_value.="<option value='No' ".$select_no.">No</option>";
+					$answer_value.="<option value='Yes' ".$select_yes.">Yes</option>";
+					$answer_value.="</select>";
+					
+				}else{
+					$answer_value="<select name='selectans6_".$resultset['qid']."[]' id='ans_option_".$i."' class='form-control margin-bottom'>";
+					/*if ($role_id == 3) {
+						$answer_value.="<option value='Yes' ".$select_yes.">Yes</option>";
+						$answer_value.="<option value='Yes' ".$select_no.">No</option>";
+					}else{
+						$answer_value.="<option value='Yes' ".$select_yes.">Yes</option>";
+						$answer_value.="<option value='No' ".$select_no.">No</option>";
+					}*/
+					$answer_value.="<option value='No' ".$select_no.">No</option>";
+					$answer_value.="<option value='Yes' ".$select_yes.">Yes</option>";
+					$answer_value.="</select>";
+				}
+			}
+
+			if($required==1){
+				$answer_value.= "<div id='required-qus-".$result_data_ans['question_id']."' style='clear: both;'></div>";
+			}
+			
+			if($role_id==2 && $question!=''){ // for freelancer :fquestion
+			      if($required==1){
+					$req_text="<i class='fa fa-asterisk required-stars' aria-hidden='true' style='color:red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;'></i>";
+				}else{
+					$req_text="";
+				}
+				   $result_arr.='<div class="col-md-5 col-lg-4 text-right padding-bottom">'.$resultset['fq'].'<input type="hidden" name="question_id[]" value="'.$resultset['qid'].'-'.$resultset['tk'].'">'.$req_text.'</div><div class="col-md-7 margin-bottom">'.$answer_value.'</div>';
+			
+			}if($role_id==3 && $question!=''){// for employer :equestion
+			   if($required==1){
+					$req_text="<i class='fa fa-asterisk required-stars' aria-hidden='true' style='color:red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;'></i>";
+				}else{
+					$req_text="";
+				}
+			  $result_arr.='<div class="col-md-5 col-lg-4 text-right padding-bottom">'.$resultset['eq'].'<input type="hidden" name="question_id[]" value="'.$resultset['qid'].'-'.$resultset['tk'].'">'.$req_text.'</div><div class="col-md-7 margin-bottom">'.$answer_value.'</div>';
+				
+			}			
+		}
+	}
+
+    // get user extra info
+	$sqlGetExtraData = "SELECT * FROM  user_extra_info WHERE uid ='$uid'";    
+	$getExtraData = $adapter->query($sqlGetExtraData, $adapter::QUERY_MODE_EXECUTE);
+	$ExtraData = $getExtraData->toArray();
+	foreach ($ExtraData as $key => $value) {
+		$allData[] = $value;
+		$allStoreData[] = $value;
+	}
+	// get store data
+	$exp_var="";
+	if($_SESSION['user_role_id']==2 ){
+		$store_id=explode(',',$allData[0]['store_id']);
+		$store_data=explode(',',$allStoreData[0]['store_data']);
+		foreach($store_id as $key=>$name){
+			$exp_var[$name]=array($name=>$store_data[$key]);
+		}
+		//print_r($exp_var);
+	}
+	if($_SESSION['user_role_id']==3 ){
+		$store_id_emp=$ExtraData[0]['store_id'];
+	}
+    if($_SESSION['user_role_id']==3 ){
+		$store_week_time=unserialize($ExtraData[0]['store_week_time']); //print_r($store_week_time); //echo $store_week_time;
+		$store_unique_time=unserialize($ExtraData[0]['store_unique_time']); //print_r($store_unique_time);
+		$daytime1=$store_week_time[0][0]; // from time 0,1,2,3 =>Monday,From,To,Lunch
+		$daytime2=$store_week_time[1][0]; // from time 0,1,2,3 =>Tuesday,From,To,Lunch
+		$daytime3=$store_week_time[2][0]; // from time 0,1,2,3 =>Wednesday,From,To,Lunch
+		$daytime4=$store_week_time[3][0]; // from time 0,1,2,3 =>Thursday,From,To,Lunch
+		$daytime5=$store_week_time[4][0]; // from time 0,1,2,3 =>Friday,From,To,Lunch
+		$daytime6=$store_week_time[5][0]; // from time 0,1,2,3 =>Saturday,From,To,Lunch
+		$daytime7=$store_week_time[6][0]; // from time 0,1,2,3 =>Sunday,From,To,Lunch
+	}
+	//check for popup
+	if(isset($_GET['popup']) && $_GET['popup']=="yes"){
+		$popup="yes";
+	}else{
+		$popup="";
+	}
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row" <?php if($popup){ echo 'style="display:none;"';}?>>
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+					<li><a href="/user-question-edit">EDIT PROFILE</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>EDIT PROFILE</h3>
+                    <?php if($popup){ echo '<a href="javascript:void(0);" onClick="window.close();">Close</a>';}?>
+                </div>
+            </div>
+        </div>
+     </div>
+</section> 
+<div id="primary-content" class="main-content register user-edit-wrapper">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+                <div class="col-md-12">
+					<?php echo $this->partial('flash-messages'); ?>
+                <div class="one-page-box visible widget-box no-border col-xs-12">
+                    <div class="widget-body">
+                        <div class="widget-main">
+                            <!--<h4 class="header">
+                            <?php //echo $this->escapeHtml('Question Edit'); ?>
+                            </h4>-->
+                            <form id="one-page-form" action="/user-question-edit<?php if($popup){ echo '?popup=yes';}?>" method="post" class="user_question_edit_form" onsubmit="return is_validate('<?php echo $role_id ?>', '<?php echo $cat_id ?>')">
+
+
+ 								<h3>The following questions will enable us to notify you about job opportunities relevant to your individual needs and clinical competencies.</h3> 
+           		 				<div class='col-md-12 margin-bottom' align='center'><a id="how-to-answer-question" href="<?php echo $this->serverUrl(); echo ($role_id == 2) ? '/how-to-answer-question-fre' : '/how-to-answer-question-emp'; ?>" target='_blank' class='tip_font2' style='text-align:center;'>(		Please click here for help on how to answer these questions)</a></div> 
+
+
+                                <input type="hidden" name="uid" id="u_id" value="<?php echo $uid;?>">
+                                <?php if($popup){ echo '<input type="hidden" name="popupwin" value="yes">'; }?>
+                                 <?php if(!empty($return['error_message'])): ?>
+                                        <div class="notification error"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                                    <?php endif; ?>
+                                    <div class="col-md-12 margin-bottom">
+                                    	<?php echo $result_arr;?>
+                                    </div>
+
+                                    <?php if($_SESSION['user_role_id']==2){  ?>
+										<div class="col-md-12 margin-bottom"> 
+										  	<div class="col-md-5 col-sm-5 col-lg-4 text-right">
+                                         		<p>
+                                         			Please enter the minimum acceptable rate<i class="fa fa-asterisk required-stars" aria-hidden="true" ></i>
+                                         			<br/>
+                                         			<span class="tip_font2">( Please enter a whole number, ie: 250 )</span>
+                                         		</p>
+                                         	</div>
+                                         	<div class="col-md-7 col-sm-7">
+	                                            <?php
+	                                                /* Get min rate per day */
+	                                                $min_rate = unserialize($ExtraData[0]['minimum_rate']);
+	                                            ?> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12"><span class="rate-day">Monday</span></div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Monday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12">
+	                                                    <span class="rate-day">Tuesday</span>
+	                                                </div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Tuesday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12">
+	                                                    <span class="rate-day">Wednesday</span>
+	                                                </div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Wednesday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12">
+	                                                    <span class="rate-day">Thursday</span>
+	                                                </div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Thursday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12">
+	                                                    <span class="rate-day">Friday</span>
+	                                                </div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Friday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12">
+	                                                    <span class="rate-day">Saturday</span>  
+	                                                </div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Saturday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div> 
+	                                            <div class="row">
+	                                                <div class="col-md-3 col-sm-6 col-xs-12">
+	                                                    <span class="rate-day">Sunday</span>
+	                                                </div>
+	                                                <div class="col-md-9 col-sm-6 col-xs-12">
+	                                                    <input name="minimum_rate[]" type="number" class="form-control margin-bottom" value="<?php if($ExtraData[0]['minimum_rate']!="0.00"){echo $min_rate['Sunday'];}else{ echo '0.00'; }?>" required />
+	                                                </div>
+	                                            </div>
+	                                        </div>
+                                        </div>
+									<?php } ?>
+
+                                    <!-- -->
+                                    <?php //if($_SESSION['user_role_id']==2 ){ // freelancer with optometry category?>
+                                    <?php if($_SESSION['user_role_id']==2 ){ // freelancer with optometry category?>
+                                   
+                                    <!-- <div class="col-md-12 margin-bottom">
+                                        <div class="col-md-5 col-lg-4 text-right"><p>Which of the following stores have you worked for in the past? <i class='fa fa-asterisk required-stars' aria-hidden='true' style='color:red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;'></i><br><span class="tip_font2">(If selected, please state how long has it been since you last worked)</span></p></div>                                        
+
+                                        <div class="col-md-7 multi_sel_list no-padding-left multi_sel-ques-padd store-you-worked">
+
+                                        	<div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_3" onChange="open_select(3);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Boots', $store_id)){ echo "checked";}}?>  value="Boots"><span class="margin-left">Boots</span></div>
+	                                            <div class="col-md-8" id="store_id_3">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Boots', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Boots']['Boots']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Boots']['Boots']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Boots']['Boots']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Boots']['Boots']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+                                            </div>
+                                            <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_2" onChange="open_select(2);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Specsavers', $store_id)){ echo "checked";}}?> value="Specsavers"><span class="margin-left">Specsavers</span></div>
+	                                            <div class="col-md-8" id="store_id_2">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Specsavers', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Specsavers']['Specsavers']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Specsavers']['Specsavers']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Specsavers']['Specsavers']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Specsavers']['Specsavers']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div>
+                                            <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4"><input type="checkbox" id="st_1" onChange="open_select(1);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Vision express', $store_id)){ echo "checked";}}?> value="Vision express"><span class="margin-left">Vision express</span></div>
+	                                            <div class="col-md-8" id="store_id_1">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Vision express', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Vision express']['Vision express']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Vision express']['Vision express']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Vision express']['Vision express']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Vision express']['Vision express']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+                                            </div>
+                                            <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_10" onChange="open_select(10);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Asda', $store_id)){ echo "checked";}}?> value="Asda"><span class="margin-left">Asda</span>
+	                                            </div>
+	                                            <div class="col-md-8" id="store_id_10">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Asda', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Asda']['Asda']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Asda']['Asda']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Asda']['Asda']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Asda']['Asda']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div>
+	                                        <div class="col-md-12 no-padding-left">
+		                                        <div class="col-md-4">
+		                                        <input type="checkbox" id="st_12" onChange="open_select(12);" name="store_id[]"  <?php if(isset($store_id)){if(in_array('David Clulows', $store_id)){ echo "checked";}}?> value="David Clulows"><span class="margin-left">David Clulows</span></div>
+		                                        <div class="col-md-8" id="store_id_12">
+		                                        <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('David Clulows', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+		                                        <option value="">Please select</option>
+		                                        <option value="0-6 months" <?php if($exp_var['David Clulows']['David Clulows']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['David Clulows']['David Clulows']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['David Clulows']['David Clulows']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['David Clulows']['David Clulows']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+		                                        </div>
+	                                        </div>
+	                                        <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_9" onChange="open_select(9);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Domaciliary', $store_id)){ echo "checked";}}?> value="Domaciliary"><span class="margin-left">Domaciliary</span></div>
+	                                            <div class="col-md-8" id="store_id_9">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Domaciliary', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Domaciliary']['Domaciliary']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Domaciliary']['Domaciliary']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Domaciliary']['Domaciliary']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Domaciliary']['Domaciliary']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div>
+	                                        <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_8" onChange="open_select(8);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Independent', $store_id)){ echo "checked";}}?> value="Independent"><span class="margin-left">Independent</span></div>
+	                                            <div class="col-md-8" id="store_id_8">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Independent', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Independent']['Independent']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Independent']['Independent']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Independent']['Independent']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Independent']['Independent']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div>
+	                                        <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_6" onChange="open_select(6);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Leightons', $store_id)){ echo "checked";}}?> value="Leightons"><span class="margin-left">Leightons</span></div>
+	                                            <div class="col-md-8" id="store_id_6">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Leightons', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Leightons']['Leightons']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Leightons']['Leightons']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Leightons']['Leightons']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Leightons']['Leightons']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div>
+
+                                            <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_7" onChange="open_select(7);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Scrivens', $store_id)){ echo "checked";}}?> value="Scrivens"><span class="margin-left">Scrivens</span></div>
+	                                            <div class="col-md-8" id="store_id_7">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Scrivens', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Scrivens']['Scrivens']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Scrivens']['Scrivens']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Scrivens']['Scrivens']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Scrivens']['Scrivens']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div>
+	                                        <div class="col-md-12 no-padding-left">
+		                                        <div class="col-md-4">
+		                                        <input type="checkbox" id="st_11" onChange="open_select(11);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Tesco', $store_id)){ echo "checked";}}?> value="Tesco"><span class="margin-left">Tesco</span>
+		                                        </div>
+		                                        <div class="col-md-8" id="store_id_11">
+		                                        <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Tesco', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+		                                        <option value="">Please select</option>
+		                                        <option value="0-6 months" <?php if($exp_var['Tesco']['Tesco']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Tesco']['Tesco']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Tesco']['Tesco']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Tesco']['Tesco']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+		                                        </div>
+		                                    </div>
+		                                    <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_5" onChange="open_select(5);" name="store_id[]" <?php if(isset($store_id)){if(in_array('The Optical Shop', $store_id)){ echo "checked";}}?> value="The Optical Shop"><span class="margin-left">The Optical Shop</span></div>
+	                                            <div class="col-md-8" id="store_id_5" >
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('The Optical Shop', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['The Optical Shop']['The Optical Shop']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['The Optical Shop']['The Optical Shop']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['The Optical Shop']['The Optical Shop']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['The Optical Shop']['The Optical Shop']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+	                                        </div> 
+                                            <div class="col-md-12 no-padding-left">
+	                                            <div class="col-md-4">
+	                                            <input type="checkbox" id="st_4" onChange="open_select(4);" name="store_id[]" <?php if(isset($store_id)){if(in_array('Optical express', $store_id)){ echo "checked";}}?> value="Optical express"><span class="margin-left">Optical express</span></div>
+	                                            <div class="col-md-8" id="store_id_4">
+	                                            <select name="store_data[]" class="form-control margin-bottom width-100" id="store_data1" <?php if(isset($store_id)){if(in_array('Optical express', $store_id)){ echo "style='display:block;' required='required'";}}?>>
+	                                            <option value="">Please select</option>
+	                                            <option value="0-6 months" <?php if($exp_var['Optical express']['Optical express']=='0-6 months'){ echo "selected";}?>>0-6 months</option><option value="7-12 months"  <?php if($exp_var['Optical express']['Optical express']=='7-12 months'){ echo "selected";}?>>7-12 months</option><option value="1-2 years"  <?php if($exp_var['Optical express']['Optical express']=='1-2 years'){ echo "selected";}?>>1-2 years</option><option value="2 years plus"  <?php if($exp_var['Optical express']['Optical express']=='2 years plus'){ echo "selected";}?>>2 years plus</option></select>
+	                                            </div>
+                                            </div>
+	                                        <div style="clear: both;margin-bottom: 15px;" id="worked-at-store-error"></div>
+                                    	</div>
+                                    </div> -->
+                                     <!-- -->
+                                     <?php if($_SESSION['user_role_id']==2){  ?>
+                                        <div class="col-md-12 margin-bottom"> 
+                                          	<div class="col-md-5 col-sm-5 col-lg-4 text-right">
+                                         		<p>How far you willing to travel?<i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></p>
+                                         		<p><em style="font-style: italic;font-size: 12px;"><a href="#" style="color:#00a8dd;" onclick="showMapModal();">Click here</a>  to view a map of UK boroughs/counties.</em></p>
+                                         	</div>
+                                          	<div class="col-md-7 col-sm-7">
+                                          		<input name="city" type="hidden" class="form-control margin-bottom" value="<?php echo $result_data22['city'];?>" id="city"/>
+                                          		<input name="address" type="hidden" class="form-control margin-bottom" value="<?php echo $result_data22['address'];?>" id="address"/>
+                                          		<input name="zip" type="hidden" class="form-control margin-bottom" value="<?php echo $result_data22['zip'];?>" id="zip"/>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="5" onclick="get_list(this.value);">5 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="10" onclick="get_list(this.value);">10 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="15" onclick="get_list(this.value);">15 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="20" onclick="get_list(this.value);">20 miles</span></div>
+                                                 <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="25" onclick="get_list(this.value);">25 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="30" onclick="get_list(this.value);">30 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="35" onclick="get_list(this.value);">35 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="40" onclick="get_list(this.value);">40 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="45" onclick="get_list(this.value);">45 miles</span></div>
+                                                <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="50" onclick="get_list(this.value);">50 miles</span></div>
+                                                 <div class="dist_list"><span><input type="radio" name="max_distance" class="input-text margin-right" value="Over 50">Over 50 miles</span></div>   
+                                               <input  type="hidden" id="max_distanc_to_traval" value="<?php if($ExtraData[0]['max_distance']!="0"){echo $ExtraData[0]['max_distance'];}?>"/>
+
+                                               <div style="clear: both;" id="max_distance_error"></div>
+                                         	</div>
+                                       	</div>
+                                    <?php }?>
+                                     <!-- -->
+                                     <div class="celltip-bmm">
+                                     <div class="col-md-5 col-lg-4 text-right celltip-wppr"><p>How many CET points do you have in the current cycle<span class="cetpoint-toltip">?</span><span class="celltooltiptext">Locumkit will require evidence of your CET points every three months to ensure credibility</span></p></div>
+                                     <div class="col-md-7 margin-bottom"><input type="text" name="cet" id="cet" class="form-control width-100" placeholder="000" maxlength="3"  autocomplete="off" <?php if($ExtraData[0]['cet']){?>value="<?php echo $ExtraData[0]['cet'];?>"<?php }?>></div>
+                                     </div>
+                                     <div class="col-md-5 col-lg-4 text-right"><p>What is your GOC NO?<i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></p></div>
+                                     <div class="col-md-7 margin-bottom"><input type="text" name="goc" id="goc" class="form-control width-100" placeholder="01-12345 or D-00000" maxlength="7" required autocomplete="off" <?php if($ExtraData[0]['goc']){?>value="<?php echo $ExtraData[0]['goc'];?>"<?php }?>></div>
+                                     <?php //if($ExtraData[0]['aop']!=''){?>
+                                     <div class="clear-both"></div>
+                                     <div class="col-md-5 col-lg-4 text-right">
+                                     	<p style="margin-bottom: 0;">Indemnity Insurance: If AOP, what is your AOP membership number?</p>
+                                     </div>
+                                     <div class="col-md-7 margin-bottom">
+                                     	<input type="text" name="aop" id="aop" class="form-control width-100" placeholder="00000" maxlength="5"  autocomplete="off" <?php if($ExtraData[0]['aop']){?>value="<?php echo $ExtraData[0]['aop'];?>"<?php } ?> >
+                                     </div>
+                                     <div class="clear-both"></div>
+                                     <?php //if($ExtraData[0]['inshurance_company']!=""){?>
+                                     
+                                     <div class="col-md-5 col-lg-4 text-right"><p> If not AOP, please insert Company insured with, Policy number, Date of renewal?</p></div>
+                                    <div class="col-md-7 margin-bottom">
+                                    	<!-- <p><input type="checkbox" name="inshu_yes" id="inshu_yes" value="1" class="pull-left margin-bottom" <?php if($allGuestData[1]['inshurance_company']!=""){ echo "checked";}?>><span class="margin-left text-left" >Yes</span> </p> -->
+                                        <div id="inshu_open"  class="margin-top">
+                                            <input type="text" name="inshurance_company" id="inshurance_company" class="form-control width-30 margin-bottom" placeholder="company name" autocomplete="off" <?php if($ExtraData[0]['inshurance_company']){?>value="<?php echo $ExtraData[1]['inshurance_company'];?>"<?php }?>>
+                                            <input type="text" name="inshurance_no" id="inshurance_no" class="form-control width-30 margin-bottom" placeholder="Membership number" autocomplete="off" <?php if($ExtraData[0]['inshurance_no']){?>value="<?php echo $ExtraData[0]['inshurance_no'];?>"<?php }?>>
+                                            <input type="text" name="inshurance_renewal_date" id="inshurance_renewal_date" class="form-control width-30 margin-bottom" placeholder="dd-mm-yyyy" autocomplete="off" maxlength="10" <?php if($ExtraData[0]['inshurance_renewal_date']){?>value="<?php echo $ExtraData[0]['inshurance_renewal_date'];?>"<?php }?>>
+                                        </div>
+                                    </div>
+                                     <?php //} ?>
+                                     <div class="col-md-5 col-lg-4 margin-bottom text-right"><p>What is your Opthalmic List Number (OPL)?</p></div>
+                                    <div class="col-md-7"><input type="text" name="aoc_id" id="aoc_id" placeholder="OPL/11-11111/1AA" maxlength="16" class="form-control width-100 -req-qus-10002" required style="margin:10px 0px" <?php if($ExtraData[0]['aoc_id']){?>value="<?php echo $ExtraData[0]['aoc_id'];?>"<?php }?>>
+                                        
+                                    </div>
+                                    </div>
+                                    <?php }?>
+                                    <?php /*if($_SESSION['user_role_id']==3 ){ // employer with optometry category?>
+	                                    <div class="col-md-12 margin-bottom">
+	                                    	<div class="col-md-5 col-lg-4 text-right"><p>What type of store do you run?<i class="fa fa-asterisk required-stars" aria-hidden="true"></i></p></div>
+	                                        <div class="col-md-7">
+	                                            <select name="store_id_emp" required class="form-control margin-bottom">
+	                                                <option value="">Please Select</option>
+	                                                <option value="Vision express" <?php if(isset($store_id_emp) && $store_id_emp=="Vision express"){ echo "selected";}?>>Vision express</option>
+	                                                <option value="Specsavers" <?php if(isset($store_id_emp) && $store_id_emp=="Specsavers"){ echo "selected";}?>>Specsavers</option>
+	                                                <option value="Boots" <?php if(isset($store_id_emp) && $store_id_emp=="Boots"){ echo "selected";}?>>Boots</option>
+	                                                <option value="Optical express" <?php if(isset($store_id_emp) && $store_id_emp=="Optical express"){ echo "selected";}?>>Optical express</option>
+	                                                <option value="The Optical Shop" <?php if(isset($store_id_emp) && $store_id_emp=="The Optical Shop"){ echo "selected";}?>>The Optical Shop</option>
+	                                                <option value="Leightons" <?php if(isset($store_id_emp) && $store_id_emp=="Leightons"){ echo "selected";}?>>Leightons</option>
+	                                                <option value="Scrivens" <?php if(isset($store_id_emp) && $store_id_emp=="Scrivens"){ echo "selected";}?>>Scrivens</option>
+	                                                <option value="Independent" <?php if(isset($store_id_emp) && $store_id_emp=="Independent"){ echo "selected";}?>>Independent</option>
+	                                                <option value="Domaciliary" <?php if(isset($store_id_emp) && $store_id_emp=="Domaciliary"){ echo "selected";}?>>Domaciliary</option>
+	                                                <option value="Asda" <?php if(isset($store_id_emp) && $store_id_emp=="Asda"){ echo "selected";}?>>Asda</option>
+	                                                <option value="Tesco" <?php if(isset($store_id_emp) && $store_id_emp=="Tesco"){ echo "selected";}?>>Tesco</option>
+	                                                <option value="David Clulows" <?php if(isset($store_id_emp) && $store_id_emp=="David Clulows"){ echo "selected";}?>>David Clulows</option>
+	                                            </select>
+	                                        </div>
+	                                    </div>
+                                    <?php }*/ ?>
+                                    <?php if($_SESSION['user_role_id']==3){ ?>
+                                      <!-- <div class="col-md-12">
+                            			<div class="col-md-5 text-right"><p>What is your opening time for?<i class="fa fa-asterisk required-stars" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i></p></div>
+                                         <div class="col-md-7">
+                                            <div class="col-md-12 margin-bottom">
+                                                <div class="col-md-4 font-weight-500" align="center">Start Time</div>
+                                                <div class="col-md-4 font-weight-500" align="center">End Time</div>
+                                                <div class="col-md-4 font-weight-500" align="center">Lunch Break (minutes)</div>
+                                             </div>
+                                             <?php $arr_week=array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
+                                                      $arr_hours_frm="";
+													  $arr_hours_to="";
+                                                      $arr_lunch="";
+													  $selected="";
+													  $selected2="";
+													  $selected3="";
+											 ?>
+                                             <div class="col-md-12 margin-bottom no-padding-left">
+                                                    <div class="col-md-4 margin-bottom"><select name="job_new_start_time" required class="form-control width-100 required-field_088"><?php //echo $arr_hours_frm;
+													     for($th0=0;$th0<24;$th0++){
+                                                         if($th0<=9){$th0='0'.$th0;}
+														 if($store_unique_time['start_time']==$th0){
+															  $selected0="selected";
+														  }else{
+															  $selected0="";
+														  }
+														  echo '<option value="'.$th0.'" '.$selected0.'>'.$th0.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-4 margin-bottom" align="center"><select name="job_new_end_time" required class="form-control width-100 required-field_088"><?php //echo $arr_hours_to;
+													     for($th01=0;$th01<24;$th01++){
+                                                         if($th01<=9){$th01='0'.$th01;}
+														 if($store_unique_time['end_time']==$th01){
+															  $selected01="selected";
+														  }else{
+															  $selected01="";
+														  }
+														  echo '<option value="'.$th01.'" '.$selected01.'>'.$th01.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-4 margin-bottom">
+                                                    <input type="text" name="job_new_lunch_time" required class="form-control width-100 required-field_088" value="<?php echo $store_unique_time['lunch_time'];?>" placeholder="Enter lunch break">
+                                                   </div>
+                                                </div>
+                                         </div>
+                                      </div> -->
+                                    <?php  /* // for every employer ?>
+                                    <div class="col-md-12">
+                            			<div class="col-md-5 text-right"><p>What is your opening time for?<i class="fa fa-asterisk required-stars" aria-hidden="true" style="color: red; font-style: normal;font-size: 10px;margin: -20px -12px 0 0px;"></i></p></div>
+                                            <div class="col-md-7">
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"></div>
+                                                    <div class="col-md-3 font-weight-500" align="center">From</div>
+                                                    <div class="col-md-3 font-weight-500" align="center">To</div>
+                                                    <div class="col-md-3 font-weight-500" align="center">Lunch</div>
+                                                </div>
+                                                <?php $arr_week=array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
+                                                      $arr_hours_frm="";
+													  $arr_hours_to="";
+                                                      $arr_lunch="";
+													  $selected="";
+													  $selected2="";
+													  $selected3="";
+                                                      
+                                                      $st_cnt=1;
+                                                //foreach($arr_week as $weekdays){
+														
+                                                ?>
+                                                <!--Monday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Monday</p><input type="hidden" name="week_days_emp[]" value="Monday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th0=0;$th0<24;$th0++){
+                                                         if($th0<=9){$th0='0'.$th0;}
+														 if($daytime1=="Monday" && $store_week_time[0][1]==$th0){
+															  $selected0="selected";
+														  }else{
+															  $selected0="";
+														  }
+														  echo '<option value="'.$th0.'" '.$selected0.'>'.$th0.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th01=0;$th01<24;$th01++){
+                                                         if($th01<=9){$th01='0'.$th01;}
+														 if($daytime1=="Monday" && $store_week_time[0][2]==$th01){
+															  $selected01="selected";
+														  }else{
+															  $selected01="";
+														  }
+														  echo '<option value="'.$th01.'" '.$selected01.'>'.$th01.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl02=0;$tl02<=6;$tl02++){
+                                                          if($tl02==0){$lunch02='00';}else{$lunch02=$tl02*10;}
+														  if($daytime1=="Monday" && $store_week_time[0][3]==$lunch02){
+															  $selected02="selected";
+														  }else{
+															  $selected02="selected";
+														  }
+                                                          echo '<option value="'.$lunch02.'" '.$selected02.'>'.$lunch02.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                <!-- Tuesday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Tuesday</p><input type="hidden" name="week_days_emp[]" value="Tuesday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th1=0;$th1<24;$th1++){
+                                                         if($th1<=9){$th1='0'.$th1;}
+														 if($daytime2=="Tuesday" && $store_week_time[1][1]==$th1){
+															  $selected1="selected";
+														  }else{
+															  $selected1="selected";
+														  }
+														  echo '<option value="'.$th1.'" '.$selected1.'>'.$th1.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th11=0;$th11<24;$th11++){
+                                                         if($th11<=9){$th11='0'.$th11;}
+														 if($daytime2=="Tuesday" && $store_week_time[1][2]==$th11){
+															  $selected11="selected";
+														  }else{
+															  $selected11="selected";
+														  }
+														  echo '<option value="'.$th11.'" '.$selected11.'>'.$th11.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl13=0;$tl13<=6;$tl13++){
+                                                          if($tl13==0){$lunch13='00';}else{$lunch13=$tl13*10;}
+														  if($daytime2=="Tuesday" && $store_week_time[1][3]==$lunch13){
+															  $selected12="selected";
+														  }else{
+															  $selected13="";
+														  }
+                                                          echo '<option value="'.$lunch13.'" '.$selected12.'>'.$lunch13.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                <!-- Wednesday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Wednesday</p><input type="hidden" name="week_days_emp[]" value="Wednesday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th20=0;$th20<24;$th20++){
+                                                         if($th20<=9){$th20='0'.$th20;}
+														 if($daytime3=="Wednesday" && $store_week_time[2][1]==$th20){
+															  $selected20="selected";
+														  }else{
+															  $selected20="";
+														  }
+														  echo '<option value="'.$th20.'" '.$selected20.'>'.$th20.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th21=0;$th21<24;$th21++){
+                                                         if($th21<=9){$th21='0'.$th21;}
+														 if($daytime3=="Wednesday" && $store_week_time[2][2]==$th21){
+															  $selected21="selected";
+														  }else{
+															  $selected21="";
+														  }
+														  echo '<option value="'.$th21.'" '.$selected21.'>'.$th21.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl22=0;$tl22<=6;$tl22++){
+                                                          if($tl22==0){$lunch22='00';}else{$lunch22=$tl22*10;}
+														  if($daytime3=="Wednesday" && $store_week_time[2][3]==$lunch22){
+															  $selected22="selected";
+														  }else{
+															  $selected22="";
+														  }
+                                                          echo '<option value="'.$lunch22.'" '.$selected22.'>'.$lunch22.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                <!-- Thursday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Thursday</p><input type="hidden" name="week_days_emp[]" value="Thursday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th30=0;$th30<24;$th30++){
+                                                         if($th30<=9){$th30='0'.$th30;}
+														 if($daytime4=="Thursday" && $store_week_time[3][1]==$th30){
+															  $selected30="selected";
+														  }else{
+															  $selected30="";
+														  }
+														  echo '<option value="'.$th30.'" '.$selected30.'>'.$th30.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th31=0;$th31<24;$th31++){
+                                                         if($th31<=9){$th31='0'.$th31;}
+														 if($daytime4=="Thursday" && $store_week_time[3][2]==$th31){
+															  $selected31="selected";
+														  }else{
+															  $selected31="";
+														  }
+														  echo '<option value="'.$th31.'" '.$selected31.'>'.$th31.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl32=0;$tl32<=6;$tl32++){
+                                                          if($tl32==0){$lunch32='00';}else{$lunch32=$tl32*10;}
+														  if($daytime4=="Thursday" && $store_week_time[3][3]==$lunch32){
+															  $selected32="selected";
+														  }else{
+															  $selected32="";
+														  }
+                                                          echo '<option value="'.$lunch32.'" '.$selected32.'>'.$lunch32.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                <!-- Friday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Friday</p><input type="hidden" name="week_days_emp[]" value="Friday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th40=0;$th40<24;$th40++){
+                                                         if($th40<=9){$th40='0'.$th40;}
+														 if($daytime5=="Friday" && $store_week_time[4][1]==$th40){
+															  $selected40="selected";
+														  }else{
+															  $selected40="";
+														  }
+														  echo '<option value="'.$th40.'" '.$selected40.'>'.$th40.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th41=0;$th41<24;$th41++){
+                                                         if($th41<=9){$th41='0'.$th41;}
+														 if($daytime5=="Friday" && $store_week_time[4][2]==$th41){
+															  $selected41="selected";
+
+
+														  }else{
+															  $selected41="";
+														  }
+														  echo '<option value="'.$th41.'" '.$selected41.'>'.$th41.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl42=0;$tl42<=6;$tl42++){
+                                                          if($tl42==0){$lunch42='00';}else{$lunch42=$tl42*10;}
+														  if($daytime5=="Friday" && $store_week_time[4][3]==$lunch42){
+															  $selected42="selected";
+														  }else{
+															  $selected42="";
+														  }
+                                                          echo '<option value="'.$lunch42.'" '.$selected42.'>'.$lunch42.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                <!-- Saturday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Saturday</p><input type="hidden" name="week_days_emp[]" value="Saturday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th50=0;$th50<24;$th50++){
+                                                         if($th50<=9){$th50='0'.$th50;}
+														 if($daytime6=="Saturday" && $store_week_time[5][1]==$th50){
+															  $selected50="selected";
+														  }else{
+															  $selected50="";
+														  }
+														  echo '<option value="'.$th50.'" '.$selected50.'>'.$th50.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th51=0;$th51<24;$th51++){
+                                                         if($th51<=9){$th51='0'.$th51;}
+														 if($daytime6=="Saturday" && $store_week_time[5][2]==$th51){
+															  $selected51="selected";
+														  }else{
+															  $selected51="";
+														  }
+														  echo '<option value="'.$th51.'" '.$selected51.'>'.$th51.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl52=0;$tl52<=6;$tl52++){
+                                                          if($tl52==0){$lunch52='00';}else{$lunch52=$tl52*10;}
+														  if($daytime6=="Saturday" && $store_week_time[5][3]==$lunch52){
+															  $selected52="selected";
+														  }else{
+															  $selected52="";
+														  }
+                                                          echo '<option value="'.$lunch52.'" '.$selected52.'>'.$lunch52.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                <!-- Sunday -->
+                                                <div class="col-md-12 margin-bottom">
+                                                    <div class="col-md-3"><p class="font-weight-500">Sunday</p><input type="hidden" name="week_days_emp[]" value="Sunday" ></div>
+                                                    <div class="col-md-3"><select name="job_day_time_frm[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_frm;
+													     for($th60=0;$th60<24;$th60++){
+                                                         if($th60<=9){$th60='0'.$th60;}
+														 if($daytime7=="Sunday" && $store_week_time[6][1]==$th60){
+															  $selected60="selected";
+														 }else{
+															  $selected60="";
+														 }
+														  echo '<option value="'.$th60.'" '.$selected60.'>'.$th60.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3" align="center"><select name="job_day_time_to[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_hours_to;
+													     for($th61=0;$th61<24;$th61++){
+                                                         if($th61<=9){$th61='0'.$th61;}
+														 if($daytime7=="Sunday" && $store_week_time[6][2]==$th61){
+															 $selected61="selected";
+														 }else{
+															 $selected61="";
+														 }
+														  echo '<option value="'.$th61.'" '.$selected61.'>'.$th61.'</option>';
+                                                      }
+													?>
+                                                    </select></div>
+                                                    <div class="col-md-3"><select name="job_lunch_time[]" required class="form-control width-100 required-field_0<?php echo $st_cnt;?>"><?php //echo $arr_lunch;
+													for($tl62=0;$tl62<=6;$tl62++){
+                                                          if($tl62==0){$lunch62='00';}else{$lunch62=$tl62*10;}
+														  if($daytime7=="Sunday" && $store_week_time[6][3]==$lunch62){
+															  $selected62="selected";
+														  }else{
+															  $selected62="";
+														  }
+                                                          echo '<option value="'.$lunch62.'" '.$selected62.'>'.$lunch62.'</option>';
+                                                      }
+													?>
+                                                   </select></div>
+                                                </div>
+                                                
+                                                <?php //}?>
+                                            </div>
+                                         </div>
+                                         
+                                    <?php */}?>
+									
+									
+                                    <!-- -->
+                                    <div class="col-md-offset-3 col-md-5" align="center">
+                                     <input type="submit" name="save_answer" class="btn btn-small btn-warning" value="<?php echo $this->escapeHtml('Save Answer'); ?>" >
+                                       <!--<button class="pull-right btn btn-small btn-warning">
+                                            <i class="glyphicon glyphicon-edit"></i>
+                                            <?php //echo $this->escapeHtml('Save Answer'); ?>
+                                       </button>-->
+                                    </div>
+                                </form>
+                                <!-- Store list pop up start-->
+                                <div id="getlist-section" class="modal fade" role="dialog">
+                                    <div class="list-popup">
+                                      <div class="modal-dialog">
+                                        <!-- Modal content-->
+                                        <div class="modal-content">
+                                          <div class="modal-header no-border-bottom">
+                                            <button type="button" class="close" data-dismiss="modal" onclick="close_dive('getlist-section');">&times;</button>
+                                            <h4 class="modal-title">Town list</h4>
+                                          </div>
+                                          <div class="modal-body">
+                                          <h3 id="load_list" style="display:none"><img src="public/frontend/locumkit-template/img/loader.gif"> Please wait... </h3>
+                                          <form id="store_list_div" name="store_frm" action="/ajax-request">
+                                            
+                                          </form>
+                                          </div>
+                                          <div class="modal-footer no-border-top">
+                                           <!--  <button type="button" class="btn btn-default" onclick="close_dive('profession_question');" data-dismiss="modal">Close</button> -->
+                                          </div>
+                                        </div>
+                                      </div>
+                                   </div>
+                                 </div>
+                                <!-- Store list pop up end -->
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- col-md-6 end -->
+            </div>
+        </div>
+   	</div>
+
+</div>
+
+<!-- Modal content-->
+<div id="locumkit_maps" class="modal fade" role="dialog">
+    <div class="modal-dialog" style="width: 50vw;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Locumkit Maps</h4>
+            </div>
+            <div class="modal-body" style="display: inline-block">
+                <div class="col-md-5"><img alt="" id="uk-map" src="https://www.locumkit.com/public/media/ckeditor-file/UK-map-437.png" style="width: 100%"></div>
+                <div class="col-md-7"><img alt="" id="london-map" src="https://www.locumkit.com/public/media/ckeditor-file/PCT london by map.jpg" style="width: 100%; "></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Zoom Map Pop up -->
+<div class="modal fade" id="map-dialog" role="dialog">
+    <div class="modal-dialog" style="width: 90% !important; height: 80vh !important;">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center; max-height: 80vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$('input#cet').keydown(function (e) {
+    var key = e.charCode || e.keyCode || 0;
+    // Allow numeric (and tab, backspace, delete) keys only
+        return (key == 8 || 
+                key == 9 ||
+                key == 46 ||
+                (key >= 48 && key <= 57) ||
+                (key >= 96 && key <= 105)); 
+});
+// GOC number format
+$('#goc').keydown(function (e) {
+		var key = e.charCode || e.keyCode || 0;
+		$goc = $(this);	
+
+		// Allow numeric (and tab, backspace, delete) keys only
+		//return (key == 8 || key == 9 || key == 46 || (key >= 48 && key <= 57) || (key >= 96 && key <= 105));	
+	})
+	
+	.bind('focus click', function () {
+		$goc = $(this);
+		
+		if ($goc.val().length === 0) {
+			//$goc.val('(');
+		}
+		else {
+			var val = $goc.val();
+			$goc.val('').val(val); // Ensure cursor remains at the end
+		}
+	})
+	
+	.blur(function () {
+		$goc = $(this);
+		
+		if ($goc.val() === '(') {
+			$goc.val('');
+		}
+	});
+$('#aop').keydown(function (e) {
+		var key = e.charCode || e.keyCode || 0;
+		$aop = $(this);
+
+		// Auto-format- do not expose the mask as the user begins to type
+		if (key !== 8 && key !== 9) {
+			/*if ($aop.val().length === 2) {
+				$aop.val($aop.val() + '-');
+			}
+			if ($aop.val().length === 6) {
+				//$aop.val($aop.val() + '/');
+			}*/
+		}
+
+		// Allow numeric (and tab, backspace, delete) keys only
+		return (key == 8 || 
+				key == 9 ||
+				key == 46 ||
+				(key >= 48 && key <= 57) ||
+				(key >= 96 && key <= 105));	
+	})
+	
+	.bind('focus click', function () {
+		$aop = $(this);
+		
+		if ($aop.val().length === 0) {
+			//$aop.val('(');
+		}
+		else {
+			var val = $aop.val();
+			$aop.val('').val(val); // Ensure cursor remains at the end
+		}
+	})
+	
+	.blur(function () {
+		$aop = $(this);
+		
+	});
+// Insurance renewal date	
+$('#inshurance_renewal_date').keydown(function (e) {
+		var key = e.charCode || e.keyCode || 0;
+		$inshurance_renewal_date = $(this);
+
+		// Auto-format- do not expose the mask as the user begins to type
+		if (key !== 8 && key !== 9) {
+			if ($inshurance_renewal_date.val().length === 2) {
+				$inshurance_renewal_date.val($inshurance_renewal_date.val() + '-');
+			}
+			if ($inshurance_renewal_date.val().length === 5) {
+				$inshurance_renewal_date.val($inshurance_renewal_date.val() + '-');
+			}			
+		}
+
+		// Allow numeric (and tab, backspace, delete) keys only
+		return (key == 8 || 
+				key == 9 ||
+				key == 46 ||
+				(key >= 48 && key <= 57) ||
+				(key >= 96 && key <= 105));	
+	})
+	
+	.bind('focus click', function () {
+		$inshurance_renewal_date = $(this);
+		
+		if ($inshurance_renewal_date.val().length === 0) {
+			//$inshurance_renewal_date.val('(');
+		}
+		else {
+			var val = $inshurance_renewal_date.val();
+			$inshurance_renewal_date.val('').val(val); // Ensure cursor remains at the end
+		}
+	})
+	
+	.blur(function () {
+		$inshurance_renewal_date = $(this);
+		
+		if ($inshurance_renewal_date.val() === '(') {
+			$inshurance_renewal_date.val('');
+		}
+	});
+	// aoc_id
+	$('#aoc_id').keydown(function (e) {
+		var key = e.charCode || e.keyCode || 0;
+		$aoc_id = $(this);
+        //alert(key);
+		// Auto-format- do not expose the mask as the user begins to type
+		if ($aoc_id.val().length < 15) {
+			if (key !== 8 && key !== 9) {
+				if ($aoc_id.val().length === 6) {
+					$aoc_id.val($aoc_id.val() + '-');
+				}
+				if ($aoc_id.val().length === 12) {
+					$aoc_id.val($aoc_id.val() + '/');
+				}			
+			}
+		}
+		// Allow numeric (and tab, backspace, delete) keys only
+		return (key == 8 || 
+				key == 9 ||
+				key == 46 ||
+				(key >= 48 && key <= 57) ||
+				(key >= 96 && key <= 105)|| (key >= 65 && key <= 90) || (key >= 97 && key <= 122));	
+	})
+	/*
+	.bind('focus click', function () {
+		$aoc_id = $(this);
+		
+		if ($aoc_id.val().length === 0) {
+			$aoc_id.val('OPL/');
+		}
+		else {
+			var val = $aoc_id.val();
+			$aoc_id.val('').val(val); // Ensure cursor remains at the end
+		}
+	})*/
+	
+	.blur(function () {
+		$aoc_id = $(this);
+		
+		if ($aoc_id.val() === '(') {
+			$aoc_id.val('');
+		}
+	});
+</script>
+<script type="text/javascript">
+    var max_dist_val = $("#max_distanc_to_traval").val();
+    $(".dist_list input[type=radio]").each( function(e){
+        if($(this).val() == max_dist_val){
+            $(this).prop('checked', true);
+        }
+    });
+	function close_dive(id){
+		$("#"+id).hide(1000);
+		$('.modal-backdrop').hide(1000);
+	}
+    function get_list(id){
+    	$('#max_distanc_to_traval').val(id);
+        $('#getlist-section').show();
+        $('#getlist-section').addClass('in');
+        $('#getlist-section').css('display','block');
+        $("#load_list").show();
+        var town 	= $("#city").val();
+        var addr 	= town+",+UK";
+        var cat_id 	= $("#profession_type").val();
+        var zip 	= $("input#zip").val();        
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'max_dis':id, 'get_list':'1','city':town,'cat_id':cat_id, 'full_addr':addr, 'zip' : zip},
+            'success':function(result){ //alert(result);
+                if(result!=""){ 
+                    $("#load_list").hide();
+                    $("#store_list_div").html(result);
+                    $('#getlist-section').show();
+                    $('#getlist-section').addClass('in');
+                    $('#getlist-section').css('display','block');   
+                }
+            }
+        });
+    }
+    function save_list(){ //alert("save data");
+        var max_distance = $("input[name=max_distance]:checked").val();
+        var store_list   = $("input[name=store_list]:checked").val(); 
+        var data_all     = $("#store_list_div").serialize();
+        var store_id     = $("input[name^=store_id]:checked" ).serialize();
+        var store_data   = $("#storeinfo_div").serialize();
+        var u_id         = $("#u_id").val();
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'update_work_store_list':'1','store_id':store_id,'store_data':store_data,'store_list':store_list,'max_distance':max_distance,'data_all':data_all,'u_id':u_id},
+            'success':function(result){ //alert(result);
+                console.log(result);
+                if(result!=0){ 
+                    $('#formID').append(result);
+                    $("#getlist-section").hide(1000);
+                    $('.modal-backdrop').hide(1000);
+                }else{
+                    alert("Please fill details.");
+                    return false;
+                }
+            }
+        });
+    }
+
+    /*function open_select(id){
+		chk_st=$('#st_'+id).is(':checked'); 
+		if(chk_st==true){			
+			$('#store_id_'+id+' select').show();
+			$('#store_id_'+id+' select').val('');
+			$('#store_id_'+id+' select').attr('required','required');
+		}
+		if(chk_st==false){
+			$('#store_id_'+id+' select').hide();
+			$('#store_id_'+id+' select').val('');
+			$('#store_id_'+id+' select').removeAttr('required');
+		}
+	}*/
+
+	function is_validate(user_type,no_role_pack){
+       	// alert("I am here"+user_type+'===='+no_role_pack);
+       	var validate = true; 
+       	var check_store_validate = false;
+
+       	/*if (user_type == 2) {
+	       	$("input[id*='st_']").each(function() {
+	       		var rquired_field = $(this).attr('id');
+	            var id = rquired_field.replace('st_','').trim();
+	            if($('#st_'+id).is(':checked')){
+	            	check_store_validate = true;
+	            	console.log(id);
+	            }
+	       	});
+       	}*/
+       	
+
+       	if (!check_store_validate) {
+       		$('#worked-at-store-error').html('<span style="color:red">This is required.</span>');
+       	}else{
+       		$('#worked-at-store-error').html('');
+       	}
+       	       	
+        if(!$('#max_distanc_to_traval').val() && user_type == 2){
+        	$('#max_distance_error').html('<span style="color:red">This is required.</span>');
+        	validate =  false;
+        }else{
+        	$('#max_distance_error').html('');
+        	validate = true;
+        } 
+        
+        return 	validate;
+    }
+
+    function showMapModal() {
+        $('#locumkit_maps').modal('show');
+    }
+
+    $(document).ready(function() {
+        var ukmap = $('#uk-map').attr('src');
+        var londonmap = $('#london-map').attr('src');
+
+        $('#uk-map').click(function(){
+            showModalMapZoom(ukmap);
+        });
+
+        $('#london-map').click(function(){
+            showModalMapZoom(londonmap);
+        });
+    });
+
+    function showModalMapZoom(map_url) {
+        var available_html = '';
+        available_html += '<img src="'+map_url+'" alt="receipt" style="width: 100%">';
+        $('#map-dialog .modal-body').html(available_html);
+        // $('#map-dialog .modal-title').html(map_url);
+        $('#map-dialog').modal('show');
+    }
+
+</script>

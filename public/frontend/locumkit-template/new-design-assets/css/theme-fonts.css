@@ -1,0 +1,29 @@
+@charset "utf-8";
+/* CSS Document */
+
+
+@font-face {
+    font-family: 'proxima_nova_rgregular';
+    src: url('../fonts/proximanova/proximanova-regular-webfont.woff2') format('woff2'),
+         url('../fonts/proximanova/proximanova-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+@font-face {
+    font-family: 'proxima_novasemibold';
+    src: url('../fonts/proximanova/fontsfree-net-proxima-nova-sbold-webfont.woff2') format('woff2'),
+         url('../fonts/proximanova/fontsfree-net-proxima-nova-sbold-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+@font-face {
+    font-family: 'proxima_novabold';
+    src: url('../fonts/proximanova/fontsfree-net-proxima-nova-bold-webfont.woff2') format('woff2'),
+         url('../fonts/proximanova/fontsfree-net-proxima-nova-bold-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+

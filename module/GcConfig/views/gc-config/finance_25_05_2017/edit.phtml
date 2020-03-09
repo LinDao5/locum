@@ -1,0 +1,223 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<?php //echo $this->partial('gc-config/forms/user.phtml', array('form' => $this->form)); ?>
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+
+<form class="relative form-horizontal" action="<?php echo $this->form->getAttribute('action'); ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('email')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('email')); ?>
+            <?php echo $this->formElementErrors($this->form->get('email'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('login')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('login')); ?>
+            <?php echo $this->formElementErrors($this->form->get('login'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('password')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('password')); ?>
+            <?php echo $this->formElementErrors($this->form->get('password'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('password_confirm')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('password_confirm')); ?>
+            <?php echo $this->formElementErrors($this->form->get('password_confirm'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('lastname')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('lastname')); ?>
+            <?php echo $this->formElementErrors($this->form->get('lastname'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('firstname')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('firstname')); ?>
+            <?php echo $this->formElementErrors($this->form->get('firstname'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('active')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('active')); ?>
+            <?php echo $this->formElementErrors($this->form->get('active'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    
+    <div class="form-group is_disable" id="role_select">
+        <?php echo $this->formLabel($this->form->get('user_acl_role_id')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('user_acl_role_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('user_acl_role_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div id="if_freelancer"> 
+        <div class="form-group is_disable" id="if_emp">
+            <?php echo $this->formLabel($this->form->get('user_acl_profession_id')); ?>
+            <div class="col-lg-10" >
+                <?php echo $this->formElement($this->form->get('user_acl_profession_id')); ?>
+                <?php echo $this->formElementErrors($this->form->get('user_acl_profession_id'), array('class' => 'text-danger')); ?>
+            </div>
+        </div>
+        <div class="form-group if_fre">
+            <?php echo $this->formLabel($this->form->get('is_free')); ?>
+            <div class="col-lg-10">
+                <?php if($this->form->get('is_free')->getValue()) { ?>
+                    <input type="text"  class="form-control"  value="You already allow this user to use 1 month free service." readonly>
+                <?php }else{ ?>
+                    <?php echo $this->formElement($this->form->get('is_free')); ?>
+                    <?php echo $this->formElementErrors($this->form->get('is_free'), array('class' => 'text-danger')); ?>
+                <?php } ?>
+            </div>
+        </div> 
+        <div class="form-group if_fre is_disable" >
+            <?php echo $this->formLabel($this->form->get('user_acl_package_id')); ?>
+            <div class="col-lg-10">
+                <?php echo $this->formElement($this->form->get('user_acl_package_id')); ?>
+                <?php echo $this->formElementErrors($this->form->get('user_acl_package_id'), array('class' => 'text-danger')); ?>
+            </div>
+        </div>
+    </div>
+    
+    
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save & add new')); ?>" name="addNew">
+</form>
+<form  action="/report" method="GET">
+    <?php
+        $link = $_SERVER[REQUEST_URI];
+        $linkArray = explode("/", $link);
+        $uid = end($linkArray);
+    ?>
+    <input type="hidden" name="uid" id="uid" value="<?php echo $uid; ?>">
+    <input type="hidden"  name="type" value="user_extra_info_export">
+    <div class="form-group " style="display:none">
+        <?php echo $this->formLabel($this->form->get('user_acl_role_id')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('user_acl_role_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('user_acl_role_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <input id="user_record" type="submit" value="Export Extra Info" class="export-btn">
+</form>
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    var role_id = $(".is_disable select[name='user_acl_role_id']").val();
+    
+    $(".is_disable#role_select").append('<input type="hidden" name="user_acl_role_id" value="'+role_id+'">');
+    $(".is_disable select").attr("disabled",true);
+    
+    $("#password").attr('placeholder','Enter password if you need to change else leave it blank');
+    $("#password_confirm").attr('placeholder','Enter re-password if you need to change else leave it blank');
+});
+
+var role = $("#role_select select").val();
+if (role && role == 2) {
+    $("#if_freelancer").show(700);
+    $(".if_fre").show(700);
+}
+if(role && role == 3){
+    $("#if_freelancer").show(700);
+    $(".if_fre").hide(700);
+}
+if(role && role != 3 && role != 2){
+    $("#if_freelancer").hide(700);
+}
+$("#role_select select").change(function(){
+    var newRole = $("#role_select select").val();    
+    if (newRole && newRole == 2) {
+        $("#if_freelancer").show(700);
+        $(".if_fre").show(700);
+    }
+    if(newRole && newRole == 3){
+        $("#if_freelancer").show(700);
+        $(".if_fre").hide(700);
+    }
+    if(newRole && newRole != 3 && newRole != 2){
+        $("#if_freelancer").hide(700);
+    }
+});
+
+</script>
+<style type="text/css">
+    .export-btn{
+        margin-top: 0px;
+        float: right;
+        border: 1px solid #00a9e0;
+        padding: 5px 10px;
+        text-decoration: none;
+        background: #00a9e0;
+        font-size: 16px;
+        position: absolute;
+        left: 475px;
+        z-index: 99999;
+        bottom: 12px;
+        color: #fff;
+        border-radius: 3px;
+    }
+</style>

@@ -1,0 +1,285 @@
+<?php 
+  use GcFrontend\Controller\EndecryptController as Ecryption;
+  use GcFrontend\Controller\PaypalFormController as PaypalFormController;
+  use Zend\Serializer\Serializer;
+  use Zend\Db\Sql\Sql;
+  use Zend\Db\TableGateway\TableGateway;
+  use Gc\User\Packageresource\Model;
+  use GcFrontend\Controller\PackageUpgradeController as PackageUpgradeController;
+  use GcFrontend\Controller\DbController as DbController;
+  $dbConfig = new DbController();
+  $adapter = $dbConfig->locumkitDbConfig();
+  $sql = new Sql($adapter);
+  $select = $sql->select();
+  $encypt = new Ecryption();
+  $paypalFormController = new PaypalFormController();
+  if (isset($_GET['u']) && $_GET['u'] != ' ') {
+    $u = $encypt->decryptIt($_GET['u']);
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_id'] == $u){
+      $uid = $u;
+    }else{
+      $actual_link = "$_SERVER[REQUEST_URI]";
+	    $_SESSION['action_url'] = $actual_link;
+      echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+    }
+  }else {
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/404'</script>";
+  }
+  //package change
+  if(isset($_GET['pack'])){
+	  $title="PACKAGE/MEMBERSHIP INFORMATION";
+  }else{
+	  $title="Account Upgrade";
+  }
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="/user-profile">My Dashboard</a></li>
+                    <li><a href="javascript:void(0)"><?php echo $title;?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon packging-info" style="padding: 8px 6px 0px 3px">
+                    <!--<i class="glyphicon glyphicon-usd" aria-hidden="true"></i>-->
+                    <i class="fa fa-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3><?php echo $title;?></h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+  <div class="container">
+    <div class="row">
+      <div class="contents gray-gradient">
+        <!-- <div class="welcome-heading">
+          <h1>Account <span>Upgrade</span> </h1>
+          <hr class="shadow-line">
+        </div> -->
+        <div class="package-upgrade-form">
+          <div class="col-md-12">
+            <section id="packages" class="package">
+              <div class="row">
+                  <?php
+                      $returnArray_pack="";$benifits="";$arr_ben="";
+                      $select->from('user_acl_package');
+                      $select->order('id DESC');
+                      $statement = $sql->prepareStatementForSqlObject($select);
+                      $results2 = $statement->execute();
+                      $data_pro = $results2->getResource()->fetchAll();
+                      foreach ($data_pro as $result) {
+                        if($result['price'] != 0){
+                          $package_resources_id=unserialize($result['user_acl_package_resources_id']);
+                          $returnArray_pack .='<div class="col-sm-4 col-md-4 package-price-box" id="package-'.$result['id'].'">
+                            <div class="set-pack-icon">
+                                <div class="set-pack-price">
+                                    <div class="gradient-cricle-'.strtolower($result['name']).'">
+                                        <span>£'.$result['price'].'</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="set-pack-content">
+                                <h2>'.$result['name'].'</h2>
+                                <p>'.$result['description'].'</p>
+                            </div>
+                            <div class="set-pack-link">
+                                <a class="read-common-btn" href="javascript:void(0);" onClick="open_benifits('.$result['id'].')" id="pack-'.strtolower($result['name']).'">Select</a>
+                                <input type="hidden" name="'.strtolower($result['name']).'"class="pkg_price" id="'.strtolower($result['name']).'" value="'.$result['price'].'">
+                                <input type="hidden" name="'.strtolower($result['name']).'_id" class="pkg_id" id="'.strtolower($result['name']).'_id" value="'.$result['id'].'">
+                            </div>
+                          </div>';
+                        }
+                      }
+                  ?>
+                  <div class="package-block">
+                    <?php echo $returnArray_pack; ?>
+                    
+                  </div>
+              </div>
+                
+              </section>
+              <div class="css_error" id="package_error"></div>
+          </div>
+          
+            <div class="row">           
+              <input type="hidden" name="pack_change" id="pack_change" value="<?php echo  $encypt->decryptIt($_GET['pack']); ?>">
+              <input type="hidden" name="pacakage_val" id="package_name_val">
+              <input type="hidden" name="package-final" id="package-final">
+              <input type="hidden" name="current-uid" id="current-uid" value="<?php echo $encypt->decryptIt($_GET['u']); ?>">
+              <input type="hidden" name="pre_package_id" id="pre_package_id" value="<?php echo $encypt->decryptIt($_GET['p']) != 4 ? $encypt->decryptIt($_GET['p']) : ''; ?>">
+              <input type="hidden" name="package_id" id="package_id">
+            </div>
+         
+          <div class="row">
+              <div class="col-md-6">
+                <!--<h2 class="padding-left-30">Benifits</h2>-->
+                <div id="benifits-section" ></div>
+              </div>
+              
+          </div>
+          <div class="upgrade-btn">
+            <div id="paypal-upgrade-form"></div>
+            <div class="alert alert-danger" id="pkg-error" style="display:none;"> Please select package. </div>
+            <?php 
+        			$pack="";
+        			if(isset($_GET['pack'])){ $pack=$encypt->decryptIt($_GET['pack']);}
+        			if(isset($_GET['pack']) && $pack=="change"){?>
+            	<a href="javascript:void(0)" id="account-upgrade" onclick="change_package()">Change Package</a>  
+            <?php }else{?>        
+            	<a href="javascript:void(0)" id="account-upgrade" onclick="upgrade_account()">Change Package</a>
+            <?php }?>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+
+<script type="text/javascript">
+  $( document ).ready(function() {
+    var currentPkg = $('#pre_package_id').val();
+    open_benifits(currentPkg);
+    var pkgPrice = $('.active-package .set-pack-link .pkg_price').val();
+    $("#package-final").val(pkgPrice);
+    $("#package_id").val(currentPkg);
+  });
+  // user package section
+  function open_benifits(id){
+     var str = id; //alert(id);
+     if (id == 1) {
+          $("#package-1").addClass("active-package");
+          $("#package-2").removeClass("active-package");
+          $("#package-3").removeClass("active-package");
+     }else if(id == 2){
+          $("#package-2").addClass("active-package");
+          $("#package-3").removeClass("active-package");
+          $("#package-1").removeClass("active-package");
+     }else if(id == 3){
+          $("#package-3").addClass("active-package");
+          $("#package-2").removeClass("active-package");
+          $("#package-1").removeClass("active-package");
+     }
+      if(str!=""){
+          $.ajax({
+              'url'   :'/ajax-request',
+              'type'  :'POST',
+              'data'  :{'pack_id':str, 'open_block':'1'},
+              'success':function(result){ //alert(result);
+                  console.log(result);
+                  if(result!=""){ 
+                      $("#benifits-section").html(result);
+                  }else{
+                      $("#benifits-section").html("");
+                      $("#package-"+id).removeClass("active-package");
+                  }
+              }
+          });
+     }
+  }
+  function upgrade_account() {
+    var uid = $('#current-uid').val();
+    var price = $('#package-final').val();
+    var pid = $('#package_id').val();
+    if (pid == null || pid == "") {
+      pid = $('#pre_package_id').val();
+    }    
+
+    if (pid != null || pid != "") {
+      $("div#pkg-error").hide();
+      $.ajax({
+        'url'   :'/ajax-request',
+        'type'  :'POST',
+        'data'  :{'pack_upgrade_uid':uid, 'pack_upgrade_price':price, 'pack_upgrade_pid':pid},
+        'success':function(result){ //alert(result);
+            console.log(result);
+            if(result!=""){ 
+                $("#paypal-upgrade-form").html(result);
+                $('#account-upgrade').hide();
+             $("#paypal-form").submit();
+            }else{
+                $("#paypal-upgrade-form").html("");
+                //$("#package-"+id).removeClass("active-package");
+            }
+        }
+      });
+    }else{
+      $("div#pkg-error").show();
+    }
+  }
+  
+  function change_package(){
+  	var instant_change = $('#instant_change').val();
+  	var pack_change = $('#pack_change').val();
+    var uid = $('#current-uid').val();
+    var price = $('#package-final').val();
+    var pid = $('#package_id').val();
+    
+    if (pid == null || pid == "") {
+      pid = $('#pre_package_id').val();
+    }    
+    if (pid) {
+      $("div#pkg-error").hide();
+      $.ajax({
+        'url'   :'/ajax-request',
+        'type'  :'POST',
+        'data'  :{'pack_change_uid':uid, 'pack_change_price':price, 'pack_change_pid':pid, 'instant_change':instant_change, 'package_change':pack_change},
+        'success':function(result){ //alert(result);
+            console.log(result);
+            if(result!=""){ 
+                $("#paypal-upgrade-form").html(result);
+                $('#account-upgrade').hide();
+                $("#paypal-form").submit();
+            }else{
+                $("#paypal-upgrade-form").html("");
+                //$("#package-"+id).removeClass("active-package");
+            }
+        }
+      }); 
+    }else{
+      $("div#pkg-error").show();
+    }
+
+     
+  }
+	$('#pack-bronze').on('click', function() {      
+		   var b_val=$("#bronze").val();
+		   var bronze_id=$("#bronze_id").val();
+		   $("#package_name_val").val("Bronze");
+		   $("#package-final").val(b_val);
+		   $("#package_id").val(bronze_id);
+		   $("#package_error").html("");
+       $("div#pkg-error").hide();
+    });
+		$('#pack-silver').on('click', function() {
+		   var s_val=$("#silver").val();
+		   var silver_id=$("#silver_id").val();
+		   $("#package_name_val").val("Silver");
+		   $("#package-final").val(s_val);
+		   $("#package_id").val(silver_id);
+		   $("#package_error").html("");
+       $("div#pkg-error").hide();
+        });
+		$('#pack-gold').on('click', function() {
+		   var g_val=$("#gold").val();
+		   var gold_id=$("#gold_id").val();		   
+		   $("#package_name_val").val("Gold");
+		   $("#package-final").val(g_val);
+		   $("#package_id").val(gold_id);
+		   $("#package_error").html("");
+       $("div#pkg-error").hide();
+		   
+        });
+</script>

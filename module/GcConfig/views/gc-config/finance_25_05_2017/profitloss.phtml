@@ -1,0 +1,162 @@
+<style>
+    td{
+        padding: 10px;
+        font-size: 14px;
+    }
+</style>
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+                <section id="suplier-add" class="suplier-add">
+                    <div class="container" id="content_profitloss">
+                        <div class="row">
+                            <div class="col-md-10 col-sm-10">
+                                <table width="80%" border="0" cellspacing="0" cellpadding="0" id="table_wrapper" align="center">
+                                    <tr>
+                                        <td colspan="2">
+                                            <div class="col-sm-12" style=" font-size: 16px;">
+                                                <div class="col-md-4" title="User No.">User No. <?php echo $userData->getId() ; ?></div>
+                                                <div class="col-md-4"><?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?></div>
+                                                <div class="col-md-4"><?php echo $userData->getEmail() ; ?></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2"><h3>PROFIT AND LOSS</h3></td>
+                                    </tr>
+                                    <?php if($revenue1 == ''){ ?>
+                                        <tr>
+                                            <td colspan="2" align="center">Data Not Available</td>
+                                        </tr>
+                                    <?php }else { ?>
+                                        <tr>
+                                            <td>Revenue</td>
+                                            <td><?php echo  $revenue = $revenue1; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cost of Sales</td>
+                                            <td><?php echo $cos = $cos1; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Gross Profit</td>
+                                            <td><?php echo $gross = $revenue - $cos ; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>GP %</td>
+                                            <td><?php echo $grossper = $gross/$revenue ; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Administrative expenses</td>
+                                            <td><?php echo $othercost = $othercost1; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Profit from operations</td>
+                                            <td><?php echo $pfo = $gross-$othercost ; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>OP %</td>
+                                            <td><?php echo $op = $pfo/$revenue ; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Interest income</td>
+                                            <td id="inin">
+                                                <input id="interestincome" name="interestincome" type="number" value="" placeholder="Interest Income" class="form-control" >
+
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Profit before taxs</td>
+                                            <td id="pbt">N/A
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Income tax</td>
+                                            <td> <?php echo htmlentities($totaltax) ; ?>  </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Profit after tax</td>
+                                            <td id="pat">N/A</td>
+                                        </tr>
+                                    <?php } ?>
+                                </table>
+                                <div class="form-group">
+                                    <div class="col-md-12">
+                                        <div class="pull-right">
+                                            <button type="button" id="freeze" class="btn btn-info">Freeze</button>
+                                            <button onclick="location.reload();" id="reset" class="btn btn-info" style="display:none">Reset</button>
+                                            <button id="btnExport"  class="btn btn-info" style="display:none">Export to xls</button>
+                                            <button id="cmd" class="btn btn-info" style="display:none">generate PDF</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jspdf/0.9.0rc1/jspdf.min.js"></script>
+    <script>
+        $("#interestincome").keyup(function(){
+            var totaltax =  '<?php echo $totaltax ;?>';
+            var pfo =  '<?php echo $pfo ;?>';
+            var inin =  $("#interestincome").val();
+            if(inin == ''){
+                $("#pbt").html('N/A');
+                $("#pat").html('N/A');
+            }else{
+                var income = parseFloat(pfo) + parseFloat(inin);
+                var pat = parseFloat(income) + parseFloat(totaltax);
+                $("#pbt").html(income);
+                $("#pat").html(pat);
+            }
+        });
+
+        $("#freeze").click(function(){
+            var inin =  $("#interestincome").val();
+            if(inin != '') {
+                var check =  confirm('Are You Sure ?');
+                if(check == true) {
+                    $("#inin").html(inin);
+                    $("#interestincome").remove();
+                    $("#btnExport,#cmd,#reset").show();
+                    $("#freeze").hide();
+                }
+            }
+        });
+
+        $(document).ready(function() {
+            $("#btnExport").click(function(e) {
+                e.preventDefault();
+
+                //getting data from our table
+                var data_type = 'data:application/vnd.ms-excel';
+                var table_div = document.getElementById('table_wrapper');
+                var table_html = table_div.outerHTML.replace(/ /g, '%20');
+
+                var a = document.createElement('a');
+                a.href = data_type + ', ' + table_html;
+                a.download = 'exported_table_' + Math.floor((Math.random() * 9999999) + 1000000) + '.xls';
+                a.click();
+            });
+        });
+
+        var doc = new jsPDF();
+        var specialElementHandlers = {
+            '#editor': function (element, renderer) {
+                return true;
+            }
+        };
+
+        $('#cmd').click(function () {
+            doc.fromHTML($('#table_wrapper').html(), 15, 15, {
+                'width': 170,
+                'elementHandlers': specialElementHandlers
+            });
+            doc.save('sample-file.pdf');
+        });
+
+
+    </script>

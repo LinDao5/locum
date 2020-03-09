@@ -1,0 +1,74 @@
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+		    <li><a href="javascript:void(0);"><?php echo $this->escapeHtml($this->translate($this->title)); ?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+   <div class="container">
+    	<div class="row">
+            <div class="contents white-bg">
+                <section>
+                <div class="welcome-heading ans-que-heading"> 
+                    <h1><span><?php echo $this->escapeHtml($this->translate($this->title)); ?></span></h1>
+                    <hr class="shadow-line">
+                </div>
+                <div class="main-content">
+                    <?php echo $this->description; ?>
+                </div>
+                <div class="panel-group" id="accordion">
+                    <?php if($this->dentist) { ?>
+                    <div class="panel panel-default">
+                      <div class="panel-heading">
+                        <h4 class="panel-title">
+                          <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">Dentist</a>
+                        </h4>
+                      </div>
+                      <div id="collapse1" class="panel-collapse collapse in ">
+                        <div class="panel-body collapse-heading-title">
+                            <?php echo $this->dentist; ?> 
+                        </div>
+                      </div>
+                    </div>
+                    <?php } ?>
+                    <?php if($this->optometry) { ?>
+                    <div class="panel panel-default">
+                      <div class="panel-heading">
+                        <h4 class="panel-title">
+                          <a data-toggle="collapse" data-parent="#accordion" href="#collapse2">Optometry</a>
+                        </h4>
+                      </div>
+                      <div id="collapse2" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <?php echo $this->optometry; ?>
+                        </div>
+                      </div>
+                    </div>
+                    <?php } ?>
+                    <?php if($this->pharmacy) { ?> 
+                    <div class="panel panel-default">
+                      <div class="panel-heading">
+                        <h4 class="panel-title">
+                          <a data-toggle="collapse" data-parent="#accordion" href="#collapse3">Pharmacy</a>
+                        </h4>
+                      </div>
+                      <div id="collapse3" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <?php echo $this->pharmacy; ?>
+                        </div>
+                      </div>
+                    </div>
+                    <?php } ?>
+                </div> 
+                    
+                </section>
+            </div>
+        </div>
+    </div>
+</div>

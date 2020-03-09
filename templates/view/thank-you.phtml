@@ -1,0 +1,35 @@
+<?php 
+  if (isset($_SESSION['is_guest'])) {
+    unset($_SESSION['is_guest']);
+    unset($_SESSION['user_email']);
+    unset($_SESSION['renew_membership']);
+  }
+  $msg="";
+  if(isset($_GET['package'])&& $_GET['package']=="change"){
+	  $msg="Package has been successfully changed, now you can enjoy the services of locumkit.";
+  }else{
+	  if (isset($_GET['u']) && $_GET['u'] == 'f' && !isset($_GET['renew_membership']) ){
+		$msg="Thank you for registering. <br/> You are now one step away from benefiting all that LocumKit has. <br/>Please check your email to verify your account.";
+	  }elseif(isset($_GET['renew_membership']) && $_GET['renew_membership'] == 1){
+		$msg="You have successfully renew your membership. Please login in to use the feature of system.";
+	  }else{
+	  	$msg="Thank you for joining LocumKit.<br/> We have received your account application and your details are currently being verified by our team.<br/> Verification can take up to 48 hours and once this process is complete we will notify you.<br/> Please note that during this process you will be unable to access any of the features of the site<br/>Thank you for using Locumkit
+";
+	  }
+  }
+?>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg thank-you-page">
+            <section>
+      			<p style="text-align:center;">
+				<img src="<?php echo $this->cdn('/frontend/locumkit-template/'); ?>img/logo.png" alt="logo">
+				</p>
+				<h1 class="successfull_msg"><?php echo $this->partial('flash-messages'); ?></h1>
+				<h4 class="feedback_msg"><?php echo $msg;?></h4>
+             </section>
+            </div>
+        </div>
+   	</div>
+</div>

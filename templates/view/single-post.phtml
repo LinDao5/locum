@@ -1,0 +1,41 @@
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/package/bronze">Bronze</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/package/silver">Silver</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/package/gold">Gold</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/package/">Compare All</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+                <section>
+                <div class="welcome-heading">
+                    <h1><span><?php echo $this->escapeHtml($this->translate($this->title)); ?></span></h1>
+                    <hr class="shadow-line">
+                </div>                    
+                    <div class="mission-vision">
+                        <div class="col-md-2">
+                            <div class="price-info gradient-cricle-<?php if($this->title == 'Bronze'){echo 'bronze';}elseif($this->title == 'Silver'){echo 'silver';}elseif($this->title == 'Gold'){echo 'gold';}else{echo 'none';}?>">
+                               <h3>£<?php echo $this->escapeHtml($this->translate($this->price)); ?></h3>  
+                            </div>   
+                        </div>
+                        <div class="col-md-10"> 
+                            <div class="full-content">
+                                <?php echo $this->translate($this->content); ?> 
+                            </div>  
+                        </div>
+                    </div>
+                </section>      
+            </div>   
+        </div>
+    </div>
+</div>

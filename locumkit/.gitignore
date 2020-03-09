@@ -1,0 +1,77 @@
+# IDE files
+.project
+.settings
+
+# Configuration and Data
+config/autoload/*
+!config/autoload/global.php
+data/cache/*
+data/tmp/*
+data/translation/*
+sessions/*
+
+templates/layout/*
+!templates/layout/.gitignore
+templates/script/*
+!templates/script/.gitignore
+templates/view/*
+!templates/view/.gitignore
+
+# Frontend
+public/frontend/*
+!public/frontend/tmp
+public/frontend/tmp/*
+public/media/*
+!public/media/files
+!public/media/icons
+public/media/files/*
+
+# Datatypes
+extensions/Datatypes/*
+!extensions/Datatypes/.gitignore
+
+# Modules
+extensions/Modules/*
+!extensions/Modules/.gitignore
+
+# Modules
+extensions/ZfModules/*
+!extensions/ZfModules/.gitignore
+
+# Test
+tests/TestConfiguration.php
+tests/phpunit.xml
+tests/library/Gc/Core/_files/*
+!tests/logs
+tests/logs/*
+tests/media/*
+!tests/media/files
+tests/media/files/test/*
+!tests/media/github.tags
+!tests/media/templates/
+tests/media/templates/layout/*
+!tests/media/templates/layout/.gitignore
+tests/media/templates/script/*
+!tests/media/templates/script/.gitignore
+tests/media/templates/view/*
+!tests/media/templates/view/.gitignore
+
+
+# Vendor
+vendor/*
+!vendor/elFinder
+!vendor/Parsedown
+!vendor/SVGGraph
+!vendor/Assetic
+!vendor/AssetManager
+!vendor/Zend
+public/backend/css/gotcms.css
+public/backend/css/gotcms-install.css
+scripts/classmap_generator.php
+scripts/coveralls
+scripts/phpcs
+scripts/phpunit
+scripts/pluginmap_generator.php
+scripts/templatemap_generator.php
+scripts/yuicompressor.jar
+composer.lock

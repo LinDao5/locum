@@ -1,0 +1,70 @@
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>         
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <!--<li><a href="<?php echo $this->serverUrl();?>/package/bronze">Bronze</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/package/silver">Silver</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/package/gold">Gold</a></li>-->
+                    <li><a href="<?php echo $this->serverUrl();?>/package/">Compare All</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>
+<section id="services" class="service-blocks">
+	<div class="container">
+    	<div class="row">
+          <div class="contents package-bg white-bg">
+            <?php
+              $currency=$this->config()->get('site_currency'); 
+              $data='<th><div class="text-center" style="line-height: 190px;"><img src="'.$this->cdn('/frontend/locumkit-template/img/logo.png').'" alt="Locumkit Package Services" title="Locumkit Package Services" width="150px"></div></th>';
+              $posts = $this->currentDocument()->getAvailableChildren();
+            ?>
+            <?php   foreach ($posts as $key => $post) {
+               //$img = unserialize($post->getProperty('image')->getValue());
+              $url = $post->getData();
+              if($post->getProperty('title')->getValue() == 'Bronze'){$package='bronze';}elseif($post->getProperty('title')->getValue() == 'Silver'){$package='silver';}elseif($post->getProperty('title')->getValue() == 'Gold'){$package='gold';}else{$package='none';}
+              $data.='<th>';
+              $data.='<div class="price-info gradient-cricle-'.$package.' text-center"><h3>'.$currency.$this->escapeHtml($post->getProperty('price')->getValue()).'</h3></div><div class="pkg-name text-center"><h3>'.ucfirst($package).'</h3></div>';
+              $data.='</th>';
+               } 
+              ?>
+				<div class="package-table-wrapp">
+					<table class="table table-bordered table-hover package-table">
+					  <thead>
+						<tr>
+						  <?php echo $data; ?>
+						</tr>
+					  </thead>
+					  <tbody>
+						<?php 
+							use GcFrontend\Controller\DbController as DbController;
+							$dbConfig = new DbController();
+							$adapter = $dbConfig->locumkitDbConfig();
+							$sqlInserPkgInfo = "SELECT * FROM pkg_privilege_info"; 
+							$getPkgInfo = $adapter->query($sqlInserPkgInfo, $adapter::QUERY_MODE_EXECUTE);
+							$getAllPkgInfo = $getPkgInfo->toArray();
+							foreach ($getAllPkgInfo as $key => $value) {
+								$label = $value['p_label'];
+								$bronze = $value['p_bronze'];
+								$silver = $value['p_silver'];
+								$gold = $value['p_gold'];
+						  ?>
+						<tr>
+						  <td><?php echo $label ?></td>
+						  <td class="text-center"><?php if ($bronze == 1){ echo "<i class='fa fa-check' aria-hidden='true'></i>";}else{echo "<i class='fa fa-times' aria-hidden='true'></i>";} ?></td>
+						  <td class="text-center"><?php if ($silver == 1){echo "<i class='fa fa-check' aria-hidden='true'></i>";}else{echo "<i class='fa fa-times' aria-hidden='true'></i>";} ?></td>
+						  <td class="text-center"><?php if ($gold == 1){echo "<i class='fa fa-check' aria-hidden='true'></i>";}else{echo "<i class='fa fa-times' aria-hidden='true'></i>";} ?></td>
+						</tr>
+						<?php } ?>
+						
+					  </tbody>
+					</table>
+				</div>
+            
+           </div>
+        </div>
+    </div>
+</section>

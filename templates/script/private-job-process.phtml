@@ -1,0 +1,65 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use GcFrontend\Controller\DbController as DbController;
+	use Zend\Serializer\Serializer;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Gc\User\Packageresource\Model;
+	$dbConfig = new DbController();
+        $adapter = $dbConfig->locumkitDbConfig();
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$uid=$_SESSION['user_id'];
+    }
+    $request = $this->getRequest();
+    if($request->isPost())
+    {
+        $post     = $request->getPost(); print_r($post);
+		$job_id = $post->get('job_id');
+		$add_job   = $post->get('add_job'); // add store variable 
+		// add store
+		if($add_job && $add_job==1){
+			//employer store list
+			$emp_name =$post->get('emp_name');
+			$emp_email =$post->get('emp_email');
+			$priv_job_title =$post->get('priv_job_title');
+			$priv_job_rate =$post->get('priv_job_rate');
+			$priv_job_location =$post->get('priv_job_location');
+			$priv_job_start_date =$post->get('priv_job_start_date');
+			$free_job_result = array();
+			foreach ( $priv_job_title as $key=>$name ) {
+				$free_job_result[] = array( 'priv_job_title' => $name, 'priv_job_rate' => $priv_job_rate[$key], 'priv_job_location' => $priv_job_location[ $key ], 'priv_job_start_date' => $priv_job_start_date[ $key ],'emp_name' => $emp_name[ $key ],'emp_email' => $emp_email[ $key ] );
+			}
+			// employer store list insert query
+			if(isset($free_job_result)){
+				foreach($free_job_result as $free_job){
+				$start_date=$free_job['priv_job_start_date'];	
+				$date = str_replace('/', '-', $start_date);	
+				$start_date_new=date('Y-m-d', strtotime($date));
+				$sql_free_job="insert into freelancer_private_job (f_id,emp_name,emp_email,priv_job_title,priv_job_rate,priv_job_location,priv_job_start_date,priv_create_date) values('".$uid."','".$free_job['emp_name']."','".$free_job['emp_email']."','".$free_job['priv_job_title']."','".$free_job['priv_job_rate']."','".$free_job['priv_job_location']."','".$start_date_new."',NOW())";
+				$resultsemp = $adapter->query($sql_free_job, $adapter::QUERY_MODE_EXECUTE);
+				}
+			  $this->flashMessenger()->addSuccessMessage('Private job added.');
+			}
+			
+		} else{
+			foreach($job_id as $jobarr){
+				$emp_name=$post->get('emp_name_'.$jobarr);
+				$emp_email=$post->get('emp_email_'.$jobarr);
+				$priv_job_title=$post->get('priv_job_title_'.$jobarr);
+				$priv_job_rate=$post->get('priv_job_rate_'.$jobarr);
+				$priv_job_location=$post->get('priv_job_location_'.$jobarr);
+				$priv_job_start_date=$post->get('priv_job_start_date_'.$jobarr);
+				$date = str_replace('/', '-', $priv_job_start_date);
+				$priv_job_start_date_new=date('Y-m-d', strtotime($date));
+				// update query for freelancer_private_job table
+				$sqlString_update="update freelancer_private_job set emp_name='".$emp_name."',emp_email='".$emp_email."',priv_job_title='".$priv_job_title."',priv_job_rate='".$priv_job_rate."' ,priv_job_location='".$priv_job_location."', priv_job_start_date='".$priv_job_start_date_new."' where f_id='".$uid."' and pv_id='".$jobarr."'";	
+				$results_get = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE);
+			}
+			$this->flashMessenger()->addSuccessMessage('Information updated.');
+		}
+		
+        $this->redirect()->toUrl('/private-job');
+        return TRUE;
+	}
+
+?>

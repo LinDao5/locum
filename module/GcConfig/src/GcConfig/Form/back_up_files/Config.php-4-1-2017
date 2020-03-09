@@ -1,0 +1,1238 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc_Application
+ * @package    GcConfig
+ * @subpackage Form
+ * @author     Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.got-cms.com
+ */
+
+namespace GcConfig\Form;
+
+use Gc\Form\AbstractForm;
+use Gc\Document;
+use Gc\Layout;
+use Gc\User\Collection as UserCollection;
+use Zend\Form\Element;
+use Zend\Form\Fieldset;
+use Zend\InputFilter\InputFilter;
+
+/**
+ * Config form
+ *
+ * @category   Gc_Application
+ * @package    GcConfig
+ * @subpackage Form
+ */
+class Config extends AbstractForm
+{
+    /**
+     * Initialize form
+     *
+     * @return void
+     */
+    public function init()
+    {
+        $this->setInputFilter(new InputFilter());
+        $this->setAttribute('class', 'relative form-horizontal');
+    }
+
+    /**
+     * Initialize General sub form
+     *
+     * @return Config
+     */
+    public function initGeneral()
+    {
+        //General settings
+        $generalFieldset = new Fieldset('general');
+        $generalFieldset->setLabel('General');
+        $name = new Element\Text('site_name');
+        $name->setLabel('Site name')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'site_name')
+            ->setAttribute('class', 'form-control');
+        $generalFieldset->add($name);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_name',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'site_name'
+        );
+
+
+        $addr = new Element\Text('site_addr');
+        $addr->setLabel('Site Address')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'site_addr')
+            ->setAttribute('class', 'form-control');
+        $generalFieldset->add($addr);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_addr',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'site_addr'
+        );
+
+        $mobile = new Element\Text('site_mobile');
+        $mobile->setLabel('Site Contact Number')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'site_mobile')
+            ->setAttribute('class', 'form-control');
+        $generalFieldset->add($mobile);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_mobile',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'site_mobile'
+        );
+
+        $site_email = new Element\Text('site_email');
+        $site_email->setLabel('Site Eamil')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'site_email')
+            ->setAttribute('class', 'form-control');
+
+        $generalFieldset->add($site_email);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_email',
+                'required' => false,                
+            ),
+            'site_email'
+        );
+
+        $site_currency = new Element\Text('site_currency');
+        $site_currency->setLabel('Site Currency')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'site_currency')
+            ->setAttribute('class', 'form-control');
+
+        $generalFieldset->add($site_currency);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_currency',
+                'required' => false,                
+            ),
+            'site_currency'
+        );
+
+        $isOffline = new Element\Checkbox('site_is_offline');
+        $isOffline->setLabel('Is offline')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('class', 'input-checkbox')
+            ->setAttribute('id', 'site-offiline')
+            ->setCheckedValue('1');
+        $generalFieldset->add($isOffline);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_is_offline',
+                'required' => false,
+            ),
+            'site_is_offline'
+        );
+
+        $documentCollection = new Document\Collection();
+        $documentCollection->load(0);
+        $offlineDocument = new Element\Select('site_offline_document');
+        $offlineDocument->setLabel('Offline document')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'site_offline_document')
+            ->setValueOptions(array('Select document') + $documentCollection->getSelect());
+        $generalFieldset->add($offlineDocument);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_offline_document',
+                'required' => true,
+            ),
+            'site_offline_document'
+        );
+
+        $layoutCollection = new Layout\Collection();
+        $layoutNotFound   = new Element\Select('site_404_layout');
+        $layoutNotFound->setLabel('404 layout')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'site_404_layout')
+            ->setValueOptions(array('Select document') + $layoutCollection->getSelect());
+        $generalFieldset->add($layoutNotFound);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_404_layout',
+                'required' => true,
+            ),
+            'site_404_layout'
+        );
+
+        $layoutException = new Element\Select('site_exception_layout');
+        $layoutException->setLabel('Exception layout')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'site_exception_layout')
+            ->setValueOptions(array('Select document') + $layoutCollection->getSelect());
+        $generalFieldset->add($layoutException);
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'site_exception_layout',
+                'required' => true,
+            ),
+            'site_exception_layout'
+        );
+
+        $this->add($generalFieldset);
+
+
+        //Payment Intigration settings
+        $paymentFieldset = new Fieldset('payment');
+        $paymentFieldset->setLabel('Payment Paypal Setting');
+
+        $payment_mode = new Element\Select('payment_mode');
+        $payment_mode->setLabel('Payment Mode')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'payment_mode')
+            ->setAttribute('class', 'form-control');
+
+        $selectOptions  = array(
+                'sandbox' => 'Sandbox',
+                'live' => 'Live',
+            );
+        $payment_mode->setValueOptions($selectOptions);
+        $paymentFieldset->add($payment_mode);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'payment_mode',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'payment_mode'
+        );
+        $this->add($paymentFieldset);
+
+        $payment_email = new Element\Text('payment_email');
+        $payment_email->setLabel('Email')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'payment_email')
+            ->setAttribute('class', 'form-control');
+        $paymentFieldset->add($payment_email);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'payment_email',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'payment_email'
+        );
+        $this->add($paymentFieldset);
+
+        $payment_api_user_name = new Element\Text('payment_api_user_name');
+        $payment_api_user_name->setLabel('Api User Name')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'payment_api_user_name')
+            ->setAttribute('class', 'form-control');
+        $paymentFieldset->add($payment_api_user_name);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'payment_api_user_name',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'payment_api_user_name'
+        );
+        $this->add($paymentFieldset);
+
+        $payment_api_pass = new Element\Text('payment_api_pass');
+        $payment_api_pass->setLabel('API Password')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'payment_api_pass')
+            ->setAttribute('class', 'form-control');
+        $paymentFieldset->add($payment_api_pass);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'payment_api_pass',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'payment_api_pass'
+        );
+        $this->add($paymentFieldset);
+
+        $payment_api_key = new Element\Text('payment_api_key');
+        $payment_api_key->setLabel('API Key')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'payment_api_key')
+            ->setAttribute('class', 'form-control');
+        $paymentFieldset->add($payment_api_key);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'payment_api_key',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'payment_api_key'
+        );
+        $this->add($paymentFieldset);
+
+
+        //Mail settings
+        $mailFieldset = new Fieldset('mail');
+        $mailFieldset->setLabel('Admin Mail Setting');
+        $mailFrom = new Element\Text('mail_from');
+        $mailFrom->setLabel('From E-mail')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'mail_from')
+            ->setAttribute('class', 'form-control');
+        $mailFieldset->add($mailFrom);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'mail_from_name',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'mail_from_name'
+        );
+
+        $mailFromName = new Element\Text('mail_from_name');
+        $mailFromName->setLabel('From name')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'mail_from_name')
+            ->setAttribute('class', 'form-control');
+        $mailFieldset->add($mailFromName);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'mail_from',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'mail_from'
+        );
+
+        $this->add($mailFieldset);
+
+
+        //Social Media settings
+        $socialFieldset = new Fieldset('social');
+        $socialFieldset->setLabel('Social Media Setting');
+        $fb = new Element\Text('fb');
+        $fb->setLabel('Facebook Link')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'fb')
+            ->setAttribute('class', 'form-control');
+        $socialFieldset->add($fb);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'fb',
+                'required' => false,
+                
+            ),
+            'fb'
+        );
+        $this->add($socialFieldset);
+
+        $gp = new Element\Text('gp');
+        $gp->setLabel('Google Link')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'gp')
+            ->setAttribute('class', 'form-control');
+        $socialFieldset->add($gp);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'gp',
+                'required' => false,
+                
+            ),
+            'gp'
+        );
+        $this->add($socialFieldset);
+
+        $li = new Element\Text('li');
+        $li->setLabel('LinkedIn Link')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'li')
+            ->setAttribute('class', 'form-control');
+        $socialFieldset->add($li);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'li',
+                'required' => false,
+                
+            ),
+            'li'
+        );
+        $this->add($socialFieldset);
+
+        $tw = new Element\Text('tw');
+        $tw->setLabel('Twitter Link')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'tw')
+            ->setAttribute('class', 'form-control');
+        $socialFieldset->add($tw);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'tw',
+                'required' => false,
+                
+            ),
+            'tw'
+        );
+        $this->add($socialFieldset);
+
+        $pi = new Element\Text('pi');
+        $pi->setLabel('Pinterest Link')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'pi')
+            ->setAttribute('class', 'form-control');
+        $socialFieldset->add($pi);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'pi',
+                'required' => false,
+                
+            ),
+            'pi'
+        );
+        $this->add($socialFieldset);
+
+        //Search Criteria settings
+        $searchFieldset = new Fieldset('search');
+        $searchFieldset->setLabel('Freelance Search Setting');
+        $qusMatch = new Element\Text('qusMatch');
+        $qusMatch->setLabel('Question match % ')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'qusMatch')
+            ->setAttribute('class', 'form-control');
+        $searchFieldset->add($qusMatch);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'qusMatch',
+                'required' => false,
+                
+            ),
+            'qusMatch'
+        );
+        $this->add($searchFieldset);
+
+        /*//Email Intigration settings
+        $emailFieldset = new Fieldset('email');
+        $emailFieldset->setLabel('Website Email Setting');
+        $contact_name = new Element\Text('contact_name');
+        $contact_name->setLabel('Contact Name')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'contact_name')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($contact_name);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'contact_name',
+                'required' => false,
+            ),
+            'contact_name'
+        );
+        $this->add($emailFieldset);
+        $contact_email = new Element\Text('contact_email');
+        $contact_email->setLabel('Contact Email')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'contact_email')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($contact_email);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'contact_email',
+                'required' => false,
+            ),
+            'contact_email'
+        );
+        $this->add($emailFieldset);
+
+        $finance_name = new Element\Text('finance_name');
+        $finance_name->setLabel('Finance Name')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'finance_name')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($finance_name);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'finance_name',
+                'required' => false,
+            ),
+            'finance_name'
+        );
+        $this->add($emailFieldset);
+        $finance_email = new Element\Text('finance_email');
+        $finance_email->setLabel('Finance Email')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'finance_email')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($finance_email);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'finance_email',
+                'required' => false,                
+            ),
+            'finance_email'
+        );
+        $this->add($emailFieldset);
+        
+        $custom_name_1 = new Element\Text('custom_name_1');
+        $custom_name_1->setLabel('Custome Name 1')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'custom_name_1')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($custom_name_1);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'custom_name_1',
+                'required' => false,
+            ),
+            'custom_name_1'
+        );
+        $this->add($emailFieldset);
+        $custom_email_1 = new Element\Text('custom_email_1');
+        $custom_email_1->setLabel('Custome Email 1')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'custom_email_1')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($custom_email_1);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'custom_email_1',
+                'required' => false,                
+            ),
+            'custom_email_1'
+        );
+        $this->add($emailFieldset);
+        $custom_name_2 = new Element\Text('custom_name_2');
+        $custom_name_2->setLabel('Custome Name 2')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'custom_name_2')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($custom_name_2);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'custom_name_2',
+                'required' => false,
+            ),
+            'custom_name_2'
+        );
+        $this->add($emailFieldset);
+        $custom_email_2 = new Element\Text('custom_email_2');
+        $custom_email_2->setLabel('Custome Email 2')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'custom_email_2')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($custom_email_2);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'custom_email_2',
+                'required' => false,                
+            ),
+            'custom_email_2'
+        );
+        $this->add($emailFieldset);*/
+
+        return $this;
+    }
+
+    /**
+     * Initialize System sub form
+     *
+     * @return Config
+     */
+    public function initSystem()
+    {
+        //Session settings
+        $sessionFieldset = new Fieldset('session');
+        $sessionFieldset->setLabel('Session');
+        $cookieDomain = new Element\Text('cookie_domain');
+        $cookieDomain->setLabel('Cookie domain')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'cookie_domain')
+            ->setAttribute('class', 'form-control');
+        $sessionFieldset->add($cookieDomain);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'cookie_domain',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'cookie_domain'
+        );
+
+        $cookiePath = new Element\Text('cookie_path');
+        $cookiePath->setLabel('Cookie path')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'cookie_path')
+            ->setAttribute('class', 'form-control');
+        $sessionFieldset->add($cookiePath);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'cookie_path',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'cookie_path'
+        );
+
+        $sessionHandler = new Element\Select('session_handler');
+        $sessionHandler->setLabel('Session handler')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'session_handler')
+            ->setValueOptions(array('0' => 'Files', '1' => 'Database'));
+        $sessionFieldset->add($sessionHandler);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'session_handler',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'session_handler'
+        );
+
+        $sessionPath = new Element\Text('session_path');
+        $sessionPath->setLabel('Session path')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'session_path')
+            ->setAttribute('class', 'form-control');
+        $sessionFieldset->add($sessionPath);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'session_path',
+                'required' => false,
+            ),
+            'session_path'
+        );
+
+        $sessionLifetime = new Element\Text('session_lifetime');
+        $sessionLifetime->setLabel('Session lifetime')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'session_lifetime')
+            ->setAttribute('class', 'form-control');
+        $sessionFieldset->add($sessionLifetime);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'session_lifetime',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                    array('name' => 'digits'),
+                ),
+            ),
+            'session_lifetime'
+        );
+
+        $this->add($sessionFieldset);
+
+        //Debug settings
+        $debugFieldset = new Fieldset('debug');
+        $debugFieldset->setLabel('Debug');
+        $debugIsActive = new Element\Checkbox('debug_is_active');
+        $debugIsActive->setLabel('Debug is active')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'debug_is_active')
+            ->setAttribute('id', 'input-checkbox')
+            ->setAttribute('class', 'input-checkbox');
+        $debugFieldset->add($debugIsActive);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'debug_is_active',
+                'required' => false,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'debug_is_active'
+        );
+
+        $this->add($debugFieldset);
+
+        //Cache settings
+        $cacheFieldset = new Fieldset('cache');
+        $cacheFieldset->setLabel('Cache');
+        $cacheIsActive = new Element\Checkbox('cache_is_active');
+        $cacheIsActive->setLabel('Cache is active')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'cache_is_active')
+            ->setAttribute('class', 'input-checkbox')
+            ->setAttribute('id', 'cache-active');
+        $cacheFieldset->add($cacheIsActive);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'cache_is_active',
+                'required' => false,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'cache_is_active'
+        );
+
+        $cacheHandler = new Element\Select('cache_handler');
+        $cacheHandler->setAttribute('class', 'form-control')
+            ->setAttribute('id', 'cache_handler')
+            ->setLabel('Cache handler')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            );
+        $handlerWhitelist = array('filesystem' => 'FileSystem');
+        if (extension_loaded('apc')) {
+            $handlerWhitelist['apc'] = 'Apc';
+        }
+
+        if (extension_loaded('memcached')) {
+            $handlerWhitelist['memcached'] = 'Memcached';
+        }
+
+        $cacheHandler->setValueOptions($handlerWhitelist);
+        $cacheFieldset->add($cacheHandler);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'cache_handler',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'cache_handler'
+        );
+
+        $cacheLifetime = new Element\Text('cache_lifetime');
+        $cacheLifetime->setLabel('Cache lifetime')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'cache_lifetime')
+            ->setAttribute('class', 'form-control');
+        $cacheFieldset->add($cacheLifetime);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'cache_lifetime',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                    array('name' => 'digits'),
+                ),
+            ),
+            'cache_lifetime'
+        );
+
+        $this->add($cacheFieldset);
+
+        return $this;
+    }
+
+    /**
+     * Initialize Server sub form
+     *
+     * @param array $config Configuration
+     *
+     * @return Config
+     */
+    public function initServer($config)
+    {
+        //Local settings
+        $localeFieldset = new Fieldset('locale');
+        $localeFieldset->setLabel('Locale');
+        $locale = new Element\Select('locale');
+        $locale->setLabel('Server locale')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'locale')
+            ->setAttribute('class', 'form-control')
+            ->setValueOptions($config['locales']);
+        $localeFieldset->add($locale);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'locale',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'locale'
+        );
+
+        $this->add($localeFieldset);
+
+        
+
+        //Web settings
+        $webFieldset = new Fieldset('web');
+        $webFieldset->setLabel('Web');
+
+        $forceBackendSsl = new Element\Checkbox('force_backend_ssl');
+        $forceBackendSsl->setLabel('Force backend SSL')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'force_backend_ssl')
+            ->setAttribute('class', 'input-checkbox')
+            ->setAttribute('id', 'force-backend-ssl');
+        $webFieldset->add($forceBackendSsl);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'force_backend_ssl',
+                'required' => false,
+            ),
+            'force_backend_ssl'
+        );
+
+        $forceFrontendSsl = new Element\Checkbox('force_frontend_ssl');
+        $forceFrontendSsl->setLabel('Force frontend SSL')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'force_frontend_ssl')
+            ->setAttribute('class', 'input-checkbox')
+            ->setAttribute('id', 'force-frontend-ssl');
+        $webFieldset->add($forceFrontendSsl);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'force_frontend_ssl',
+                'required' => false,
+            ),
+            'force_frontend_ssl'
+        );
+
+        $pathFields = array(
+            'Unsecure backend base path'  => 'unsecure_backend_base_path',
+            'Unsecure frontend base path' => 'unsecure_frontend_base_path',
+            'Secure backend base path' => 'secure_backend_base_path',
+            'Secure frontend base path' => 'secure_frontend_base_path',
+            'Unsecure cdn base path' => 'unsecure_cdn_base_path',
+            'Secure cdn base path' => 'secure_cdn_base_path',
+        );
+
+        foreach ($pathFields as $label => $identifier) {
+            $field = new Element\Text($identifier);
+            $field->setLabel($label)
+                ->setLabelAttributes(
+                    array(
+                        'class' => 'required control-label col-lg-2'
+                    )
+                )
+                ->setAttribute('id', $identifier)
+                ->setAttribute('class', 'form-control');
+            $webFieldset->add($field);
+
+            $this->getInputFilter()->add(
+                array(
+                    'name' => $identifier,
+                    'required' => false,
+                    'validators' => array(
+                        array('name' => 'uri'),
+                    ),
+                ),
+                $identifier
+            );
+        }
+
+        $this->add($webFieldset);
+
+        return $this;
+    }
+
+    /**
+     * Initialize Email sub form
+     *
+     * @return Config
+     */
+    public function initEmailConfig()
+    {
+        /* Subscriber email manager */
+        $emailFieldset = new Fieldset('email_subscriber');
+        $emailFieldset->setLabel('Email Manager Subscibe user');
+        $email_subscriber = new Element\MultiCheckbox('email');
+        $email_subscriber->setLabel('User Email')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2 email-list'
+                )
+            )
+            ->setAttribute('id', 'email')
+            ->setAttribute('class', 'form-control');
+        
+        $userCollection = new UserCollection();
+        $userList      = $userCollection->getUsers();
+        $selectOptions  = array();
+        foreach ($userList as $userModel) {
+            $selectOptions[$userModel->getEmail()] = $userModel->getEmail();
+        }
+
+        /*print_r($selectOptions);
+        exit();*/
+        $email_subscriber->setValueOptions($selectOptions)
+            ->setAttribute('class', 'form-control');
+
+        $emailFieldset->add($email_subscriber);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'email',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'email'
+        );
+        $this->add($emailFieldset);
+
+        $mailSubject = new Element\Text('mail_subject');
+        $mailSubject->setLabel('Subject')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'mail_subject')
+            ->setAttribute('class', 'form-control');
+        $emailFieldset->add($mailSubject);
+
+        $mailMessage = new Element\Textarea('mail_message');
+        $mailMessage->setLabel('Message')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('id', 'mail_message')
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('rows', '10');
+        $emailFieldset->add($mailMessage);
+
+
+        /* Site user email manager */
+        $emailFieldsetUser = new Fieldset('email_user');
+        $emailFieldsetUser->setLabel('Email Manager Site user');
+        $email_user = new Element\MultiCheckbox('email_user');
+        $email_user->setLabel('User Email')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2 email-list'
+                )
+            )
+            ->setAttribute('id', 'email')
+            ->setAttribute('class', 'form-control');
+        
+        $userCollectionSite = new UserCollection();
+        $userListSite     = $userCollectionSite->getUsers();
+        $selectOptionsSite  = array();
+        foreach ($userListSite as $userModelSite) {
+            $selectOptionsSite[$userModelSite->getEmail()] = $userModelSite->getEmail();
+        }
+
+        /*print_r($selectOptions);
+        exit();*/
+        $email_user->setValueOptions($selectOptionsSite)
+            ->setAttribute('class', 'form-control');
+
+        $emailFieldsetUser->add($email_user);
+
+        $this->getInputFilter()->add(
+            array(
+                'name' => 'email-user',
+                'required' => true,
+                'validators' => array(
+                    array('name' => 'not_empty'),
+                ),
+            ),
+            'email'
+        );
+        $this->add($emailFieldsetUser);
+
+        $mailSubject = new Element\Text('user_mail_subject');
+        $mailSubject->setLabel('Subject')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2'
+                )
+            )
+            ->setAttribute('id', 'mail_subject')
+            ->setAttribute('class', 'form-control');
+        $emailFieldsetUser->add($mailSubject);
+
+        $mailMessage = new Element\Textarea('user_mail_message');
+        $mailMessage->setLabel('Message')
+            ->setLabelAttributes(
+                array(
+                    'class' => 'required control-label col-lg-2',
+                )
+            )
+            ->setAttribute('id', 'mail_message')
+            ->setAttribute('class', 'form-control')
+            ->setAttribute('rows', '10');
+        $emailFieldsetUser->add($mailMessage);
+
+        return $this;
+    }
+    /**
+     * Set config values from database result
+     *
+     * @param array $data The data as array will by passed into form field
+     *
+     * @return void
+     */
+    public function setValues(array $data)
+    {
+        foreach ($data as $config) {
+            foreach ($this->getFieldsets() as $fieldset) {
+                if ($fieldset->has($config['identifier'])) {
+                    $fieldset->get($config['identifier'])->setValue($config['value']);
+                    break;
+                }
+            }
+        }
+    }
+    
+}

@@ -1,0 +1,491 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+
+?>
+<?php $controller = empty($this->layout()->routeParams['controller']) ? null : $this->layout()->routeParams['controller']; ?>
+<?php $action     = empty($this->layout()->routeParams['action']) ? null : $this->layout()->routeParams['action']; ?>
+<ul class="nav nav-list">
+
+
+<?php 
+    $url = $_SERVER['REQUEST_URI'];
+    $userPage = 0;
+    $current = explode("/", $url);
+    foreach ($current as $key => $value) {
+        if ($value == 'user') {
+          $userPage = 1;
+          break;
+        }
+    }
+
+?>
+
+<?php if ( $controller === 'UserController' || $userPage ): ?>
+    <!-- User Manager -->
+    <?php if (($this->acl('settings', 'user') || $this->acl('settings', 'user/list') || $this->acl('settings', 'user/create') || $this->acl('settings', 'user/edit')) ): ?>
+        <li<?php if ($controller === 'UserController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-user"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Users')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'user/list')): ?>
+                    <li<?php if ($controller === 'UserController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'user/create')): ?>
+                    <li<?php if ($controller === 'UserController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- Role Manager -->
+    <?php if ($this->acl('settings', 'role')): ?>
+        <li<?php if ($controller === 'RoleController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-tower"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Roles')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'role/list')): ?>
+                    <li<?php if ($controller === 'RoleController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/role'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'role/create')): ?>
+                    <li<?php if ($controller === 'RoleController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/role/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>                
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- Package Manager -->
+    <?php if ($this->acl('settings', 'package/list') || $this->acl('settings', 'package/edit') || $this->acl('settings', 'package/create')): ?>
+        <li<?php if ($controller === 'PackageController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-gbp"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Package')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'package/list')): ?>
+                    <li<?php if ($controller === 'PackageController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/package'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'package/create')): ?>
+                    <li<?php if ($controller === 'ProfessionalController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/package/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>                
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- Package Privileges Manager -->
+    <?php if ($this->acl('settings', 'packageResource/list') || $this->acl('settings', 'packageResource/edit') || $this->acl('settings', 'packageResource/create')): ?>
+        <li<?php if ($controller === 'PackageResourceController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-flash"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Package Resources')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'packageResource/list')): ?>
+                    <li<?php if ($controller === 'PackageResourceController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/packageresource'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'packageResource/create')): ?>
+                    <li<?php if ($controller === 'PackageResourceController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/packageresource/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>                
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- Profession Manager -->
+    <?php if ($this->acl('settings', 'profession/list') || $this->acl('settings', 'profession/edit') || $this->acl('settings', 'profession/create')): ?>
+        <li<?php if ($controller === 'ProfessionalController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-book"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Category')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'profession/list')): ?>
+                    <li<?php if ($controller === 'ProfessionalController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/professional'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'profession/create')): ?>
+                    <li<?php if ($controller === 'ProfessionalController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/professional/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- Registration Question Manager -->
+    <?php if($this->acl('settings', 'question/list') || $this->acl('settings', 'question/create') ) : ?>
+        <li<?php if ($controller === 'QuestionController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-question-sign"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Question')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'question/list')): ?>
+                    <li<?php if ($controller === 'QuestionController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/question'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'question/create')): ?>
+                    <li<?php if ($controller === 'QuestionController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/question/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>                
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- Payment History Manager -->
+    <?php if($this->acl('settings', 'paymentHistory/list')) : ?>
+        <li<?php if ($controller === 'PaymenthistoryController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-bookmark"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Payment')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'paymentHistory/list')): ?>
+                    <li<?php if ($controller === 'PaymenthistoryController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/paymenthistory'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('History')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </li>       
+    <?php endif; ?>
+    <!-- Feedback Question Manager -->
+    <?php if ($this->acl('settings', 'feedback/list') || $this->acl('settings', 'feedback/creat') || $this->acl('settings', 'feedback/edit')): ?>
+        <li<?php if ($controller === 'FeedbackController' and $action !== 'feedbackList' and $action !== 'feedbackDispute' and $action !== 'feedbackEdit'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-question-sign"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Feedback Question')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'feedback/list')): ?>
+                    <li<?php if ($controller === 'FeedbackController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/feedback'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('List')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'feedback/edit')): ?>
+                    <li<?php if ($controller === 'FeedbackController' and $action === 'create'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/feedback/create'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Create')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>                
+            </ul>
+        </li>
+    <?php endif; ?>
+    <!-- User Feedback & Dispute Manager -->
+    <?php if($this->acl('settings', 'feedback/feedbackList') || $this->acl('settings', 'feedback/feedbackEdit') || $this->acl('settings', 'feedback/feedbackDispute')) : ?>
+        <li<?php if ($controller === 'FeedbackController' and ($action === 'feedbackList' || $action === 'feedbackDispute' || $action === 'feedbackEdit')): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-star-empty"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Feedback Management')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if($this->acl('settings', 'feedback/feedbackList') || $this->acl('settings', 'user/feedbackEdit')): ?>
+                    <li<?php if ($controller === 'FeedbackController' and $action === 'feedbackList' ): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/feedback/user-feedback'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('User Feedback')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if($this->acl('settings', 'feedback/feedbackDispute')): ?>
+                    <li<?php if ($controller === 'FeedbackController' and $action === 'feedbackDispute'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/user/feedback/dispute-feedback'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Dispute Feedback')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>       
+            </ul>
+        </li>
+    <?php endif; ?>
+
+    <!-- User Finance Manager -->
+    <?php if($this->acl('settings', 'finance/list') || $this->acl('settings', 'finance/balancesheet') || $this->acl('settings', 'finance/profitloss')) : ?>
+        <li<?php if ( ($controller === 'FinanceController' || $controller === 'FinanceTaxController' )): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-gbp"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Finance ')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">                
+                <li<?php if ($controller === 'FinanceController' and ($action === 'index' || $action === 'balancesheet' || $action === 'profitloss')): ?> class="active"<?php endif; ?>>
+                    <a href="<?php echo $this->url('config/user/finance'); ?>">
+                        <i class="glyphicon glyphicon-arrow-right"></i>
+                        <?php echo $this->escapeHtml($this->translate('Records')); ?>
+                    </a>
+                </li>
+                <li<?php if ($controller === 'FinanceTaxController' and ($action === 'taxList' || $action === 'taxEdit' || $action === 'taxAdd')): ?> class="active"<?php endif; ?>>
+                    <a href="<?php echo $this->url('config/user/finance/tax'); ?>">
+                        <i class="glyphicon glyphicon-arrow-right"></i>
+                        <?php echo $this->escapeHtml($this->translate('Tax Setting')); ?>
+                    </a>
+                </li>
+                <li<?php if ($controller === 'FinanceTaxController' and ($action === 'niTaxList' || $action === 'niTaxEdit' || $action === 'niTaxAdd')): ?> class="active"<?php endif; ?>>
+                    <a href="<?php echo $this->url('config/user/finance/ni-tax'); ?>">
+                        <i class="glyphicon glyphicon-arrow-right"></i>
+                        <?php echo $this->escapeHtml($this->translate('NI Tax Setting')); ?>
+                    </a>
+                </li>
+            </ul>
+        </li>
+    <?php endif; ?>
+
+<?php else: ?>
+    <?php if ($this->acl('settings', 'config')): ?>
+        <li<?php if ($controller === 'CmsController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-cog"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Configuration')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">
+                <?php if ($this->acl('settings', 'config/general')): ?>
+                    <li<?php if ($controller === 'CmsController' and $action === 'editGeneral'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/general'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('General')); ?>
+                        </a>
+                    </li>
+                    <li<?php if ($controller === 'CmsController' and $action === 'editEmail'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/email'); ?>">
+                            <i class="glyphicon glyphicon-envelope"></i>
+                            <?php echo $this->escapeHtml($this->translate('Email Newsletter')); ?>
+                        </a>
+                    </li>
+                    <li<?php if ($controller === 'CmsController' and $action === 'notification'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/notification'); ?>">
+                            <i class="glyphicon glyphicon-envelope"></i>
+                            <?php echo $this->escapeHtml($this->translate('Notification Settings')); ?>
+                        </a>
+                    </li>
+                
+                <?php elseif($this->acl('settings', 'config/editEmail')): ?>
+                    <li<?php if ($controller === 'CmsController' and $action === 'editEmail'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/email'); ?>">
+                            <i class="glyphicon glyphicon-envelope"></i>
+                            <?php echo $this->escapeHtml($this->translate('Email Newsletter')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <!-- <?php if ($this->acl('settings', 'config/system')): ?>
+                    <li<?php if ($controller === 'CmsController' and $action === 'editSystem'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/system'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('System')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($this->acl('settings', 'config/server')): ?>
+                    <li<?php if ($controller === 'CmsController' and $action === 'editServer'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/server'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Server')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?> -->
+                <!-- <?php if ($this->acl('settings', 'config/update')): ?>
+                    <li<?php if ($controller === 'CmsController' and $action === 'update'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/cms-update'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Update')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?> -->
+            </ul>
+        </li>
+    <?php endif; ?>
+    <?php if ($this->acl('settings', 'report')): ?>
+        <li<?php if ($controller === 'ReportController'): ?> class="open active"<?php endif; ?>>
+            <a class="menu-toggle" href="#">
+                <i class="glyphicon glyphicon-list-alt"></i>
+                <span class="menu-text"><?php echo $this->escapeHtml($this->translate('Report')); ?></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="submenu">  
+                <?php if ($this->acl('settings', 'report/list')): ?>              
+                    <li<?php if ($controller === 'ReportController' and $action === 'index'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Block User Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/newUser')): ?>
+                    <li<?php if ($controller === 'ReportController' and $action === 'newUser'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/new-user-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('New User Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/packageReport')): ?>
+                    <li<?php if ($controller === 'ReportController' and $action === 'packageReport'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/package-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Package Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/leaveUser')): ?>
+                    <li<?php if ($controller === 'ReportController' and $action === 'leaveUser'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/leave-user'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Leave User Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/lastLoginUsers')): ?>
+                    <li<?php if ($controller === 'ReportController' and $action === 'lastLoginUsers'): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/last-login-user'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Last Login User Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/empJobReport')): ?>
+                    <li<?php if ($controller === 'ReportController' and ( $action === 'empJobReport' OR $action === 'singleEmp')): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/emp-job-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Employer Job Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/freJobReport')): ?>
+                    <li<?php if ($controller === 'ReportController' and ( $action === 'freJobReport' OR $action === 'singleFre')): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/fre-job-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Locum Job Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/pkgIncomeReport')): ?>
+                    <li<?php if ($controller === 'ReportController' and ( $action === 'pkgIncomeReport')): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/package-income-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Package Income Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/privateFreelancerReport')): ?>
+                    <li<?php if ($controller === 'ReportController' and ( $action === 'privateFreelancerReport')): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/private-freelancer-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Private Locum Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($this->acl('settings', 'report/privateStoreReport')): ?>
+                    <li<?php if ($controller === 'ReportController' and ( $action === 'privateStoreReport')): ?> class="active"<?php endif; ?>>
+                        <a href="<?php echo $this->url('config/report/private-store-report'); ?>">
+                            <i class="glyphicon glyphicon-arrow-right"></i>
+                            <?php echo $this->escapeHtml($this->translate('Locum Private Job Report')); ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </li>
+    <?php endif; ?>
+<?php endif; ?>
+</ul>

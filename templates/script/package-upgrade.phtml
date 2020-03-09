@@ -1,0 +1,38 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Zend\Db\Sql\Sql;
+	use Gc\Registry;
+	use GcFrontend\Controller\JobmailController as MailController;
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	$encypt = new Ecryption();
+	$mailController = new MailController();
+	use GcFrontend\Controller\PackageUpgradeController as PackageUpgradeController;
+	use GcFrontend\Controller\DbController as DbController;
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	echo $currentDate = date("Y-m-d");
+	echo $packageNotificationDate = date('Y-m-d', strtotime('+7 day', strtotime($currentDate)));
+	echo $packageOneDayNotificationDate = date('Y-m-d', strtotime('+1 day', strtotime($currentDate)));
+	echo "<br/>";
+	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	/* Get package  expiry reminder information */
+	echo $sqlPackageExpired = "SELECT * from user_package_details WHERE (package_expire_date = '$packageNotificationDate' OR package_expire_date = '$packageOneDayNotificationDate') AND package_status='1'";	
+    $packageExpiredData = $adapter->query($sqlPackageExpired, $adapter::QUERY_MODE_EXECUTE);
+    $packageExpired = $packageExpiredData->toArray();
+	echo '<pre>';
+	    print_r($packageExpired);
+	echo '</pre>';
+	echo date('G');
+
+    foreach ($packageExpired as $key => $value) {
+    	$userId = $value['user_id'];
+    	$packageId = $value['package_id'];
+    	$packageExpiryDate = $value['package_expire_date'];
+    	$btnLink = '<a href="'.$serverUrl().'/upgrade-package?u='.$encypt->encryptIt($userId).'&p='.$encypt->encryptIt($packageId).'" style="padding: 8px 15px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff;     text-transform: uppercase; width: 200px; display: block; text-align: center;">Upgrade account</a>';
+    	if($packageNotificationDate == $packageExpiryDate && date('G') == '9'){
+    	    $mailController->sendPackageExpiredMail($userId,$packageId,$packageExpiryDate,$btnLink,7,$adapter);
+    	}elseif($packageOneDayNotificationDate == $packageExpiryDate && date('G') == '7'){
+    	    $mailController->sendPackageExpiredMail($userId,$packageId,$packageExpiryDate,$btnLink,1,$adapter);
+    	}
+    	
+    }

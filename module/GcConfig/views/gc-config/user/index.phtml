@@ -1,0 +1,375 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=1.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+
+if (isset($_POST['setUserNameOrder'])) {
+    if (isset($_POST['setUserNameOrder']) && $_POST['setUserNameOrder'] == 1 ) {
+        $_SESSION['setUserNameOrder'] = 1;
+    }elseif(isset($_POST['setUserNameOrder']) && $_POST['setUserNameOrder'] == 2){
+        $_SESSION['setUserNameOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserFNameOrder'])||isset($_SESSION['setUserLNameOrder'])||isset($_SESSION['setUserEmailOrder'])){
+        unset($_SESSION['setUserFNameOrder']);
+        unset($_SESSION['setUserLNameOrder']);
+        unset($_SESSION['setUserEmailOrder']);
+    }
+}
+if(isset($_POST['setUserFNameOrder'])){
+    if (isset($_POST['setUserFNameOrder']) && $_POST['setUserFNameOrder'] == 1 ) {
+        $_SESSION['setUserFNameOrder'] = 1;
+    }elseif(isset($_POST['setUserFNameOrder']) && $_POST['setUserFNameOrder'] == 2){
+        $_SESSION['setUserFNameOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserNameOrder'])||isset($_SESSION['setUserLNameOrder'])||isset($_SESSION['setUserEmailOrder'])){
+        unset($_SESSION['setUserNameOrder']);
+        unset($_SESSION['setUserLNameOrder']);
+        unset($_SESSION['setUserEmailOrder']);
+    }
+}
+if(isset($_POST['setUserLNameOrder'])){
+    if (isset($_POST['setUserLNameOrder']) && $_POST['setUserLNameOrder'] == 1 ) {
+        $_SESSION['setUserLNameOrder'] = 1;
+    }elseif(isset($_POST['setUserLNameOrder']) && $_POST['setUserLNameOrder'] == 2){
+        $_SESSION['setUserLNameOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserNameOrder'])||isset($_SESSION['setUserFNameOrder'])||isset($_SESSION['setUserEmailOrder'])){
+        unset($_SESSION['setUserNameOrder']);
+        unset($_SESSION['setUserFNameOrder']);
+        unset($_SESSION['setUserEmailOrder']);
+    }
+}
+if(isset($_POST['setUserEmailOrder'])){
+    if (isset($_POST['setUserEmailOrder']) && $_POST['setUserEmailOrder'] == 1 ) {
+        $_SESSION['setUserEmailOrder'] = 1;
+    }elseif(isset($_POST['setUserEmailOrder']) && $_POST['setUserEmailOrder'] == 2){
+        $_SESSION['setUserEmailOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserNameOrder'])||isset($_SESSION['setUserFNameOrder'])||isset($_SESSION['setUserLNameOrder'])){
+        unset($_SESSION['setUserNameOrder']);
+        unset($_SESSION['setUserFNameOrder']);
+        unset($_SESSION['setUserLNameOrder']);
+    }
+}
+
+$paginatorEmp = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userEmp));
+$paginatorEmp->setItemCountPerPage(20);
+$paginatorEmp->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+
+$paginatorFre = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userFre));
+$paginatorFre->setItemCountPerPage(20);
+$paginatorFre->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorAdm = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userAdm));
+$paginatorAdm->setItemCountPerPage(20);
+$paginatorAdm->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+$session   = $_SESSION['Zend_Auth_Backend']->storage;
+?>
+<?php
+    $qus = 'fre';
+    if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+        $qus = 'emp';
+    }elseif(isset($_GET['q']) && $_GET['q'] == 'adm' && $session->getUserAclRoleId() == 1){
+        $qus = 'adm';
+    }
+
+    if (isset($_GET['c']) && $_GET['c'] != '') {
+        $cat = $_GET['c'];
+    }else{
+        $cat = 1;
+    }
+?>
+<div id="tabs">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($qus == 'fre') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=fre">Locum</a></li>
+            <li class="<?php if ($qus == 'emp') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=emp">Employer</a></li>
+            <?php if($session->getUserAclRoleId() == 1){ ?><li class="<?php if ($qus == 'adm') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=adm">Admin</a></li><?php } ?>
+        </ul>
+    </div>
+    <?php if ($qus == 'emp') {?>
+        <div id="emp-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <?php foreach ($this->professions as $profession) { ?>
+                        <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=emp&c=<?php echo $profession->getId(); ?>"><?php echo $profession->getName() ?></a></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php if(!empty($paginatorEmp)): ?>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+					<col width="1%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="10%">
+                    <col width="1%">
+                    <col width="1%">
+                </colgroup>
+                <thead>
+                    <tr>
+					     <th><?php echo $this->escapeHtml($this->translate('Id')); ?></th>
+                         <th><?php if(isset($_SESSION['setUserNameOrder']) && $_SESSION['setUserNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Login')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Login')); ?></a><?php } ?></th>
+                        <th><?php if(isset($_SESSION['setUserFNameOrder']) && $_SESSION['setUserFNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserFNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Firstname')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserFNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Firstname')); ?></a><?php } ?></th>
+                        <th><?php if(isset($_SESSION['setUserLNameOrder']) && $_SESSION['setUserLNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserLNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Lastname')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserLNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Lastname')); ?></a><?php } ?></th>
+
+                        <th><?php if(isset($_SESSION['setUserEmailOrder']) && $_SESSION['setUserEmailOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserEmailOrder(10);"><?php echo $this->escapeHtml($this->translate('Email')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserEmailOrder(2);"><?php echo $this->escapeHtml($this->translate('Email')); ?></a><?php } ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Is active')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    /*echo "<pre>";
+                    print_r($this->users);
+                    echo "</pre>";*/
+
+                    foreach ($paginatorEmp as $user):
+                    ?>
+                        <tr>
+						    <td><?php echo $this->escapeHtml($user->getId()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getActive() ==1 ? 'Yes' : 'No'); ?></td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/edit', array('id' => $user->getId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/delete', array('id' => $user->getId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user?q=emp&c='.$cat));?>
+            </div>
+            <?php
+                else:
+                    echo "<h3>No record found..!</h3>";
+                endif;
+            ?>
+        </div>
+    <?php }elseif($qus == 'fre'){ ?>
+        <div id="fre-tab">
+            <div class="cat-tabs">
+                <ul>
+                    <?php foreach ($this->professions as $profession) { ?>
+                        <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=fre&c=<?php echo $profession->getId()  ?>"><?php echo $profession->getName() ?></a></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php if(!empty($paginatorFre)): ?>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+				    <col width="1%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="10%">
+                    <col width="1%">
+                    <col width="1%">
+                </colgroup>
+                <thead>
+                    <tr>
+					     <th><?php echo $this->escapeHtml($this->translate('Id')); ?></th>
+                         <th><?php if(isset($_SESSION['setUserNameOrder']) && $_SESSION['setUserNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Login')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Login')); ?></a><?php } ?></th>
+                        <th><?php if(isset($_SESSION['setUserFNameOrder']) && $_SESSION['setUserFNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserFNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Firstname')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserFNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Firstname')); ?></a><?php } ?></th>
+                        <th><?php if(isset($_SESSION['setUserLNameOrder']) && $_SESSION['setUserLNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserLNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Lastname')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserLNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Lastname')); ?></a><?php } ?></th>
+
+                        <th><?php if(isset($_SESSION['setUserEmailOrder']) && $_SESSION['setUserEmailOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserEmailOrder(10);"><?php echo $this->escapeHtml($this->translate('Email')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserEmailOrder(2);"><?php echo $this->escapeHtml($this->translate('Email')); ?></a><?php } ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Is active')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('CET View')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    /*echo "<pre>";
+                    print_r($this->users);
+                    echo "</pre>";*/
+
+                    foreach ($paginatorFre as $user):
+                    ?>
+                        <tr>
+						<td><?php echo $this->escapeHtml($user->getId()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getActive() ==1 ? 'Yes' : 'No'); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getView() ==1 ? $user->getCet().'/V' : $user->getCet().'/N'); ?></td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/edit', array('id' => $user->getId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/delete', array('id' => $user->getId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user?q=fre&c='.$cat));?>
+            </div>
+            <?php
+                else:
+                    echo "<h3>No record found..!</h3>";
+                endif;
+            ?>
+        </div>
+    <?php }elseif($qus == 'adm'){ ?>
+        <div id="fre-tab">
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+				<col width="1%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="10%">
+                    <col width="1%">
+                    <col width="1%">
+                </colgroup>
+                <thead>
+                    <tr>
+					<th><?php echo $this->escapeHtml($this->translate('Id')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Login')); ?></th>
+                         <th><?php echo $this->escapeHtml($this->translate('Firstname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Lastname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Is active')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    /*echo "<pre>";
+                    print_r($this->users);
+                    echo "</pre>";*/
+                    foreach ($paginatorAdm as $user):
+
+                    ?>
+                            <tr>
+							<td><?php echo $this->escapeHtml($user->getId()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getActive()==1 ? 'Yes' : 'No'); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/edit', array('id' => $user->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/delete', array('id' => $user->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                    <?php  endforeach; ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorAdm, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user?q=adm'));?>
+            </div>
+        </div>
+    <?php } ?>
+
+
+<script type="text/javascript">
+    Gc.initTableList();
+    function changeUserNameOrder(order){
+        $.ajax({
+            'url'   :'/admin/config/user',
+            'type'  :'POST',
+            'data'  :{'setUserNameOrder':order},
+            'success':function(result){ //alert('question'+result);
+                //alert("Order change");
+                location.reload();
+            }
+        });
+    }
+    function changeUserFNameOrder(order){
+        $.ajax({
+            'url'   :'/admin/config/user',
+            'type'  :'POST',
+            'data'  :{'setUserFNameOrder':order},
+            'success':function(result){ //alert('question'+result);
+                //alert("Order change");
+                location.reload();
+            }
+        });
+    }
+    function changeUserLNameOrder(order){
+        $.ajax({
+            'url'   :'/admin/config/user',
+            'type'  :'POST',
+            'data'  :{'setUserLNameOrder':order},
+            'success':function(result){ //alert('question'+result);
+                //alert("Order change");
+                location.reload();
+            }
+        });
+    }
+    function changeUserEmailOrder(order){
+        $.ajax({
+            'url'   :'/admin/config/user',
+            'type'  :'POST',
+            'data'  :{'setUserEmailOrder':order},
+            'success':function(result){ //alert('question'+result);
+                //alert("Order change");
+                location.reload();
+            }
+        });
+    }
+
+if (window.location.search.indexOf('page') > -1 || window.location.search.indexOf('c') > -1 || window.location.search.indexOf('q') > -1) {
+    //alert('track present');
+} else {
+    var url = window.location.href;
+    window.location.href = url + "?page=1&c=3&q=fre";
+}
+</script>

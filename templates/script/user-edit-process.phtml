@@ -1,0 +1,160 @@
+<?php
+	use GcFrontend\Controller\DbController as DbController;
+	$dbConfig = new DbController();
+        $adapter = $dbConfig->locumkitDbConfig();
+	use Zend\Db\Sql\Sql;
+	$sql = new Sql($adapter);
+	$update = $sql->update();
+	$select = $sql->select();
+	/*$select->from('user');
+	$statement = $sql->prepareStatementForSqlObject($select);
+	$results = $statement->execute();
+	$row = $results->current();
+	$name = $row['firstname']; // working*/
+
+    use GcFrontend\Controller\JobmailController as MailController;
+	$mailController = new MailController();
+	$header = $mailController->mailHeader();
+	$footer = $mailController->mailFooter();
+
+// check for session
+if(empty($_SESSION['user_id'])&& $_SESSION['user_id']==''){
+	$this->redirect()->toUrl('/login-form');
+	return true;
+}
+
+$request = $this->getRequest();
+if($request->isPost())
+{
+    $post = $request->getPost();
+	$id = $post->get('id');
+	$lastname = $post->get('lastname');
+	$firstname = $post->get('firstname');
+	$email = $post->get('email');
+    $login = $post->get('login');
+    $password = $post->get('password');
+    $answer_hash = $post->get('answer_hash');
+    $answer = substr(sha1($post->get('answer')), 5, 10);
+	$password_new="";
+	$company=$post->get('company');
+	$address=$post->get('address');
+	$city=$post->get('city');
+	$telephone=$post->get('telephone');
+	$mobile=$post->get('mobile');
+	$dob=date('Y-m-d',strtotime($post->get('dob')));
+	$gender=$post->get('gender');
+	$address=$post->get('address');
+	$zip=$post->get('zip');
+	if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){
+	  $max_distance=$post->get('max_distance');
+	  $min_rate=$post->get('minimum_rate');
+	  $day_with_rate = array();
+	  $day_with_rate = array(
+	  		'Monday' 	=> $min_rate[0],
+	  		'Tuesday' 	=> $min_rate[1],
+	  		'Wednesday' => $min_rate[2],
+	  		'Thursday' 	=> $min_rate[3],
+	  		'Friday' 	=> $min_rate[4],
+	  		'Saturday' 	=> $min_rate[5],
+	  		'Sunday' 	=> $min_rate[6],
+	  	);	
+	 
+	  /*echo "<pre>";
+	  print_r(serialize($day_with_rate));
+	  echo "</pre>";
+	  exit();*/
+	  $minimum_rate=serialize($day_with_rate);
+	}else{
+	  $max_distance="";
+	  $minimum_rate="";
+	}
+	
+	$sqlString_get="select * from user where email='$email' and id!='$id'";	
+    $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+	$row111 = $results0->current();
+    $id2 = $row111['id'];
+
+    /* Ptofile Img section */
+    $sqlString_ux="select profile_image,uid from user_extra_info where uid='$id'";	
+    $results_ux = $adapter->query($sqlString_ux, $adapter::QUERY_MODE_EXECUTE);
+    $rowux = $results_ux->current();
+	$profile_image_db = $rowux['profile_image'];
+
+	if(isset($_FILES["profile_pic"]["name"]) && $_FILES["profile_pic"]["name"] != ''){
+		unlink($profile_image_db);
+		//fileupload section
+		$target_dir = "public/media/files/profile_pic/";
+		$target_filenew = md5(uniqid().time())."_". basename($_FILES["profile_pic"]["name"]);
+		$target_file = $target_dir . $target_filenew;
+		if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
+			$profile_image=$target_file;
+		}
+	}else{
+		$profile_image = $profile_image_db;
+	}
+
+    if(!empty($id2))
+    {
+        return array('error_message' => 'Email ID entered is already exist,please try other emailID.');
+    }
+    else
+    {
+        // working code
+		$fname=$firstname;
+		if($password!=''){
+		   $password_new=sha1($password);
+		   $keyValues=array('updated_at'=>'NOW()','firstname'=>$firstname,'lastname'=>$lastname,'password'=>$password_new);
+		}else{
+			$keyValues=array('updated_at'=>'NOW()','firstname'=>$firstname,'lastname'=>$lastname); //,'email'=>$email,'login'=>$login
+		}
+		$update = $sql->update();
+		$update->table('user');
+		$update->set( $keyValues );
+		$update->where( array( 'id' => $id ) );
+        $statement  = $sql->prepareStatementForSqlObject( $update );
+        $results    = $statement->execute();
+		if($profile_image!=""){
+			//$keyValues2=array('mobile'=>$mobile,'telephone'=>$telephone,'address'=>$address,'city'=>$city,'zip'=>$zip,'company'=>$company,'profile_image'=>$profile_image,'max_distance'=>$max_distance,'minimum_rate'=>$minimum_rate); 
+			$sqlString_update="update user_extra_info set mobile='$mobile',telephone='$telephone',address='$address',city='$city',zip='$zip',company='$company',profile_image='$profile_image' where uid='$id'"; 
+		}else{
+		    //$keyValues2=array('mobile'=>$mobile,'telephone'=>$telephone,'address'=>$address,'city'=>$city,'zip'=>$zip,'company'=>$company,'max_distance'=>$max_distance,'minimum_rate'=>$minimum_rate);
+			$sqlString_update="update user_extra_info set mobile='$mobile',telephone='$telephone',address='$address',city='$city',zip='$zip',company='$company' where uid='$id'"; 
+		}
+		echo $sqlString_update;
+		//exit();
+		/*$update2 = $sql->update();
+		$update2->table('user_extra_info');
+		$update2->set( $keyValues2 );
+		$update2->where( array( 'uid' => $id ) );
+		$statement2  = $sql->prepareStatementForSqlObject($update2); 
+		$results2    = $statement2->execute();//print_r($results2);die();print_r($statement2); */
+				
+        $results_get = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE); //print_r($results_get); die();
+		
+		/******Send Email to user on Profile update ******/
+		$message=$header.'
+					<div style="padding: 25px 50px 5px; text-align: left;">
+					<p>Hello '.$fname.',</p>
+					<p>Your account details have just been changed.</p>
+<p>If this was you then you can safely ignore this email.</p>
+<p>If this was not you, your account has been compromised. Please follow these steps.</p>
+					
+<p>1- Reset your password</p>
+<p>2- Check your account details</p>
+					
+					</div>'.$footer;
+		$mail = new \Gc\Mail('utf-8', $message);
+		$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+		$mail->setSubject('Profile update notification');
+		$mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+		$mail->addTo($email, $fname);
+		$mail->send();
+				
+		/***********SEND email end*************/
+	
+        $this->flashMessenger()->addSuccessMessage('Information updated.');
+        $this->redirect()->toUrl('/user-edit');
+        return TRUE;
+    }
+}
+?>

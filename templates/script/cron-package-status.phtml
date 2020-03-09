@@ -1,0 +1,10 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use GcFrontend\Controller\DbController as DbController;
+use Zend\Db\Sql\Sql;
+use GcFrontend\Controller\PackageUpgradeController as PackageUpgradeController;
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$pkgUpgController = new PackageUpgradeController();
+echo $currentDate = date("Y-m-d");
+$pkgUpgController->updatePackageDetailsStatusOnCron($currentDate,$adapter);

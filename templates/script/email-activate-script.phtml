@@ -1,0 +1,174 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use Zend\Db\Sql\Sql;
+use GcFrontend\Controller\DbController as DbController;
+use GcFrontend\Controller\JobmailController as MailController;
+
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+
+/* Check if url has email parameter */
+$helper = new Zend\View\Helper\ServerUrl();
+$url = $helper->__invoke(true);
+//echo $url; //full url
+$str = explode('?',$url);
+$str2 = explode('-',$str[1]); 
+//print_r($str2);
+$get_email = $str2[0]; // email 
+if ($get_email == '') {
+	//$this->redirect()->toUrl('/');
+}
+
+$sql = new Sql($adapter);
+$update = $sql->update();
+$select = $sql->select();
+$select->from('user');
+$statement = $sql->prepareStatementForSqlObject($select);
+$results = $statement->execute();
+$row = $results->current();
+$name = $row['firstname']; // working
+
+// email controller
+
+$mailController = new MailController();
+$header = $mailController->mailHeader();
+$footer = $mailController->mailFooter();
+
+$request = $this->getRequest();
+if($request->isPost())
+{
+    $post = $request->getPost();
+    $email = $post->get('email');
+    $get_email = $post->get('get_email');
+    $get_date = sha1($post->get('get_date'));
+    //$answer_hash = $post->get('answer_hash');
+    //$answer = substr(sha1($post->get('answer')), 5, 10);
+    $retrieve_password_key = $get_email;
+	
+	$sqlString_get="select * from user where email='$email' and TIMEDIFF(created_at, now()) <  '24:00:00'";	
+    $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+	$row111 = $results0->current();
+    $id = $row111['id'];
+	$role_id = $row111['user_acl_role_id']; // freelancer=2 and employer=3
+	$proid = $row111['user_acl_profession_id']; 
+	$email = sha1($row111['email']);
+	$user_acl_package_id = $row111['user_acl_package_id'];
+	$email22 = $row111['email'];
+	$fname = $row111['firstname'];
+	$lname = $row111['lastname'];
+	$isActive = $row111['active'];
+	/*print_r($results0);
+	
+	echo "$get_email";
+	die('STOOP');*/
+    if(empty($get_email) or empty($id))
+    {
+        $msg="Verification link is may be expired please check or generate new";
+    	$this->flashMessenger()->addErrorMessage($msg);    	
+        $this->redirect()->toUrl($url.'?verified1');
+        return TRUE;
+    }
+    if($id!='' && (!$isActive || $isActive == 3))
+    {
+    	/************Send WELCOME email noticiation to LOCUM ****************/
+		if($role_id==2){
+			$keyValues=array('updated_at'=>'NOW()','retrieve_password_key'=>'','active'=>'1');
+			$update = $sql->update();
+			$update->table('user');
+			$update->set( $keyValues );
+			$update->where( array( 'email' => $email22 ) );
+	        $statement  = $sql->prepareStatementForSqlObject( $update );
+	        $results    = $statement->execute();
+			$msg="Email verified successfully, please login and update your profile";
+			$message = $header.'
+					<div style="padding: 25px 50px 5px; text-align: left;">
+					<p>Dear '.$fname.' '.$lname.',</p>
+					<p>Your account is now live.</p>
+					<p>Thank you for registering with Locumkit. A platform created by locums for locums. A platform where we have listened to you and are now ready to bring you a platform that will make locum life hassle free.</p>
+					<p>We are in the process of bringing on board employers, with more joining each day.</p>
+					<p>We are all about <strong>empowering</strong> - an example being where we will never restrict you leaving direct details with the employer, unlike any other agency.</p>
+					<p>Some key benefits: </p>
+					<ul>
+						<li><p>Innovative calendar tool enabling complete management of your diary</p></li>
+						<li><p>Tailored job notifications that eliminate jobs that are too far, too low a rate or at a store you do not like</p></li>
+						<li><p>24/7 access via our website or app, available on both <strong>iOS</strong> and <strong>Android</strong> platforms</p></li>
+						<li><p>Instant job alerts</p></li>
+						<li><p>Income/expense and job reminders EVEN if the job is not through our platform</p></li>
+						<li><p>Up to date, automated income and expense reporting EVEN if the jobs are not through our platform</p></li>
+						<li><p>Reports tailored to your needs as a locum such as the <strong>Open Invoices</strong> report, which allows you to see at a snapshot which employers have paid you and which have yet to</p></li>
+						<li><p>Year-end statutory compliance - submission of all your accounts and tax returns, carried out by a dual qualified Chartered Accountant and Optometrist</p></li>
+					</ul>
+					<p>We are fully aware that we are a work in progress. We are continioulsy looking to improve our platform. We listened to your feedback from our launch at 100% optical and have already made changes to our site and app. However if you feel further improvements can be made, we would love to hear from you.</p>
+					<p>We hope you enjoy using Locumkit and get to embrace all that it has to offer.</p>
+					</div>'.$footer;
+
+			$mail = new \Gc\Mail('utf-8', $message);
+			$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+			$mail->setSubject('Locumkit Account Verified');
+			$mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'), $fname);
+			$mail->addTo($email22);
+			$mail->send();
+			$msg="Email verification approved, please login to use the site";
+		}
+		// send email to admin after email verification for employer
+		if($role_id==3){
+		
+		
+		$sqlPro = "SELECT name , description from user_acl_professional WHERE id='$proid'";
+            $sqlProData = $adapter->query($sqlPro, $adapter::QUERY_MODE_EXECUTE);
+            $sqlProval = $sqlProData->current();
+		
+		
+			$message = $header.'
+					<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+					<p>Hello <b>Admin</b>,</p>
+					<h3>Activate employer: please check employer details</h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Email</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$email22.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$fname.' '.$lname.'</td>
+					  </tr>
+					   <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Profession</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$sqlProval['name'].'</td>
+					  </tr>
+					   <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">ID</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$id.'</td>
+					 </table><br/>
+					<p><p>
+					</div>'.$footer;
+
+			$mail = new \Gc\Mail('utf-8', $message);
+			$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+			$mail->setSubject('Email verified - Activate user');
+			$mail->setFrom($email22, $fname);
+			$mail->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+			$mail->send();
+			$msg="Email verified successfully and your profile will get active in 24 hrs";
+		
+		}
+		// update user_package_details for package
+		/*if($user_acl_package_id!=0){
+			$package_active_date=date('Y-m-d');
+			$time = strtotime(date('Y-m-d'));
+			$package_expire_date = date("Y-m-d", strtotime("+2 month", $time));
+			
+			$sqlString_update="update user_package_details set package_active_date='$package_active_date',package_expire_date='$package_expire_date',package_status=1 where user_id='$id'";	
+			$results_update = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE);
+		}*/
+		
+        $this->flashMessenger()->addSuccessMessage($msg);        
+        $this->redirect()->toUrl($url.'?verified1');
+        return TRUE;
+    }else{
+    	$msg="You are already verified user, please try to login";
+    	$this->flashMessenger()->addErrorMessage($msg);    	
+        $this->redirect()->toUrl($url.'?verified1');
+        return TRUE;
+    }
+}

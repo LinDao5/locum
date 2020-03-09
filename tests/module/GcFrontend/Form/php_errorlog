@@ -1,0 +1,1 @@
+[28-Apr-2016 08:02:13 CST6CDT] PHP Fatal error:  Class 'PHPUnit_Framework_TestCase' not found in /home/fudugoso/public_html/locumkit/tests/module/GcFrontend/Form/InstallTest.php on line 39

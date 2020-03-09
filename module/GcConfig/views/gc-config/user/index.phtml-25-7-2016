@@ -1,0 +1,226 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+
+$paginatorEmp = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userEmp));
+$paginatorEmp->setItemCountPerPage(10);
+$paginatorEmp->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorFre = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userFre));
+$paginatorFre->setItemCountPerPage(10);
+$paginatorFre->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+$paginatorAdm = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userAdm));
+$paginatorAdm->setItemCountPerPage(10);
+$paginatorAdm->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<?php
+    $qus = 'fre';
+    if (isset($_GET['q']) && $_GET['q'] == 'emp') {
+        $qus = 'emp';
+    }elseif(isset($_GET['q']) && $_GET['q'] == 'adm'){
+        $qus = 'adm';
+    }
+?>
+<div id="tabs">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($qus == 'fre') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=fre">Freelancer</a></li>
+            <li class="<?php if ($qus == 'emp') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=emp">Employer</a></li>
+            <li class="<?php if ($qus == 'adm') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user?q=adm">Admin</a></li>
+        </ul>
+    </div>
+    <?php if ($qus == 'emp') {?>
+        <div id="emp-tab">
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="10%">
+                    <col width="5%">
+                    <col width="5%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Lastname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Firstname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Login')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Is active')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    /*echo "<pre>";
+                    print_r($this->users);
+                    echo "</pre>";*/
+                    foreach ($paginatorEmp as $user):
+                    ?>
+                        <tr>
+                            <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getActive() ? 'Yes' : 'No'); ?></td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/edit', array('id' => $user->getId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/delete', array('id' => $user->getId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php  endforeach; ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorEmp, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user?q=emp'));?>
+            </div>
+        </div>
+    <?php }elseif($qus == 'fre'){ ?>
+        <div id="fre-tab">
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="10%">
+                    <col width="5%">
+                    <col width="5%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Lastname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Firstname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Login')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Is active')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    /*echo "<pre>";
+                    print_r($this->users);
+                    echo "</pre>";*/
+                    foreach ($paginatorFre as $user): 
+                    ?>
+                        <tr>
+                            <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                            <td><?php echo $this->escapeHtml($user->getActive() ? 'Yes' : 'No'); ?></td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/edit', array('id' => $user->getId())); ?>" class="edit-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a href="<?php echo $this->url('config/user/delete', array('id' => $user->getId())); ?>" class="delete-line">
+                                    <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                </a>
+                            </td>
+                        </tr>
+                    <?php  endforeach; ?>
+                </tbody>
+            </table> 
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user?q=fre'));?>
+            </div>
+        </div>
+    <?php }elseif($qus == 'adm'){ ?>
+        <div id="fre-tab">
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="10%">
+                    <col width="5%">
+                    <col width="5%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th><?php echo $this->escapeHtml($this->translate('Lastname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Firstname')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Login')); ?></th>
+                        <th><?php echo $this->escapeHtml($this->translate('Is active')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+                        <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    /*echo "<pre>";
+                    print_r($this->users);
+                    echo "</pre>";*/
+                    foreach ($userAdm as $user): 
+                        
+                    ?>
+                            <tr>
+                                <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                                <td><?php echo $this->escapeHtml($user->getActive() ? 'Yes' : 'No'); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/edit', array('id' => $user->getId())); ?>" class="edit-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>" />
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <a href="<?php echo $this->url('config/user/delete', array('id' => $user->getId())); ?>" class="delete-line">
+                                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                                    </a>
+                                </td>
+                            </tr>
+                    <?php  endforeach; ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                 <?php echo $this->paginationControl($paginatorAdm, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user?q=adm'));?>
+            </div>
+        </div>
+    <?php } ?>
+
+
+<script type="text/javascript">    
+    Gc.initTableList();
+</script>

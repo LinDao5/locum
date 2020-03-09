@@ -1,0 +1,166 @@
+<?php	
+    date_default_timezone_set('Europe/London');
+  $actual_link = $_SERVER[REQUEST_URI];
+  $_SESSION['action_url'] = $actual_link;
+	/* Check usre login */
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$uid=$_SESSION['user_id'];
+	}else{ 
+		$this->redirect()->toUrl('/login-form');
+	}
+	/* Job Id */
+	$cjid = '';
+	if (isset($_GET['e']) && $_GET['e'] != '') { 
+		$cjid = $_GET['e'];
+	}else{
+		$this->redirect()->toUrl('/404');
+	}
+	
+
+	/* User type */
+	$uType = '';
+	if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] != '') {
+		$uType = $_SESSION['user_role_id'];
+	}else{
+		$this->redirect()->toUrl('/login-form');
+	}
+	use GcFrontend\Controller\DbController as DbController;
+	use Zend\Db\Sql\Sql;
+	use Zend\Db\TableGateway\TableGateway;
+	use Gc\User\JobAction\Model as ActionModel;
+	use Gc\User\Job\Model as JobModel;
+	use Gc\User\JobCancel\Model as CancelModel;
+	use GcFrontend\Controller\JobmailController as MailController;
+	use Gc\User\Finance\Employertrans\Model as EmployertransModel;
+    	$employertransModel = new EmployertransModel();
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	$sql = new Sql($adapter);
+	$jobModel 	= new JobModel();
+	$actionModel = new ActionModel();
+	$cancelModel = new CancelModel();
+	$mailController = new MailController();
+	$host=$this->getRequest()->getUri()->getHost();
+	
+
+	//check job association with user 
+	if ($uType == 3 ) {
+		//Check job associate with Employer
+		$sqlString_get="SELECT * FROM job_post WHERE job_id = '$cjid' AND e_id='$uid' AND (job_status = 1 OR job_status=3 OR job_status = 4 OR job_status= 6) ";
+        $result = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+        $getJobObj = $result->current();
+        if(empty($getJobObj) || strtotime(str_replace('/', '-', $getJobObj['job_date']) ) < strtotime(date('d-m-Y'))){
+        	$this->redirect()->toUrl('/job-listing');
+		}
+	}elseif($uType == 2){
+		//Check job associate with freelance
+		$sqlString_get="SELECT * FROM job_post WHERE job_status = 4 AND job_id IN (SELECT job_id FROM job_action WHERE action = 3 AND f_id = '$uid' AND job_id = '$cjid')";
+        $result = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+        $getJobObj = $result->current();
+        if(empty($getJobObj) || strtotime(str_replace('/', '-', $getJobObj['job_date']) ) < strtotime(date('d-m-Y'))){
+			 $this->redirect()->toUrl('/job-listing');
+		}
+	}
+
+	// Submit cancel form and perform the action 
+	$request = $this->getRequest();
+	if($request->isPost())
+	{
+		$post = $request->getPost();
+		$cancel_reason = $post->get('cancel-reason');
+		// Cancel action 
+		if ($uType == 3 ) {
+			
+			//Notification to freelancer 
+			$sqlInvitedFre = "SELECT f_id FROM job_action WHERE job_id = '$cjid' AND action = 3";
+			$result = $adapter->query($sqlInvitedFre, $adapter::QUERY_MODE_EXECUTE);
+        	$getFreObj = $result->toArray();
+
+			
+        	if(count($getFreObj) > 0){
+
+	        	$sqlCheckJobStatus="SELECT * FROM job_post WHERE job_id = '$cjid' AND e_id='$uid' AND (job_status = 4) ";
+				$checkJobStatus= $adapter->query($sqlCheckJobStatus, $adapter::QUERY_MODE_EXECUTE);
+				$jobStatus= $checkJobStatus->current();
+				//Insert reson of cancelation
+				$cancelModel->addCancelRecord($cjid,$uid,3,$cancel_reason,1);
+
+				if(!empty($jobStatus)){
+					//Employer Cancel job action update
+					$actionModel->updateEmpCancelJobaction($cjid,7,1); // accepted job
+	        	}else{
+					//Employer Cancel job action update
+					$actionModel->updateEmpCancelJobaction($cjid,8,0); // Waiting job
+	        	}
+	        	//Job Main table status update
+				$jobModel->jobStatusUpdate($cjid,8);
+	        	foreach ($getFreObj as $key => $freData) {
+		        	$fid = $freData['f_id'];
+		        	$mailController->cancelJobByEmpNotificationToFreelancer($fid , $cjid,$cancel_reason, $adapter );
+		        	// Notify to Employer 
+		        	$mailController->cancelJobByEmpNotificationToEmployer($uid ,$fid, $cjid,$cancel_reason, $adapter );
+		        	// Notify to Admin 
+		        	$mailController->cancelJobByEmpNotificationToAdmin($uid , $cjid,$cancel_reason, $adapter );
+		        	
+		        	//delete data from employer finance
+	                	$employertransModel->deleteFinanceByjobid($uid,$cjid,$fid);
+		        	
+	        	}
+	        	
+	        }else{
+	            //Notification to private freelancer
+	     
+	            $sqlInvitedpFre = "SELECT puid FROM private_user_job_action WHERE j_id = '$cjid' AND status = 3";
+	            $result = $adapter->query($sqlInvitedpFre, $adapter::QUERY_MODE_EXECUTE);
+	            $getpFreObj = $result->toArray();
+	            //Job Main table status update
+				$jobModel->jobStatusUpdate($cjid,8);
+	            foreach ($getpFreObj as $key => $freData) {
+	            	$sqlUpdatepFre = "UPDATE private_user_job_action SET status = 5 WHERE j_id = '$cjid' AND puid = '$fid'";
+	            	$result = $adapter->query($sqlUpdatepFre, $adapter::QUERY_MODE_EXECUTE);
+
+	                $fid = $freData['puid'];
+	                $mailController->cancelJobByEmpNotificationToPrivateFreelancer($fid , $cjid,$cancel_reason, $adapter );
+	                // Notify to Employer
+	                $mailController->cancelJobByEmpNotifyToEmployerIFPrivatefreelancer($uid ,$fid, $cjid,$cancel_reason, $adapter );
+		   			// Notify to Admin
+	                $mailController->cancelJobByEmpNotificationToAdmin($uid , $cjid,$cancel_reason, $adapter );
+	          
+	            }   
+	        }
+        	
+			
+			
+		}elseif($uType == 2){
+			
+			$sqlJobEmp = "SELECT e_id,job_relist FROM job_post WHERE job_id = '$cjid'";
+			$result = $adapter->query($sqlJobEmp, $adapter::QUERY_MODE_EXECUTE);
+        	$getEmpObj = $result->toArray();
+        	
+			//Insert reson of cancelation
+			$cancelModel->addCancelRecord($cjid,$uid,2,$cancel_reason,2);
+			//Job Main table status update
+			$jobModel->jobStatusUpdate($cjid,8);
+			//Freelancer Cancel job action update
+			$actionModel->updateJobaction($cjid,$uid,6,0);
+
+			foreach ($getEmpObj as $key => $empData) {
+	        	$eid = $empData['e_id'];
+	        	$is_relist = $empData['job_relist'];
+
+				$mailController->cancelJobByFreNotificationToFreelancer($eid ,$uid, $cjid,$cancel_reason, $adapter );
+		        // Notify to Employer 
+	        	$mailController->cancelJobByFreNotificationToEmployer($uid ,$eid, $cjid,$cancel_reason,$is_relist, $adapter );
+	        	// Notify to Admin 
+	        	$mailController->cancelJobByFreNotificationToAdmin($uid , $cjid,$cancel_reason, $adapter );
+	        	
+	        	//delete data from employer finance
+                $employertransModel->deleteFinanceByjobid($eid,$cjid,$uid);
+	        }
+		}
+		$this->flashMessenger()->addSuccessMessage('Job is cancelled');
+		$this->redirect()->toUrl('/job-listing');
+        return true;
+
+	}
+	

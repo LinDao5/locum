@@ -1,0 +1,84 @@
+<?php
+	use Gc\User\JobAction\Model as ActionModel;
+	use Gc\User\Job\Model as JobModel;
+	use GcFrontend\Controller\JobmailController as MailController;
+	use GcFrontend\Controller\EndecryptController as Endecrypt;
+	use GcFrontend\Controller\DbController as DbController;
+	$dbConfig 		= new DbController();
+	$adapter 		= $dbConfig->locumkitDbConfig();
+	$endecrypt 		= new Endecrypt();
+	$actionModel 	= new ActionModel();
+	$jobModel 		= new JobModel();
+	$mailController = new MailController();    
+    $host 			= "http://".$this->getRequest()->getUri()->getHost();
+	$selectedTime 	= date("Y-m-d H:i:s");
+	$endTime1 		= strtotime("-15 minutes", strtotime($selectedTime));
+	$endTime2 		= strtotime("-9 minutes", strtotime($selectedTime));
+	$endTime3 		= strtotime("-10 minutes", strtotime($selectedTime));
+	$currentDate 	= date("Y-m-d H:i:s", $endTime1);
+	$currentDate2 	= date("Y-m-d H:i:s", $endTime2);
+	$currentDate3 	= date("Y-m-d H:i:s", $endTime3);
+	/* Check if invitetion send to current login user or not*/
+	echo $sqlAction 		= "SELECT * from job_action WHERE update_date < '$currentDate' AND (action = 1 OR action = 5)";	
+	$actionData 	= $adapter->query($sqlAction, $adapter::QUERY_MODE_EXECUTE);
+	$data 			= $actionData->toArray();
+
+	echo "<pre>";
+	print_r($data);
+	echo "</pre>";
+
+
+	/* Check if private locum invited */
+	echo $sqlPrivateLocumAction = "SELECT * FROM private_user_job_action WHERE j_id IN (SELECT job_id from job_action WHERE update_date < '$currentDate' AND (action = 1 OR action = 5))";	
+	$actionPrivateLocumData = $adapter->query($sqlPrivateLocumAction, $adapter::QUERY_MODE_EXECUTE);
+	$private_locum_data = $actionPrivateLocumData->toArray();
+
+	echo "<pre>";
+	print_r($private_locum_data);
+	echo "</pre>";
+	
+	if (!empty($data)) {
+		foreach ($data as $key => $value) {
+			$job_id = $value['job_id'];
+			$f_id	= $value['f_id'];
+			$link 	= '<a style="outline: none !important;border-radius: 25px;margin-bottom: 15px;font-size: 18px;color: #fff;background-color: #2dc9ff;padding: 10px 35px;text-decoration: none;text-transform: uppercase;font-weight: 500;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($f_id).'">Accept</a> <!-- OR &nbsp;<a href="'.$host.'/freeze-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($f_id).'" style=" background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;">Freez Job</a> --> ';
+			$jobModel->updateJobCron($value['job_id'],1);
+			$actionModel->updateJobactionCron(0);
+			$actionModel->updateJobactionCronReFreeze(0);
+			$mailController->sendExpireFreezeNotification($job_id,$f_id,1,$adapter,$link);
+		}
+	}
+
+	/* Send notification of 5min expired freeze */
+	$sqlAction 	= "SELECT * from job_action WHERE (update_date < '$currentDate2' AND update_date > '$currentDate3'  AND action = 1) ";	
+	$actionData = $adapter->query($sqlAction, $adapter::QUERY_MODE_EXECUTE);
+	$data 		= $actionData->toArray();
+
+
+	if (!empty($data)) {
+		foreach ($data as $key => $value) {
+			$job_id = $value['job_id'];
+			$f_id	= $value['f_id'];
+			$link ='<a style="outline: none !important;border-radius: 25px;margin-bottom: 15px;font-size: 18px;color: #fff;background-color: #2dc9ff;padding: 10px 35px;text-decoration: none;text-transform: uppercase;font-weight: 500;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($f_id).'">Accept</a> <!-- OR &nbsp;<a href="'.$host.'/freeze-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($f_id).'" style=" background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;">Freez Job</a> -->';
+			$mailController->sendExpireFreezeNotification($job_id,$f_id,2,$adapter,$link);
+		}
+	}
+
+	
+	//Send notification private locum
+	if (!empty($private_locum_data)) {
+		foreach ($private_locum_data as $key => $private_data) {
+			$job_id = $private_data['j_id'];
+			$f_id	= $private_data['puid'];
+			$link 	= '<a style="outline: none !important;border-radius: 25px;margin-bottom: 15px;font-size: 18px;color: #fff;background-color: #2dc9ff;padding: 10px 35px;text-decoration: none;text-transform: uppercase;font-weight: 500;" href="'.$host.'/accept-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('p').'&u='.$endecrypt->encryptIt($f_id).'">Accept</a> <!-- OR &nbsp;<a href="'.$host.'/freeze-job?j='.$endecrypt->encryptIt($job_id).'&jtype='.$endecrypt->encryptIt('1').'&utype='.$endecrypt->encryptIt('n').'&u='.$endecrypt->encryptIt($f_id).'" style=" background: #00A9E0; padding: 10px 15px; color: #fff; font-size: 16px; text-decoration: none; text-transform: uppercase;">Freez Job</a> --> ';	
+			//get private locum email 
+			$sql_private_locum_email = "SELECT p_name,p_email FROM private_user WHERE p_uid = '$f_id'";
+			$private_locum_obj = $adapter->query($sql_private_locum_email, $adapter::QUERY_MODE_EXECUTE);
+			$private_locum 		= $private_locum_obj->current();
+			$private_locum_name =  $private_locum->p_name;
+			$private_locum_email =  $private_locum->p_email;
+			$mailController->sendExpireFreezeNotificationPrivateLocum($job_id,$f_id,$private_locum_name, $private_locum_email,$adapter,$link);
+		}
+	}
+
+	

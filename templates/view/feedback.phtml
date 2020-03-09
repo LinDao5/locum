@@ -1,0 +1,249 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+	use Gc\User\JobReminder\OnDayModel as OnDayModule;
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	use GcFrontend\Controller\JobmailController as MailController;
+	use Zend\Db\Sql\Sql;
+	use Gc\Registry;
+	use GcFrontend\Controller\DbController as DbController;
+	use Gc\User\Feedback\Model as FeedbackModel;
+	$feedbackModel 	= new FeedbackModel();
+	$encypt = new Ecryption();
+	$onDayModule = new OnDayModule();
+	$mailController = new MailController();
+	$dbConfig = new DbController();
+	$adapter = $dbConfig->locumkitDbConfig();
+	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	$actual_link = $_SERVER['REQUEST_URI'];
+	$_SESSION['action_url'] = $actual_link;
+	$u_id = 0;
+    if (isset($_GET['u']) && $_GET['u'] != '') {
+      	$u_id = $encypt->decryptIt($_GET['u']);
+    }else{
+    	echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/404'</script>"; 
+    }
+
+
+use GcFrontend\Controller\PackagePrivilegesController;
+$packagePrivilegesController = new PackagePrivilegesController();
+if($packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$u_id,null) == 0 && $_SESSION['user_role_id'] == 2){
+	$url= $this->serverUrl().'/user-profile'; echo "<script type='text/javascript'>window.location='".$url."'</script>";
+}
+
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_id']==$u_id){
+		$page_title ='';
+		if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2){
+		  	$page_title ='Locum Feedback';
+		}elseif (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3) {
+			$page_title ='Employer Feedback';
+		}
+	}else{
+		$actual_link = $_SERVER['REQUEST_URI'];
+		$_SESSION['action_url'] = $actual_link;
+		echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+	}  
+  	$job_id = 0;
+    if (isset($_GET['j']) && $_GET['j'] != '') {
+        $job_id = $encypt->decryptIt($_GET['j']);
+    	$job_id = $encypt->decryptIt($_GET['j']);
+    	$sqlJob = "SELECT * from job_post WHERE job_id = '$job_id'";	
+        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+        $job = $jobView->current();
+    	$jobTitle 	= $job['job_title'];
+    	$jobId 		= $job['job_id'];
+    	$jobRate 	= $job['job_rate'];
+    	$jobDesc 	= $job['job_post_desc'];
+
+    	$sqlOnDayJob = "SELECT * from job_on_day WHERE j_id = '$job_id'";	
+	    $jobOnDayData = $adapter->query($sqlOnDayJob, $adapter::QUERY_MODE_EXECUTE);
+	    $jobOnDay = $jobOnDayData->current();
+        $jobEmpId = $jobOnDay['e_id'];
+        $jobFreId = $jobOnDay['f_id'];
+    }else{
+    	echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/404'</script>"; 
+    }
+$checkFeedbackData = $feedbackModel->checkFeedback($job_id,$_SESSION['user_id'],$_SESSION['user_role_id']); 
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $serverUrl();?>/user-profile">My Dashboard</a></li>
+                    <li><a href="javascript:void(0)">Feedback Form</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3> <?php echo $page_title ; ?> </h3>
+                </div>
+            </div>
+            
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+  	<div class="container">
+      	<div class="row">
+			<div class="contents white-bg">
+			    <div class="welcome-heading">
+					<h1>Leave your feedback</h1>
+					<hr class="shadow-line">
+		        </div>
+				<div class="feedback-form">
+					<?php 
+					if($checkFeedbackData == 1){
+						echo "<h3 id='feedback-msg'><span style='color:#EBA34D'> Feedback already submitted.</span></h3>";
+					}else{
+					$userType = 0;
+						if (isset($_GET['utype']) && $_GET['utype'] == 'emp' && $_SESSION['user_role_id'] == 3) {
+							$this->script('employer-feedback');
+						}elseif (isset($_GET['utype']) && $_GET['utype'] == 'fre' && $_SESSION['user_role_id'] == 2) {
+							$this->script('freelancer-feedback');
+						}else{
+							echo "<script type='text/javascript'>alert('You are not valid user to feedback on this job.');window.location='".$this->serverUrl()."/404'</script>";
+						}
+					}						
+					?>
+					
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-1.10.2.min.js'); ?>"></script>
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/bootstrap.min.js'); ?>"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+	//  Check Radio-box
+		//alert("#note-rate-"+i+" input:radio");
+		//$("div[id*='note-rate-']").click( function(){
+			//var id = $(this).attr('id');
+			//var qusnum = id.replace('note-rate-',' ').trim();
+			//$("#"+id+" input:radio").attr("checked", false);
+		    $("div[id*='note-rate-'] input:radio").click(function(){
+		    	var id = $(this).parent().parent().attr('id');
+		    	var qusnum = id.replace('note-rate-',' ').trim();
+		    	$("#"+id+" input:radio").attr("checked", true);
+		        $("#"+id+" span").removeClass('checked');
+		        $(this).parent().addClass('checked');
+		        $("#rate-val-"+qusnum).val($(this).val());
+		        var values = [];
+		        var coutQus = $("input[name='ratevalue[]']").length;
+				$("input[name='ratevalue[]']").each(function() {
+				    values.push(isNaN(parseInt($(this).val())) ? 0 : parseInt($(this).val()));
+				});
+				var totalRateValues = 0;
+				$.each(values, function(){
+				    totalRateValues += this;
+				});
+				var perOfRating = (totalRateValues/(coutQus*5))*100;
+				$("#feedback-progress-bar").attr("aria-valuenow",perOfRating);
+				var pWidth = Math.round(perOfRating)+"%";
+				$("#feedback-progress-bar").css("width",pWidth);
+				$("#feedback-progress-bar").html('<div id="percentRating">'+perOfRating.toFixed(2)+"%</div>");
+				$("#total-rates").val((totalRateValues/(coutQus)).toFixed(1)); 
+
+		    });
+		//});
+
+		$("div[id*='qus-']").click( function(){
+			var id = $(this).attr('id');					
+			if (!$("#"+id+" a").hasClass("active")) {
+				$("#"+id+" a").addClass("active");
+				$('#'+id+' a span i').addClass("fa-minus");
+				$('#'+id+' a span i').removeClass("fa-plus");
+			}else{				
+				$("#"+id+" a").removeClass("active");
+				$('#'+id+' a span i').removeClass("fa-minus");
+				$('#'+id+' a span i').addClass("fa-plus");
+			}
+			
+		});
+	});
+	
+	function showQus(qusCollaps) {	
+		$('#'+qusCollaps).toggle(1000);
+	}
+
+	function submitfeedback(){
+		$(".lodader").css('display','block');
+		var name 				= $(".feedback-name").val();
+		var email 				= $(".feedback-email").val();
+		var uId 				= $("#user_id").val();
+		var touserid 			= $("#to_user_id").val();
+		var jId 				= $("#job_id").val();
+		var comment 			= $("#feed_comment").val();
+		var user_role 			= $("#user_role").val();
+		var user_cat 			= $("#user_cat").val();
+		var rating 				= $("#total-rates").val();
+		var feedback 			= '';
+		var feedbackQus 		= '';
+		var feedbackQuestionId 	= '';
+		var feedbackvalues 		= [];
+		var feedbackQusId 		= [];
+		var feedbackQus 		= [];
+		$("input[name='ratevalue[]']").each(function() {
+			feedbackvalues.push(isNaN(parseInt($(this).val())) ? 0 : parseInt($(this).val()));
+		});
+		feedback = feedbackvalues.toString();
+		$("input[name='fdqusid[]']").each(function() {
+			feedbackQusId.push(isNaN(parseInt($(this).val())) ? 0 : parseInt($(this).val()));
+		});
+		feedbackQuestionId = feedbackQusId.toString();
+		$("input[name='fdqus[]']").each(function() {
+			feedbackQus.push($(this).val());
+		});
+		feedbackQuestion = feedbackQus.toString();
+		
+		
+		if(isValidate() != 0){
+			$.ajax({
+	            'url'   :'/ajax-request',
+	            'type'  :'POST',
+	            'data'  :{'feedback_name':name,'feedback_email':email, 'feedback':feedback, 'feedbackQusId':feedbackQuestionId,'feedbackQus':feedbackQuestion, 'feedback_user_id':uId,'feedback_to_user_id':touserid, 'feedback_job_id':jId, 'feedback_comment':comment, 'user_role':user_role, 'user_cat':user_cat, 'rating':rating },
+	            'success':function(result){  
+	                console.log(result);
+	                $("#feedback-msg").html('');
+	                $(".lodader").css('display','none');
+	                if($.trim(result)=="1"){ 
+	                    $("#feedback-msg").html('<span style="color:green"> Feedback submitted successfully.</span>');
+	                    $("form#feedback-form").html('');
+	                }else if($.trim(result)=="2"){
+	                    $("#feedback-msg").html('<span style="color:#EBA34D"> Feedback already submitted.</span>');
+	                }else{
+	                    $("#feedback-msg").html('<span style="color:red"> Ohhh..! Some problem occurred.</span>');
+	                    //$("#feedback-msg").html(result);
+	                }
+
+	            }
+	        });
+	    }else{
+	    	$(".lodader").css('display','none');
+	    	$("#feedback-msg").html('<span style="color:red">Ohhh..! look like you miss somthing please check & try again.</span>');
+	    }
+	
+	}
+
+	function isValidate() {		
+		var valid = 1;
+		$("input[name='ratevalue[]']").each(function() {						
+			if ($(this).val() == '' ) {
+				valid = 0;
+			}
+		});
+		if ($("input[name='t_and_c']").prop("checked") == false  && valid == 1) {			
+			valid = 0;
+		}
+
+		return valid;		
+	}
+</script>

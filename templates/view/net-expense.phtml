@@ -1,0 +1,243 @@
+<?php
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2){
+    $uid=$_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>";
+}
+$currency = $this->config()->get('site_currency');
+$financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+$expenseRecord = $financeHelper->getAllExpense($uid,$financialYear,$filter , null , 1);
+$transchart = $financeHelper->chart_getAllExpense($uid,$financialYear,$filter);
+$overallincome = $financeHelper->getIncomeByuser($uid);
+$overallexpence = $financeHelper->getExpenceByuser($uid);
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                    <li><a href="#">Net Expense</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Net Expense</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section class="text-left">
+            
+            <div class="col-md-12 pad0">
+                <div class="marb0 text-capitalize text-center finance-page-head">Net Expense</div>
+            </div>
+                        
+            <div class="col-md-12 in_ex_pr_box">
+                        <div class="in_ex_pr_inbox">
+                            <div class="col-md-4 text-center">
+                                <h1 class="mar0" id="register_head_blue">Income</h1>
+                                <h2 class="mar0">
+                                    <?php echo $currency.$financeHelper->setPriceFormate($overallincome['job_rate']); ?></h2>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <h1 class="mar0" id="register_head_blue">Expense</h1>
+                                <h2 class="mar0">
+                                    <?php echo $currency.$financeHelper->setPriceFormate($overallexpence['cost']); ?></h2>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <h1 class="mar0" id="register_head_blue">Profit</h1>
+                                <h2 class="mar0"><?php $profit = $overallincome['job_rate'] - $overallexpence['cost'];
+                                    echo $currency.$financeHelper->setPriceFormate($profit); ?>
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+              
+               <div class="cash_man_chart2 wholeborder padb0">
+               <form action="" class="add_item_form form-inline">	
+                    <div class="col-md-12 pad0">
+                    <div class="financial-year-title col-md-7 bglightgrey">
+                    <h4 class="text-right">Please select your financial year &nbsp;&nbsp;&nbsp;&nbsp;: </h4>
+                    </div>
+                    <div class="financial-year-select col-md-5 bglightgrey">
+                                   
+                   <div class="form-group">
+                        <select name="year" class="filter-selection" id="finance-year" onchange="this.form.submit()">
+                        <?php $registerYear = $financeHelper->getCreatedYear($uid);
+                        for($i = $registerYear; $i <= date('Y'); $i++ ){ ?>
+                        <option value="<?php echo $i; ?>"  <?php echo @$financialYear == $i ? 'selected' : '' ; ?>><?php echo $i; ?></option>
+                        <?php } ?>
+                        </select>					  
+                    </div>
+                    </div>
+                    </div>
+                    <div class="col-md-12 pad0 mart30">
+                  <div class="col-md-6">
+                  <h1 class="mar0 text-capitalize" id="register_head_blue">Net Expense</h1>
+                  </div>
+                  <div class="col-md-6">
+                
+                    <div class="form-group mar0">
+                    <select name="filter" class="form-control pull-right" onchange="this.form.submit()">
+                        <option value="month" <?php echo @$filter == 'month' ? 'selected' : '' ; ?>>Monthly </option>
+                        <option value="year" <?php echo @$filter == 'year' ? 'selected' : '' ; ?>>Yearly</option>
+                    </select>
+                    </div>
+                  </div>
+                  </div>
+               </form>	
+              
+              
+              <div class="col-md-12 pad0 marb20">
+                        <div class="col-md-6 cash_man_chart">
+                            <div style="border:1px solid #dedede;height:315px">
+                                <canvas id="myChart" height="200" class="well"></canvas>
+                                <div id="myChart-legend" class="chart-legend"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 cash_man_chart">
+                            <div style="border:1px solid #dedede;height:315px">
+                                <canvas id="myChart2" height="200" class="well"></canvas>
+                                <div id="myChart2-legend" class="chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+              
+               <div class="col-md-12 cash_table">
+                    <div class="table-responsive">                 
+                 <table class="table table-striped income_sum_table" id="example">
+                                    <thead>
+                                    <tr>
+                                        <th class="col-md-1">Date</th>
+                                        <!--<th class="col-md-1">Account</th>-->
+                                        <th class="col-md-1">Job No</th>
+                                        <th class="col-md-1">Trans no</th>
+                                        <th class="col-md-1">Description</th>
+                                        <th class="col-md-1">Gross</th>
+                                        <th class="col-md-1">Bank</th>
+                                        <th class="col-md-1">Bank date</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    <?php   if (!empty($expenseRecord)) :
+                                        foreach($expenseRecord as $expense){
+                                            $isBank = $expense['bank'];
+                                            $grossCost = $expense['cost'];?>
+                                            <tr>
+                                                <td class="col-md-1"><?php echo date_format(date_create($expense['job_date']), 'd/m/y'); ?></td>
+                                                <!--<td class="col-md-1"> - </td>-->
+                                                <td class="col-md-1"><?php echo $expense['cost']; ?></td>
+                                                <td class="col-md-1" data-order="<?php echo $expense['trans_id']; ?>"> # <?php echo $expense['trans_id']; ?></td>
+                                                <td class="col-md-1">
+                                                <a href="javascript:void(0);" onclick="detailDescription('<?php echo $expense['description']; ?>')"><?php echo substr($expense['description'], 0,8).'...' ?></a>
+                                                </td>
+                                                <td class="col-md-1"><?php echo $currency.$financeHelper->setPriceFormate($grossCost); ?></td>
+                                                <td class="col-md-1"><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<i class="fa fa-close" aria-hidden="true"></i>' ?></td>
+                                                <td class="col-md-1"><?php echo $expense['bank_date'] != '' && $expense['bank_date'] != '0000-00-00'  ? date('d/m/y',strtotime($expense['bank_date'])) : 'N/A' ?></td>
+                                            </tr>
+                                        <?php   }
+                                    endif; ?>
+                                    </tbody>
+                                </table>
+                  <?php /*?><?php  if (empty($expenseRecord)) {  echo '<h4 class="no-finance-record">Data Not Found</h4>';  } ?><?php */?>
+                </div>
+                </div>
+                
+               </div>
+              
+            </section>
+                
+            </div>
+        </div>
+   	</div>
+</div>
+
+<script>
+
+    function detailDescription(description) {
+        $('#detail-description .modal-body').html('<p>'+description+'</p>');
+        $('#detail-description').modal('show');
+    }
+
+
+    $(document).ready(function() {
+        $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+
+            var data_x = <?php echo json_encode($transchart[0]) ?>;
+            var netincome = <?php echo json_encode($transchart[1]) ?>;
+
+            var data = {
+                labels : data_x,
+                datasets : [
+                    {
+                        label: "Net Expense",
+                        fillColor : "#C0504D",
+                        strokeColor : "#C0504D",
+                        pointColor : "#C0504D",
+                        pointStrokeColor : "#C0504D",
+                        data : netincome
+                    }
+                ]
+            };
+
+            var options = {
+                animation: true,
+                datasetFill: false,
+                pointDot: true,
+                multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+                bezierCurve: false,
+                tooltipTemplate: "<%= label %> : <?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+                barValueSpacing: 15
+            };
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart").getContext("2d");
+            /*********************/
+            var myChart = new Chart(ctx).Bar(data,options);
+            document.getElementById('myChart-legend').innerHTML = myChart.generateLegend();
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart2');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart2").getContext("2d");
+            /*********************/
+            var myChart2 = new Chart(ctx).Line(data,options);
+            document.getElementById('myChart2-legend').innerHTML = myChart2.generateLegend();
+
+        })
+    });
+
+    $(document).ready(function() {
+        $('#example').DataTable( {
+            searching: false,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]]
+        } );
+    } );
+
+
+</script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js" charset="UTF-8"></script>

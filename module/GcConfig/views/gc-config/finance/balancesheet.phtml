@@ -1,0 +1,294 @@
+<?php use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$currency = $this->config()->get('site_currency'); ?>
+
+<div class="page-content">
+<div class="col-md-1 col-sm-1"></div>
+                        <div class="col-md-10 col-sm-10 finproloss">
+                            <form id="profitlossform" method="post">
+                            <table width="50%" border="1" cellspacing="0" cellpadding="0" id="table_wrapper" align="center">
+                           		
+                                <tr>
+                                    <td colspan="2" align="center" class="col-md-12"><h3 class="mar0">BALANCE SHEET</h3></td>
+                                </tr>
+                                <tr>
+                                <td colspan="2" class="pad0">
+                                    <table width="100%" cellspacing="0" cellpadding="0" border="0" align="center">
+                                    <tbody>
+                                    <tr>
+                                        <td class="col-md-3" align="center">Year: <?php echo $year ; ?></td>
+                                        <td class="col-md-3" align="center">User No. <?php echo $userData->getId() ; ?></td>
+                                        <td class="col-md-3" align="center"><?php echo $userData->getLogin(); // echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?></td> 
+                                        <!--<td class="col-md-3" align="center"><?php // echo $userData->getEmail() ; ?></td>-->
+                                    </tbody>
+                                    </table>
+                                    </td>
+                                </tr>
+                                
+                                <?php if($revenue1 == ''){ ?>
+                                    <tr>
+                                        <td colspan="2" align="center">Data Not Available</td>
+                                    </tr>
+                                <?php }else { ?>
+                                    <tr>
+                                        <td colspan="2" bgcolor="#E7E7E7">Non-current assets</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="col-md-4">Property, plant and equipment</td>
+                                        <td class="col-md-4 put1">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                        <input id="put1" name="put1" type="number" value="<?php echo @$inputdata['put1'] ? floatval($inputdata['put1']) : ''?>" placeholder="Enter" class="form-control" required></div>
+                        
+                        </td>
+                                     <tr>
+                                        <td colspan="2" bgcolor="#E7E7E7">Current assets</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Trade and other receivables</td>
+                                        <td class="put2">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                        <input id="put2" name="put2" type="number" value="<?php echo @$inputdata['put2'] ? floatval($inputdata['put2']) : ''?>" placeholder="Enter" class="form-control" required>
+                                        </div>
+                                        
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cash and cash equivalents</td>
+                                        <td class="put3">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                        <input id="put3" name="put3" type="number" value="<?php echo @$inputdata['put3'] ? floatval($inputdata['put3']) : ''?>" placeholder="Enter" class="form-control" required>
+                                        </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total</td>
+                                        <td id="old_put2_put3" class="put2_put3">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                        <input title="Trade and other receivables + Cash and cash equivalents" type="text" id="put2_put3" class="form-control" disabled placeholder="N/A"/>
+                                        </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td title="Non-current assets + Current assets">Total Assets</td>
+                                        <td id="put1_td_old" class="put1_td">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                        <input title="Non-current assets + Current assets" type="text" id="put1_td" class="form-control" placeholder="N/A" disabled />
+                                        </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" bgcolor="#E7E7E7">Non-current liabilities</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Current liabilities</td>
+                                        <td  class="put4">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                        <input id="put4" name="put4" type="number" value="<?php echo @$inputdata['put4'] ? floatval($inputdata['put4']) : ''?>" placeholder="Enter" class="form-control" required>
+                                        </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Taxation</td>
+                                        <td><?php echo $currency.$financeHelper->setPriceFormate(htmlentities($totaltax));  ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td title="Current liabilities + Taxation">Total</td>
+                                        <td id="old_put4_html" class="put4_html">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                        <input title="Current liabilities + Taxation" type="text" id="put4_html" class="form-control" placeholder="N/A" disabled/>
+                                        </div>
+                                        </td>
+                                    </tr>
+                                 	<tr>
+                                        <td colspan="2" bgcolor="#E7E7E7">Net Assets / Liabilities</td>
+                                    </tr>
+                                    
+                                     <tr>
+                                        <td  title="Total assets - Non-current liabilities"></td>
+                                        <td id="put1_td_put4_old" class="put1_td_put4">
+                                       <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span> <input title="Total assets - Non-current liabilities" type="text" id="put1_td_put4" class="form-control" placeholder="N/A" disabled/></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2"  bgcolor="#E7E7E7">Equity</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Equity</td>
+                                        <td  class="put6">
+                                            <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span><input id="put6" name="put6" type="number" value="<?php echo @$inputdata['put6'] ? floatval($inputdata['put6']) : ''?>" placeholder="Enter" class="form-control" required></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Retained earnings </td>
+                                        <td class="put7">
+                                        <div class="input-group">
+                        <span class="input-group-addon"><?php echo $currency ; ?></span>
+                                            <input id="put7" name="put7" type="number" value="<?php echo @$inputdata['put7'] ? floatval($inputdata['put7']) : ''?>" placeholder="Enter" class="form-control" required></div>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            </table>
+                            <div class="form-group">
+                                <input type="hidden" value="<?php echo $totaltax;?>" name="totaltax"/>
+                                <input type="hidden" value="<?php echo $year;?>" name="year"/>
+                                <input type="hidden" value="<?php echo $userData->getId() ; ?>" name="fre_id"/>
+                                <div class="col-md-12 mart15 marb15 text-right pad0">
+                                        <?php if($post1 == 1) { ?>
+       
+  <button type="button" class="btn btn-info" onclick="fnExcelReport('BalanceSheet <?php echo $year;?> <?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?>  <?php echo date('d-m-y');?>');">Export To xls </button>
+                      
+                                            <!--<button type="button" id="cmd" class="btn btn-info">generate PDF</button>-->
+                                        <?php }else { ?>
+                                            <button type="submit" onclick=" return confirm('Are You Sure ?')" class="btn btn-info"><?php echo @$inputdata ? 'Update' : 'Save' ; ?> & Continue</button>
+                                        <?php } ?>
+                                </div>
+                            </div>
+                            </form>
+                        </div>
+<div class="col-md-1 col-sm-1"></div>
+</div>
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jspdf/0.9.0rc1/jspdf.min.js"></script>
+<script>
+
+
+ var curr = '<?php echo $currency ; ?>';   
+
+   <?php if(isset($inputdata)){ ?>
+   calculation1();
+   calculation2();
+   <?php } ?>
+   <?php if($post1 == 1 ){ ?>
+       aftersave();
+   <?php } ?>
+
+    $("#put2 , #put3 , #put1").keyup(function(){
+        calculation1();
+    });
+
+    function calculation1() {
+        var totaltax = '<?php echo $totaltax ;?>';
+        var put2 = $("#put2").val();
+        var put3 = $("#put3").val();
+
+        if (put2 != '' && put3 != '') {
+            var put2put3 = parseFloat(put2) + parseFloat(put3);
+            $("#put2_put3").val(put2put3);
+        } else {
+            $("#put2_put3,#put1_td").val('N/A');
+        }
+        var put2_put3 = $("#put2_put3").val();
+        var put1 = $("#put1").val();
+
+        if (put1 != '' && put2 != '' && put3 != '') {
+            var put1_td = parseFloat(put2_put3) + parseFloat(put1);
+            $("#put1_td").val(put1_td);
+        } else {
+            $("#put1_td").val('N/A');
+        }
+    }
+
+    $("#put4").keyup(function(){
+        calculation2();
+    });
+   function calculation2(){
+       var totaltax =  '<?php echo $totaltax ;?>';
+       var put4 =  $("#put4").val();
+       if(put4 != ''){
+           var put4_html = parseFloat(totaltax) + parseFloat(put4);
+           $("#put4_html").val(put4_html);
+           var put1_td = $("#put1_td").val();
+           var put1_td_put4 = parseFloat(put1_td) - parseFloat(put4_html);
+           $("#put1_td_put4").val(put1_td_put4);
+       }else{
+           $("#put4_html").val('N/A');
+           $("#put1_td_put4").val('N/A');
+       }
+
+   }
+
+   function aftersave(){
+   
+   $(".put2_put3").html(curr+parseFloat($("#put2_put3").val()).toFixed(2));
+   $(".put1_td").html(curr+parseFloat($("#put1_td").val()).toFixed(2));
+   $(".put4_html").html(curr+parseFloat($("#put4_html").val()).toFixed(2));
+   $(".put1_td_put4").html(curr+parseFloat($("#put1_td_put4").val()).toFixed(2));
+   
+       $(".put1").html(curr+parseFloat($("#put1").val()).toFixed(2));       
+       $(".put2").html(curr+parseFloat($("#put2").val()).toFixed(2));
+       $(".put3").html(curr+parseFloat($("#put3").val()).toFixed(2));
+       $(".put4").html(curr+parseFloat($("#put4").val()).toFixed(2));
+       $(".put6").html(curr+parseFloat($("#put6").val()).toFixed(2));
+       $(".put7").html(curr+parseFloat($("#put7").val()).toFixed(2));
+       $("#put1,#put2,#put3,#put4,#put6,#put7").remove();
+       $("#btnExport,#cmd,#reset").show();
+       $("#freeze").hide();
+   }
+
+    function fnExcelReport(filename = 'BalanceSheet')
+    {
+        var tab_text="<table border='2px'><tr bgcolor='#87AFC6'>";
+        var textRange; var j=0;
+        tab = document.getElementById('table_wrapper'); // id of table
+
+        for(j = 0 ; j < tab.rows.length ; j++)
+        {
+            tab_text=tab_text+tab.rows[j].innerHTML+"</tr>";
+            //tab_text=tab_text+"</tr>";
+        }
+
+        tab_text=tab_text+"</table>";
+        tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, "");//remove if u want links in your table
+        tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+        tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // reomves input params
+
+        var ua = window.navigator.userAgent;
+        var msie = ua.indexOf("MSIE ");
+
+        if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+        {
+            txtArea1.document.open("txt/html","replace");
+            txtArea1.document.write(tab_text);
+            txtArea1.document.close();
+            txtArea1.focus();
+            link=txtArea1.document.execCommand("SaveAs",true,"Say Thanks to Sumit.xls");
+        }
+        else{
+            //other browser not tested on IE 11
+            var isChrome = !!window.chrome && !!window.chrome.webstore;
+            if(isChrome == true){
+                var link = document.createElement('a');
+                link.download = filename+".xls";
+                link.href = 'data:application/vnd.ms-excel,' + encodeURIComponent(tab_text);
+                link.click();
+            }else{
+                link = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+               // sa = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+            }
+            return (link);
+           // return (sa);
+
+        }
+
+    }
+
+
+</script>
+<style>
+td{padding: 10px;font-size: 14px;}
+.mar0 { margin:0;}
+.pad0 { padding:0;}
+.mart15 { margin-top:15px;}
+.marb15 { margin-bottom:15px;}
+.finproloss table { width:100% !important;}
+.bglightgrey { background:#E7E7E7;}
+</style>

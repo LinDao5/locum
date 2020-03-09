@@ -1,0 +1,103 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+use GcFrontend\Controller\PackagePrivilegesController;
+$packagePrivilegesController = new PackagePrivilegesController();
+if($packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$_SESSION['user_id'],null) == 0 && $_SESSION['user_role_id'] == 2 ){
+	$url= $this->serverUrl().'/user-profile'; echo "<script type='text/javascript'>window.location='".$url."'</script>";
+}
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/user-profile">My Dashboard</a></li>
+                    <li><a href="javascript:void(0)">Feedback Dispute Form</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3> <?php echo $title ; ?> </h3>
+                </div>
+            </div>
+            
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+  	<div class="container">
+      	<div class="row">
+			<div class="contents white-bg">
+			    <div class="welcome-heading">
+					<h1>Dispute feedback</h1>
+					<hr class="shadow-line">
+		        </div>
+				<div class="feedback-form">
+                    <form id="dispute-form">                        
+    					<?php 
+    						$this->script('feedback-dispute');
+    					?>
+                        <div class="dispute-comment">
+                            <div class="form-group">
+                                <label class="required control-label col-lg-2" for="dispute_comment">Dispute Comment</label>
+                                <div class="col-lg-10">
+                                    <textarea class="form-control" id="dispute-comment" placeholder="Enter comment here...." name="dispute-comment"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dispute-submit">
+                            <a href="javascript:void(0);" id="dispute-submit" class="read-common-btn">Submit</a>
+                        </div>
+                        <h3 id="dispute-notice-msg"></h3>
+                        <div class="lodader" style="display:none">
+                            <img src="<?php echo $this->serverUrl().'/public/frontend/locumkit-template/img' ?>/loader.gif"><span>Please wait...</span>
+                        </div>
+                    </form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	jQuery("a#show-details-feedback").click(function(){
+		jQuery("#details-feedback").toggle(1000);
+	});
+
+    /* Submit Dispute Form */
+    $("#dispute-submit").click( function(){
+        $("#dispute-submit").css('display','none');
+        $(".lodader").css('display','block');
+        var disputeData = $("#dispute-form").serialize();
+        var formId = 'dispute-feedback';    
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  :{'disputeData':disputeData,'submit_id' : formId},
+            'success':function(result){ 
+                $("#dispute-notice-msg").html('');
+                console.log(result);
+                $(".lodader").css('display','none');                
+                if($.trim(result)=="1"){ 
+                    $("#dispute-notice-msg").html('<span style="color:green"> Your dispute has been logged. We shall aim to resolve your query within the next two days.</span>');
+                }else if($.trim(result)=="2"){
+                    $("#dispute-notice-msg").html('<span style="color:#EBA34D"> You have already submitted dispute for this job.</span>');
+                }else{
+                    $("#dispute-submit").css('display','block');
+                    $("#dispute-notice-msg").html('<span style="color:red"> Ohhh..! Some problem occurred. Please try after some time.</span>');
+                    //$("#dispute-notice-msg").html(result);
+                }
+
+            }
+        });
+        
+    });
+    
+</script>

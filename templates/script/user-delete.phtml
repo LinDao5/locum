@@ -1,0 +1,97 @@
+<?php
+use GcFrontend\Controller\DbController as DbController;
+use Zend\Db\Sql\Sql;
+// email controller
+use GcFrontend\Controller\JobmailController as MailController;
+$mailController = new MailController();
+$header = $mailController->mailHeader();
+$footer = $mailController->mailFooter();
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$sql = new Sql($adapter);
+$select = $sql->select();
+$delete = $sql->delete();
+$insert = $sql->insert();
+
+$request = $this->getRequest();
+if($request->isPost())
+{
+    $reason_arr=array();
+	$post = $request->getPost(); print_r($post);
+	$uid = $post->get('uid'); //role id
+	$user_email = $post->get('user_email');
+	$user_name = $post->get('user_name');
+	$reason = serialize($post->get('reason'));
+	$resonOfLeave = '<ul>';
+	foreach ($post->get('reason') as $key => $reasonDelete) {
+		$resonOfLeave .= '<li>'.$reasonDelete.'</li>';
+	}
+	$resonOfLeave .= '</ul>';
+	$userType = '';
+	if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] != '') {
+		if ($_SESSION['user_role_id'] == 3) {
+			$userType = 'Employer';
+		}elseif ($_SESSION['user_role_id'] == 2){
+			$userType = 'Freelancer';
+		}
+		
+	}
+	
+	//print_r($reason); 
+	$sqlString_insert="insert into user_leavers_table (uid,user_email,user_name,user_reason_to_leave,created_at) values('$uid','$user_email','$user_name','$reason',NOW())";
+	$results_ans_paypal = $adapter->query($sqlString_insert, $adapter::QUERY_MODE_EXECUTE);
+	
+	$sql_del="delete from user where id='$uid'";
+	$results = $adapter->query($sql_del, $adapter::QUERY_MODE_EXECUTE);
+	
+	$sql_del2="delete from user_extra_info where uid='$uid'";
+	$results2 = $adapter->query($sql_del2, $adapter::QUERY_MODE_EXECUTE);
+ 
+        /*$sql_del3="delete from user_payment_info where uid='$uid'";
+	$results3 = $adapter->query($sql_del3, $adapter::QUERY_MODE_EXECUTE);*/
+	
+	/* Notify the admin about delete user */
+	$message = $header.'
+			<div style="padding: 25px 50px 5px; text-align: left; width:84.2%;">
+			<p>Hello <b>Admin</b>,</p>
+			<p>The following member has just cancelled their membership with LocumKit</p>
+			<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+			  <tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">User Id </th>
+				<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$uid.'</td>
+			  </tr>
+			  <tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Name</th>
+				<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$user_name.'</td>
+			  </tr>
+			  <tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Type</th>
+				<td style=" border: 1px solid black;  text-align:left; padding:5px;">'.$userType.'</td>
+			  </tr>
+			  <tr>
+				<th style=" border: 1px solid black;  text-align:left;  padding:5px;" style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Reason for leaving</th>
+				<td style=" border: 1px solid black;  text-align:left; padding:5px;">'.$resonOfLeave.'</td>
+			  </tr>
+			 </table><br/>
+			<p><p>
+			</div>'.$footer;
+	try{
+		$mail = new \Gc\Mail('utf-8', $message);
+		$mail->getHeaders()->addHeaderLine('Content-type','text/html');
+		$mail->setSubject('Cancelled member');
+		$mail->setFrom($user_email, $user_name);
+		$mail->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),$this->getServiceLocator()->get('CoreConfig')->getValue('mail_from_name'));
+		$mail->send();
+	}catch (Exception $e) {}
+
+	if($uid){
+		unset($_SESSION['user_id']);
+	}
+	
+	$this->flashMessenger()->addSuccessMessage('Account deleted successfully.');
+	$this->redirect()->toUrl('/');
+    return TRUE;
+	
+}
+
+?>

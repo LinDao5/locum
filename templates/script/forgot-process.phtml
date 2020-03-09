@@ -1,0 +1,113 @@
+<?php
+    date_default_timezone_set('Europe/London');
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+	$this->redirect()->toUrl('/user-profile');
+	return true;
+}
+use GcFrontend\Controller\DbController as DbController;
+use Zend\Mvc\Controller\PluginManager;
+use Zend\ServiceManager\ServiceManager;
+use Zend\Db\Sql\Sql;
+
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$sql = new Sql($adapter);
+
+$select = $sql->select();
+
+$select->from('user');
+
+$statement = $sql->prepareStatementForSqlObject($select);
+$results = $statement->execute();
+$row = $results->current();
+$name = $row['firstname']; // working
+
+use GcFrontend\Controller\JobmailController as MailController;
+$mailController = new MailController();
+$header = $mailController->mailHeader();
+$footer = $mailController->mailFooter();
+
+$request = $this->getRequest();
+if($request->isPost())
+{
+    $post = $request->getPost();
+    $email = $post->get('email');
+    $password = sha1($post->get('password'));
+    $answer_hash = $post->get('answer_hash');
+    $answer = substr(sha1($post->get('answer')), 5, 10);
+	
+	
+    $sqlString_get="select * from user where email='$email' or login='$email' ";	
+    $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+    //print_r($results0);
+    $row111 = $results0->current();
+    $id = $row111['id'];
+	$login=$row111['login'];
+    $fname=$row111['firstname'];
+	$newemail=$row111['email'];
+	$reset_password_string=$id.'-'.sha1($email); // reset password string
+	$host=$this->getRequest()->getUri()->getHost();
+	
+	/*$message=$header.'
+					<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+					<p>Hello '.$fname.',</p>
+					
+					<h3>Forgot password</h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Email</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$email.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Login</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$login.'</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Reset password Using this link</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;"><a href="https://'.$host.'/reset-password?'.$reset_password_string.'">'.$host.'/reset-password?'.$reset_password_string.'</a></td>
+					  </tr>
+					</table>
+					
+					</div>'.$footer;	*/
+
+
+
+
+    $message=$header.'<div style="padding: 25px 50px 5px;  text-align: left;">
+					<p>Hi '.$fname.',</p>
+					<p> 
+					You have recently requested for a password reset for your Locum account. Please, click on the link below to reset your password:
+					</p>
+					<p>
+					<a href="https://'.$host.'/reset-password?'.$reset_password_string.'">'.$host.'/reset-password?'.$reset_password_string.'</a>
+					</p>
+					<p>If you did not request a password reset, please ignore this email.</p>                                       
+                                        <p>Please note this link expires within 24 hours from the time you requested this email</p>
+					</div>'.$footer;
+
+
+
+    if(empty($email) or empty($id))
+    {
+     //   return array('email' => $email, 'error_message' => 'Username/Email Address Does Not Exist.');
+    $this->flashMessenger()->addErrorMessage('Username/Email Address Does Not Exist.');
+    }
+    if($id!='')
+    {
+		//echo sha1($email);
+		//$helper = new Zend\View\Helper\ServerUrl();
+		//echo $this->getRequest()->getUri()->getHost();
+                //$url = $helper->__invoke(true);
+		//echo $url; // get full url
+		
+	    $mail = new \Gc\Mail('utf-8', $message);
+        $mail->getHeaders()->addHeaderLine('Content-type','text/html');
+        $mail->setSubject('Locumkit: Forgot password');
+	$mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'),'Locumkit Admin');
+        $mail->addTo($newemail, $fname);
+        $mail->send();
+        $this->flashMessenger()->addSuccessMessage('Email sent to your email address, please check');
+        $this->redirect()->toUrl('/forgot-password');
+        return TRUE;
+    }
+}

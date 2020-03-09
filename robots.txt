@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /admin/
+
+Sitemap: http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/sitemap.xml

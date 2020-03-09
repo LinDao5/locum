@@ -1,0 +1,401 @@
+<?php
+/**
+ * This source file is part of FUDUGO. *
+ * 
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User\Feedback
+ * @author     Suraj Wasnik (suraj.wasnik0126@gmail.com)
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.fudugo.com
+ */
+
+
+namespace GcConfig\Controller;
+
+use Gc\Mvc\Controller\Action;
+use Gc\User\Feedback\Admin as Feedback;
+use Gc\User\Professional;
+use GcConfig\Form\Feedback as FeedbackForm;
+use GcConfig\Form\Feedbackedit as FeedbackFormEdit;
+use Gc\User\Feedback as FeedbackManagement;
+use Gc\User\Feedback\Dispute as FeedbackDispute;
+use Gc\User\Collection as User;
+use GcFrontend\Controller\FunctionsController as FunctionsController;
+use GcFrontend\Controller\DbController as DbController;
+/**
+ * Question controller
+ *
+ * @category   Gc_Application
+ * @package    GcConfig
+ * @subpackage Controller
+ */
+class FeedbackController extends Action
+{
+    /**
+     * Contains information about acl
+     *
+     * @var array
+     */
+    protected $aclPage = array('resource' => 'settings', 'permission' => 'feedback');
+
+    /* == Feedback question Managment Section == */
+
+    /**
+     * List all Questions
+     *
+     * @return \Zend\View\Model\ViewModel|array
+     */
+    public function indexAction()
+    {
+       
+        $questionCollection = new Feedback\Collection();
+        $questionsEmp  = array();
+        $questionsFre  = array();   
+        if (isset($_GET['c']) && $_GET['c'] != '') {
+            $catId = $_GET['c'];       
+        }else{
+            $catId = 1;
+        }   
+        $professions = $this->getProfession(); 
+        
+        foreach ($questionCollection->getFeedbackQus() as $question) {
+            if ($question->getName() !== Feedback\Model::PROTECTED_NAME) {               
+                if (!empty($question)) {
+                    if ($question->getFdQusEmp() && $question->getFdQusEmp() != '') {
+                        if($question->getFdQusCatId() == $catId && $question->getFdQusStatus() != 2) {
+                            $questionsEmp[] = $question;
+                        }
+                    }                    
+                    if($question->getFdQusFre() && $question->getFdQusFre() != ''){                        
+                        if($question->getFdQusCatId() == $catId && $question->getFdQusStatus() != 2) {
+                            $questionsFre[] = $question;      
+                        }
+                    }
+
+                }
+            }
+        }
+        
+        return array('fdQuestionsEmp' => $questionsEmp ,'fdQuestionsFre' => $questionsFre, 'professions' => $professions);
+    }
+
+    /**
+     * Create question
+     *
+     * @return \Zend\View\Model\ViewModel|array
+     */
+    public function createAction()
+    {
+        $form = new FeedbackForm();        
+        $form->setAttribute('action', $this->url()->fromRoute('config/user/feedback/create'));
+
+        if ($this->getRequest()->isPost()) {
+            $post = $this->getRequest()->getPost()->toArray();
+            $form->setData($post);
+            if ($form->isValid() && $this->getRequest()->getPost('submit')) {
+                $fdQuestionModel = new Feedback\Model();
+                $fdQuestionModel->addData($form->getInputFilter()->getValues());
+                $fdQuestionModel->save();
+               
+                $this->flashMessenger()->addSuccessMessage('Feedback Question saved!');
+                return $this->redirect()->toRoute('config/user/feedback/edit', array('id' => $fdQuestionModel->getId()));
+            }elseif($form->isValid() && $this->getRequest()->getPost('addNew')){
+                $fdQuestionModel = new Feedback\Model();
+                $fdQuestionModel->addData($form->getInputFilter()->getValues());
+                $fdQuestionModel->save();               
+                $this->flashMessenger()->addSuccessMessage('Feedback Question saved!');
+                return $this->redirect()->toRoute('config/user/feedback/create');
+            }
+
+            $this->flashMessenger()->addErrorMessage('Feedback Question can not saved!');
+            $this->useFlashMessenger();
+        }
+
+        return array('form' => $form);
+    }
+
+    /**
+     * Delete question
+     *
+     * @return \Zend\View\Model\JsonModel
+     */
+    public function deleteAction()
+    {
+        $fdQuestionModel = Feedback\Model::fromId($this->getRouteMatch()->getParam('id'));        
+
+        if (!empty($fdQuestionModel) and $fdQuestionModel->getName() !== Feedback\Model::PROTECTED_NAME and $fdQuestionModel->delete()) {
+            return $this->returnJson(array('success' => true, 'message' => 'Feedback Question has been deleted'));
+        }
+
+        return $this->returnJson(array('success' => false, 'message' => 'Feedback Question does not exists'));
+    }
+
+    /**
+     * Edit question
+     *
+     * @return \Zend\View\Model\ViewModel|array
+     */
+    public function editAction()
+    {
+        $questionId = $this->getRouteMatch()->getParam('id');
+
+        $questionModel = Feedback\Model::fromId($questionId);        
+        if (empty($questionModel) or $questionModel->getName() === Feedback\Model::PROTECTED_NAME) {
+            $this->flashMessenger()->addErrorMessage("Can't edit this feedback question");
+            return $this->redirect()->toRoute('config/user/feedback');
+        }
+        
+        $form = new FeedbackFormEdit();        
+        $form->setAttribute('action', $this->url()->fromRoute('config/user/feedback/edit', array('id' => $questionId)));
+        
+        $form->loadValues($questionModel);
+        if ($this->getRequest()->isPost()) {
+            $post = $this->getRequest()->getPost()->toArray();
+
+            $form->setData($post);
+            if ($form->isValid() && $this->getRequest()->getPost('submit')) {
+                $questionModel->addData($form->getInputFilter()->getValues());
+                $questionModel->save();
+
+                $this->flashMessenger()->addSuccessMessage('Feedback Question saved!');
+                return $this->redirect()->toRoute('config/user/feedback/edit', array('id' => $questionId));
+            }elseif($form->isValid() && $this->getRequest()->getPost('addNew')){
+                $questionModel->addData($form->getInputFilter()->getValues());
+                $questionModel->save();
+
+                $this->flashMessenger()->addSuccessMessage('Feedback Question saved!');
+                return $this->redirect()->toRoute('config/user/feedback/create', array('id' => $questionId));
+            }
+
+            $this->flashMessenger()->addErrorMessage('Feedback question can not saved!');
+            $this->useFlashMessenger();
+        }
+
+        return array('form' => $form);
+    }
+
+    public function getProfession()
+    {
+        $professionCollections = new Professional\Collection();
+        $professions = array();
+        foreach ($professionCollections->getProfessionals() as $profession) {
+            $professions[] = $profession;
+        }
+        return   $professions;
+    }
+
+
+    /* == Feedback Managment Section == */
+
+    /* All feedback of job  */
+    public function feedbackListAction()
+    {
+        $feedbackCollection = new FeedbackManagement\Collection();
+        $feedbackEmp  = array();
+        $feedbackFre  = array();   
+        $feedbackUser  = array();   
+        if (isset($_GET['c']) && $_GET['c'] != '') {
+            $catId = $_GET['c'];       
+        }else{
+            $catId = 1;
+        }   
+        $professions = $this->getProfession();  
+        
+        //exit();
+        foreach ($feedbackCollection->getFeedbacks() as $feedbacks) {
+            if ($feedbacks->getName() !== FeedbackManagement\Model::PROTECTED_NAME) {               
+                if (!empty($feedbacks)) {
+                    $feedbacks->freUserInfo = $this->getUserInfo($feedbacks->getFreId());
+                    $feedbacks->empUserInfo = $this->getUserInfo($feedbacks->getEmpId());
+                    if ($feedbacks->getUserType() && $feedbacks->getUserType() == 3) {
+                        if($feedbacks->getCatId() == $catId && ($feedbacks->getStatus() == 0 || $feedbacks->getStatus() == 1)) {                           
+                            $feedbackEmp[] = $feedbacks;
+                        }
+                    }                    
+                    if($feedbacks->getUserType() && $feedbacks->getUserType() == 2){                        
+                        if($feedbacks->getCatId() == $catId && ($feedbacks->getStatus() == 0 || $feedbacks->getStatus() == 1)) {                            
+                            $feedbackFre[] = $feedbacks;      
+                        }
+                    }
+
+                }
+            }
+        }
+        
+        return array('feedbackEmp' => $feedbackEmp ,'feedbackFre' => $feedbackFre, 'professions' => $professions);
+    }
+
+    /* Edit Feedback of user */
+    public function feedbackEditAction()
+    {
+        $questionId = $this->getRouteMatch()->getParam('id');
+
+        $questionModel = FeedbackManagement\Model::fromId($questionId);        
+        if (empty($questionModel) or $questionModel->getName() === FeedbackManagement\Model::PROTECTED_NAME) {
+            $this->flashMessenger()->addErrorMessage("Can't edit this feedback");
+            return $this->redirect()->toRoute('config/user/feedback/user-feedback');
+        }
+
+        $form = new FeedbackFormEdit();        
+        $form->setAttribute('action', $this->url()->fromRoute('config/user/feedback/user-feedback/edit', array('id' => $questionId)));
+        
+        
+        $feedbackDispute = new FeedbackDispute\Model(); 
+        $dis = $feedbackDispute->getDisputeFeedbackById($questionId);
+        $questionModel->disputeComment = @$dis[0]['d_comment'] ? $dis[0]['d_comment'] : '' ;
+
+        if ($this->getRequest()->isPost()) {
+            $post = $this->getRequest()->getPost()->toArray();            
+            
+            $form->setData($post);
+            //  $feedbackDispute = new FeedbackDispute\Model();
+            if ($this->getRequest()->getPost('submit')) {
+                $saveArray  = array('status' => $this->getRequest()->getPost('status'), );
+                $questionModel->addData($saveArray);
+
+                /*Save Update feedback */
+                foreach ($post['fdqusid'] as $key => $feedbackQusId) {
+                    $feedbackUpdateArray[] = array(
+                            'qusId'     => $post['fdqusid'][$key],
+                            'qus'       => $post['fdqus'][$key],
+                            'qusRate'   => $post['ratevalue'][$key]
+                        );
+                }
+                $feedbackUpdate = serialize($feedbackUpdateArray);                
+                $averageUpdateRate = floor($post['total-rates']);
+                $arrayToUpdate = array(
+                        'rating' => $averageUpdateRate,
+                        'feedback' => $feedbackUpdate
+                    );
+                /*echo "<pre>";
+                print_r($arrayToUpdate);
+                echo "</pre>";
+                die();*/
+                $feedbackModel = new FeedbackManagement\Model();
+                $feedbackModel->updateFeedbackById($questionId,$arrayToUpdate);
+
+                /* End update feedback */
+
+
+                 
+                if($this->getRequest()->getPost('status') == 2 || $this->getRequest()->getPost('status') == 3){
+                    if ($this->getRequest()->getPost('status') == 2 ) {
+                        $d_status = 0;
+                    }else{
+                        $d_status = 1;
+                    }
+                    $saveDisputeArray  = array('d_status' => $d_status,);                   
+                    if($feedbackDispute->updateDisputeFeedbackById($saveDisputeArray,$questionId,$questionModel->getUserType())){
+                        $questionModel->save($saveArray);
+                        $this->flashMessenger()->addSuccessMessage('Feedback saved!');
+                    }else{
+                        $this->flashMessenger()->addErrorMessage('This feedback is not mark as dispute by any user thats why feedback can not saved!');
+                    }
+                    return $this->redirect()->toRoute('config/user/feedback/dispute-feedback/edit', array('id' => $questionId));
+                }else{                    
+                    $saveDsiputeArray  = array('d_status' => 2, );
+                    $feedbackDispute->updateDisputeFeedbackById($saveDsiputeArray,$questionId, $questionModel->getUserType());
+                    $questionModel->save($saveArray);
+                    $this->flashMessenger()->addSuccessMessage('Feedback saved!');
+                    return $this->redirect()->toRoute('config/user/feedback/user-feedback/edit', array('id' => $questionId));
+                }              
+               
+            }
+
+            $this->flashMessenger()->addErrorMessage('Feedback can not saved!');
+            $this->useFlashMessenger();
+        }
+        
+        $questionModel->freUserInfo = $this->getUserInfo($questionModel->getFreId());
+        $questionModel->empUserInfo = $this->getUserInfo($questionModel->getEmpId());
+        
+        return array('questionData' => $questionModel);
+    }
+
+    /* All dispute feedback */
+    public function feedbackDisputeAction()
+    {
+        $feedbackCollection = new FeedbackManagement\Collection();
+        $feedbackEmp  = array();
+        $feedbackFre  = array();   
+        $feedbackUser  = array();   
+        if (isset($_GET['c']) && $_GET['c'] != '') {
+            $catId = $_GET['c'];       
+        }else{
+            $catId = 1;
+        }   
+        $professions = $this->getProfession();  
+        
+        //exit();
+        foreach ($feedbackCollection->getFeedbacks() as $feedbacks) {
+            if ($feedbacks->getName() !== FeedbackManagement\Model::PROTECTED_NAME) {               
+                if (!empty($feedbacks)) {
+                    $feedbacks->freUserInfo = $this->getUserInfo($feedbacks->getFreId());
+                    $feedbacks->empUserInfo = $this->getUserInfo($feedbacks->getEmpId());
+                    if ($feedbacks->getUserType() && $feedbacks->getUserType() == 3) {
+                        if($feedbacks->getCatId() == $catId && ($feedbacks->getStatus() == 2 || $feedbacks->getStatus() == 3)) {                           
+                            $feedbackEmp[] = $feedbacks;
+                        }
+                    }                    
+                    if($feedbacks->getUserType() && $feedbacks->getUserType() == 2){                        
+                        if($feedbacks->getCatId() == $catId && ($feedbacks->getStatus() == 2 || $feedbacks->getStatus() == 3)) {                            
+                            $feedbackFre[] = $feedbacks;      
+                        }
+                    }
+
+                }
+            }
+        }
+        
+        return array('feedbackEmp' => $feedbackEmp ,'feedbackFre' => $feedbackFre, 'professions' => $professions);
+    }
+
+    
+
+    /* Delete Fedback of User */
+    public function feedbackDeleteAction()
+    {
+        $feedbackModel = FeedbackManagement\Model::fromId($this->getRouteMatch()->getParam('id'));        
+
+        if (!empty($feedbackModel)  and $feedbackModel->delete()) {
+            return $this->returnJson(array('success' => true, 'message' => 'Feedback  has been deleted'));
+        }
+
+        return $this->returnJson(array('success' => false, 'message' => 'Feedback  does not exists'));
+    }
+
+    /* Feedback User Info */
+    public function getUserInfo($uid)
+    {
+        $userObj = new User();
+        $userInfo = $userObj->getUserById($uid);
+        if (!empty($userInfo)) {
+            foreach ($userInfo as $key => $user) {
+                $uInfo = $user->getfirstname().' '.$user->getLastname().' ('.$user->getId().')';
+            }
+        }else{
+            $dbConfig = new DbController();
+            $adapter = $dbConfig->locumkitDbConfig(); 
+            $functionsController = new FunctionsController();
+            $uInfoObj = $functionsController->getDeleteUserInfo($uid, $adapter);
+            $uInfo = $uInfoObj->user_name;
+        }
+        
+        return $uInfo; 
+    }
+
+    /* Edit Feedback By Id */
+
+    public function getFeedbackById($feedbackId)
+    {
+
+        $feedbackModel = FeedbackManagement\Model::fromId($feedbackId);         
+        $feedbackModel->freUserInfo = $this->getUserInfo($feedbackModel->getFreId());
+        $feedbackModel->empUserInfo = $this->getUserInfo($feedbackModel->getEmpId());
+        return array('feedbackData' => $feedbackModel);
+    }
+}

@@ -1,0 +1,141 @@
+<?php
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$currency = $this->config()->get('site_currency');
+
+
+$t = 'in';
+if (isset($_GET['t']) && $_GET['t'] == 'in') {
+    $t = 'in';
+}elseif(isset($_GET['t']) && $_GET['t'] == 'ex'){
+    $t = 'ex';
+}
+?>
+<div class="qus-tabs financead" style="text-align: center;border: 1px solid #ccc;display: -webkit-box;margin-bottom: 10px;">
+    <div class="col-md-12">
+        <div class="col-md-4"><h5>Year: <?php echo $year ; ?></h5></div>
+        <div class="col-md-4"><h5>User No. <?php echo $userData->getId() ; ?></h5></div>
+        <div class="col-md-4"><h5><?php echo $userData->getLogin();  ?></h5></div>
+    </div>
+</div>
+<div id="tabs">
+    <div class="qus-tabs">
+        <ul>
+            <li class="<?php if ($t == 'in') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/finance/all-transactions/349/2017?t=in">Income Transactions</a></li>
+            <li class="<?php if ($t == 'ex') {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/finance/all-transactions/349/2017?t=ex">Expense Transactions</a></li>
+            <button type="button" class="btn btn-info pull-right" onclick="fnExcelReport('Transactions <?php echo $year;?> <?php echo ucfirst($userData->getFirstname()) .' '.$userData->getLastname() ;  ?> <?php echo date('d-m-y');?>');">Export To xls </button>
+        </ul>
+    </div>
+    <div id="fre-tab" style="height: 700px; overflow: auto;">
+        <table class="table clickable table-striped table-hover table-responsive"  id="table_wrapper" width="100%">
+            <thead>
+            <tr>
+                <th>Tran&nbsp;No</th>
+                <th>Job&nbsp;No</th>
+                <th>Date</th>
+                <th>Net (<?php echo $currency; ?>)</th>
+                <!--<th>Vat (<?php echo $currency; ?>)</th>-->
+                <th>Gross (<?php echo $currency; ?>)</th>
+                <?php if($t == 'in'){ ?><th>Store</th>
+                    <th>Location</th><?php } ?>
+                <th>Category</th>
+                <?php if($t == 'in'){ ?><th>Supplier</th><?php } ?>
+                <th>Bank</th>
+                <th>Bank&nbsp;Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php
+            if (!empty($alltrans)) :
+                foreach($alltrans as $alltran){
+                    $grossCost = @$alltran['job_rate'] ? trim($alltran['job_rate'])  : trim($alltran['cost']);
+                    $isBank = $alltran['bank'];
+                    $trans_type = $alltran['trans_type'];
+                    ?>
+                    <tr>
+                        <td data-order="<?php echo $alltran['trans_id']; ?>"># <?php echo $alltran['trans_id']; ?></td>
+                        <td><?php echo @$alltran['job_id'] ? $alltran['job_id'] : 'N/A'; ?></td>
+                        <td><?php echo date_format(date_create($alltran['created_at']), 'd/m/Y'); ?></td>
+                        <td><?php echo $financeHelper->getNetRate($grossCost); ?></td>
+                        <!--<td><?php echo $financeHelper->getVatRate($grossCost);?></td>-->
+                        <td><?php echo $financeHelper->setPriceFormate($grossCost); ?></td>
+                        <?php if($t == 'in'){ ?>
+                            <td><?php echo @$alltran['store'] ? $alltran['store'] : 'N/A' ; ?></td>
+                            <td><?php echo @$alltran['location'] ? $alltran['location'] : 'N/A' ; ?></td>
+                        <?php } ?>
+                        <td>
+                            <?php echo @$alltran['income_type'] ? $financeHelper->getIncometype($alltran['income_type']) :  $financeHelper->getExpencetype($alltran['expense_type_id']); ?>
+                        </td>
+                        <?php if($t == 'in'){ ?><td><?php echo @$alltran['supplier'] ? $alltran['supplier'] : 'N/A'; ?></td><?php } ?>
+                        <td><?php echo $isBank == 1 ? 'Y' : 'N' ?></td>
+                        <td><?php echo $alltran['bank_date'] != '' && $alltran['bank_date'] != '0000-00-00' ? date('d/m/Y',strtotime($alltran['bank_date'])) : 'N/A' ?></td>
+                    </tr>
+                <?php  }  endif;   ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    function fnExcelReport(filename = 'Profitandloss')
+    {
+        var tab_text="<table border='2px'>";
+        <?php if($t == 'ex'){ ?>
+        tab_text +="<tr><td bgcolor='#87AFC6' colspan='9' align='center'><h3>Year: <?php echo $year ; ?> , User No. <?php echo $userData->getId() ; ?> , <?php echo $userData->getLogin();  ?><h3/></td></tr><tr>";
+        <?php }else{ ?>
+        tab_text +="<tr><td bgcolor='#87AFC6' colspan='12'align='center'><h3>Year: <?php echo $year ; ?> , User No. <?php echo $userData->getId() ; ?> , <?php echo $userData->getLogin();  ?><h3></td></tr><tr>";
+        <?php } ?>
+
+        var textRange; var j=0;
+        tab = document.getElementById('table_wrapper'); // id of table
+
+        for(j = 0 ; j < tab.rows.length ; j++)
+        {
+            tab_text=tab_text+tab.rows[j].innerHTML+"</tr>";
+        }
+
+        tab_text=tab_text+"</table>";
+        tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, "");//remove if u want links in your table
+        tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+        tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // reomves input params
+
+        var ua = window.navigator.userAgent;
+        var msie = ua.indexOf("MSIE ");
+
+        if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+        {
+            txtArea1.document.open("txt/html","replace");
+            txtArea1.document.write(tab_text);
+            txtArea1.document.close();
+            txtArea1.focus();
+            link=txtArea1.document.execCommand("SaveAs",true,"Say Thanks to Sumit.xls");
+        }
+        else{
+            //other browser not tested on IE 11
+            var isChrome = !!window.chrome && !!window.chrome.webstore;
+            if(isChrome == true){
+                var link = document.createElement('a');
+                link.download = filename+".xls";
+                link.href = 'data:application/vnd.ms-excel,' + encodeURIComponent(tab_text);
+                link.click();
+            }else{
+                link = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));
+            }
+            return (link);
+        }
+    }
+</script>
+<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>" charset="UTF-8"></script>
+<script>
+    $(document).ready(function() {
+        $('#table_wrapper').DataTable( {
+            language: { search: "" },
+            searching: true,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]]
+        } );
+        $('#table_wrapper_filter input').addClass('form-control');
+        $('#table_wrapper_filter input').attr("placeholder", "Search For Export");
+        $('#table_wrapper_filter').addClass('pull-right');
+    } );
+</script>

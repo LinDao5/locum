@@ -1,0 +1,358 @@
+<?php 
+use GcFrontend\Controller\JobmailController as MailController;
+$mailController = new MailController();
+$this->script('accept-job'); 
+	    date_default_timezone_set('Europe/London');
+    /*function decryptIt( $q ) {
+    $cryptKey  = 'qJB0rGtIn5UB1xG03efyCp';
+    $qDecoded      = rtrim( mcrypt_decrypt( MCRYPT_RIJNDAEL_256, md5( $cryptKey ), base64_decode( $q ), MCRYPT_MODE_CBC, md5( md5( $cryptKey ) ) ), "\0");
+    return( $qDecoded );
+    }*/
+    
+    use GcFrontend\Controller\EndecryptController as Endecrypt;
+    $endecrypt = new Endecrypt();
+    
+	$jType = $endecrypt->decryptIt($_GET['jtype']);
+	$uType = $endecrypt->decryptIt($_GET['utype']);
+    
+
+    if ($jType == 1) {  // 1 for accept job
+		$page = 'Details';
+	}else {
+		$page = 'Apply';
+	}
+?>
+<section id="breadcrum" class="breadcrum"> 
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="javascript:void(0)"><?php echo $page ?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Job <?php echo $page ?></h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+  <div class="container">
+    <div class="row">
+      <div class="contents job-offer job-accept-wrap">
+        <div class="welcome-heading">
+          <h1><span>Job</span> <?php echo $page ?> </h1>
+          <hr class="shadow-line">
+        </div>
+        <div class="job-info">
+         <section>
+          <h1 class="successfull_msg" id="notification_msg"><?php echo $this->partial('flash-messages'); ?></h1>      
+        </section>
+
+        	<?php 
+				use GcFrontend\Controller\FunctionsController as FunctionsController;
+        use GcFrontend\Controller\DbController as DbController;
+        $dbConfig = new DbController();
+        $adapter = $dbConfig->locumkitDbConfig();
+				$functionsController = new FunctionsController();
+				$currency=$this->config()->get('site_currency');
+				$uid = '';
+    		if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !='') {
+    			$uid = $_SESSION['user_id'];
+    		}
+						
+				$cjid = '';
+
+				if (isset($_GET['j']) && $_GET['j'] != '') {
+					$cjid = $endecrypt->decryptIt($_GET['j']);
+				}
+				/* Get job information */
+				$sqlJob = "SELECT * from job_post WHERE job_id = '$cjid'";	
+        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+        $value = $jobView->current();	       
+        if (isset($value)) {
+          
+				  // freelancer user extra info	
+				  $sqlFreeinfo = "SELECT * from user_extra_info WHERE uid = '$uid'";	
+				  $ViewFreedets = $adapter->query($sqlFreeinfo, $adapter::QUERY_MODE_EXECUTE);
+				  $ViewDetailsFreex = $ViewFreedets->current();
+				  $minimum_rate     =$ViewDetailsFreex['minimum_rate'];
+				  
+				  //employer extra info
+				  $sqlEmpinfo = "SELECT store_unique_time,telephone,mobile from user_extra_info WHERE uid = '".$value['e_id']."'";	
+				  $ViewEmpdata = $adapter->query($sqlEmpinfo, $adapter::QUERY_MODE_EXECUTE);
+				  $ViewDetailsEmpx = $ViewEmpdata->current();
+          if (isset($ViewDetailsEmpx['store_unique_time'])) {
+            $store_unique_time=unserialize($ViewDetailsEmpx['store_unique_time']);
+          }else{
+            $store_unique_time=9;
+          }
+				  
+				  /*$store_start_time=$store_unique_time['start_time'].':00';
+		          $store_end_time=$store_unique_time['end_time'].':00';
+		          $store_lunch_time=$store_unique_time['lunch_time'].':00';*/
+				  $store_telephone=$ViewDetailsEmpx['telephone'];
+			      $store_mobile=$ViewDetailsEmpx['mobile'];
+				  if($store_telephone!=''){
+					   $store_contact_details=$store_telephone;
+				  }elseif($store_mobile!=''){
+					   $store_contact_details=$store_mobile;
+				  }
+				  
+				  // get daily rate
+				  $new_date=str_replace("/","-",$value['job_date']);
+				  $timepstamp=strtotime($new_date);
+				  $currentDay = date('l',$timepstamp);
+				  $fre_rate = unserialize( $minimum_rate);
+				  $daily_rate = $fre_rate[$currentDay];
+				  // minimum rate for private user
+				  $min_rate=$value['job_rate'];	
+				  
+					$sqlString_st00="select * from employer_store_list where emp_st_id='".$value['store_id']."' ";	
+					$results_st00 = $adapter->query($sqlString_st00, $adapter::QUERY_MODE_EXECUTE);
+					$resultset_stdate = $results_st00->current(); //print_r($resultset_stdate);
+					$emp_store_name=$resultset_stdate['emp_store_name'];
+					$emp_store_address=$resultset_stdate['emp_store_address'].', '.$resultset_stdate['emp_store_region'].', '.$resultset_stdate['emp_store_zip'];
+					$emp_store_region=$resultset_stdate['emp_store_region'];
+					$emp_store_zip=$resultset_stdate['emp_store_zip'];
+					$startTime = unserialize( $resultset_stdate['store_start_time']);
+					$endTime = unserialize( $resultset_stdate['store_end_time']);
+					$lunchTime = unserialize( $resultset_stdate['store_lunch_time']);
+					$job_day =  date('l', strtotime($new_date));
+					
+					//Store timing for posted day 
+					$store_start_time = $functionsController->getTimeOfDay($startTime,$job_day);
+					$store_end_time = $functionsController->getTimeOfDay($endTime,$job_day);
+					$store_lunch_time = $functionsController->getTimeOfDay($lunchTime,$job_day).' (Min)'; 
+
+          //Current EMP cancellation percentage
+          $cancellationRate = $functionsController->getEmpCancellationRate($value['e_id'],$adapter);
+          $cancellationRate = ($cancellationRate > 0) ? $cancellationRate.'%' : '0.00%';
+          //Current EMP feedback percentage
+          $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $value['e_id'], 2);
+          $feedbackRate = round($functionsController->getOverallRating($currentFeedbackData),2);
+          $feedbackRate = ($feedbackRate > 0) ? $feedbackRate.'%' : '0.00%';	        	
+        	?>
+        <!-- ---- job confirmation format ----- -->
+        <div class="accept-job-div">  
+        <table class="table table-striped"  width="100%">
+          <tr>
+            <th class="heading" colspan="2"> Job confirmation (Key Details)</th>
+          </tr>
+          <tr>
+            <th  class="normal">Date</th>
+            <td><?php echo $value['job_date']; ?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Daily Rate</th>
+            <td><?php if($uType!='p'){echo $currency.number_format($value['job_rate'],2);}else{
+          				echo $currency.number_format($min_rate,2);
+          			}?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Store Contact Details</th>
+            <td><?php echo  $store_contact_details;?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Store Address</th>
+            <td><?php echo $emp_store_address;?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Additional Booking Info</th>
+            <td class="job-desc-td" style="color:red; font-weight:bold;"><?php echo $value['job_post_desc'];?></td>
+          </tr>
+		    </table>
+        <br>
+        <table class="table table-striped" width="100%">
+          <tr>
+            <th class="heading" colspan="2"> Booking confirmation (additional information)</th>
+          </tr>
+          <tr>
+            <th  class="normal">Start Time</th>
+            <td><?php echo $store_start_time; ?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Finish Time</th>
+            <td><?php echo $store_end_time; ?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Lunch Break  (minutes)</th>
+            <td><?php echo $store_lunch_time; ?></td>
+          </tr>
+          <?php
+			  $sqlEmpQu = "SELECT ua.*, uq.equestion from user_answer ua, user_question uq WHERE uq.equestion!='' and ua.user_id = '".$value['e_id']."' and ua.question_id=uq.id";	
+			  $Viewans = $adapter->query($sqlEmpQu, $adapter::QUERY_MODE_EXECUTE);
+			  $ViewDetailsans = $Viewans->toArray();
+        foreach($ViewDetailsans as $resultEmp){
+		      ?>
+            <tr>
+              <th  class="normal"><?php echo $resultEmp['equestion'];?></th>
+              <td><?php echo str_replace(',',', ',$resultEmp['type_value']); ?></td>
+            </tr>
+            <?php
+  			  } //employer question answer
+  		  ?>
+        <tr>
+          <th  class="normal">Store cancellation percentage</th>
+          <td><?php echo $cancellationRate; ?></td>
+        </tr>
+        <tr>
+          <th  class="normal">Store feedback</th>
+          <td><?php echo $feedbackRate; ?></td>
+        </tr>
+         
+		  </table>
+        <br>
+        <?php if($uType!='p'){?>
+        <table class="table table-striped" width="100%">
+          <tr>
+            <th class="heading" colspan="2"> Job Invitation – Information you provided us </th>
+          </tr>
+          <tr>
+            <th class="headingcolor:red; font-weight:bold;" colspan="2">Please check the details below and advise us immediately if this information is incorrect</th>
+          </tr>
+          <?php 
+			  if($ViewDetailsFreex['goc']!=''){
+		  ?>
+          <tr>
+            <th  class="normal">GOC Number</th>
+            <td><?php echo $ViewDetailsFreex['goc']; ?></td>
+          </tr>
+          <tr>
+            <th  class="normal">AOP Membership Number</th>
+            <td><?php echo $ViewDetailsFreex['aop']; ?></td>
+          </tr>
+          <!--<tr>
+            <th  class="normal">Opthalmic number (OPL)</th>
+            <td><?php echo $ViewDetailsFreex['aoc_id']; ?></td>
+          </tr>-->
+          <tr>
+            <th  class="normal">Insurance</th>
+            <td><?php echo ucfirst($ViewDetailsFreex['inshurance_company']).'-'.$ViewDetailsFreex['inshurance_no']; ?></td>
+          </tr>
+          <tr>
+            <th  class="normal">Insurance expiry</th>
+            <td><?php echo $ViewDetailsFreex['inshurance_renewal_date']; ?></td>
+          </tr>
+          <?php }?>
+          <?php
+    			  $sqlFreeQu = "SELECT ua.*, uq.fquestion from user_answer ua, user_question uq WHERE uq.fquestion!='' and ua.user_id = '".$uid."' and ua.question_id=uq.id";	
+    			  $ViewFreeans = $adapter->query($sqlFreeQu, $adapter::QUERY_MODE_EXECUTE);
+    			  $ViewDetailsFreeans = $ViewFreeans->toArray();
+                  foreach($ViewDetailsFreeans as $resultFree){
+    		  ?>
+          <tr>
+            <th  class="normal"><?php echo $resultFree['fquestion'];?></th>
+            <td><?php echo str_replace(',',', ',$resultFree['type_value']); ?></td>
+          </tr>
+          <?php
+			  } //freelancer question answer
+		  ?>
+		</table>
+        <br>
+        <?php }?>
+        <div class="sj-term-div"><?php echo $mailController->locum_email_terms('#92D000'); ?></div>
+        </div>  
+        <!-- ---- job confirmation format ----- -->
+        <?php /*?>   
+        <div class="row">
+          <div class="col-md-6 first">Job Title <span></span></div>
+          <div class="col-md-6 second"><p class="job-title"><?php echo $value['job_title']; ?></p></div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 first">Job Date <span></span></div>
+          <div class="col-md-6 second"><p class="job-date"><?php echo $value['job_date']; ?></p></div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 first">Job Id <span></span></div>
+          <div class="col-md-6 second"><p class="job-date"><?php echo $value['job_id']; ?></p></div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 first">Job Budget <span></span></div>
+          <div class="col-md-6 second"><p class="job-rate">$<?php echo $value['job_rate']; ?></p> </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <?php $location = explode(" ", $value['job_address']); ?>
+            <?php foreach ($location as $key => $value1) {?>
+            <div class="row half">
+              <div class="col-md-6 first">Location <span></span></div>
+              <div class="col-md-6 second"><p class="job-location"><?php echo $value1; ?></p> </div>
+            </div>
+            <?php } ?>
+            
+          </div>
+          <div class="col-md-6">
+            <div class="row half">
+              <div class="col-md-6 first">Region <span></span></div>
+              <div class="col-md-6 second"><p class="job-region"><?php echo $value['job_region']; ?></p> </div>
+            </div>
+            <div class="row half">
+              <div class="col-md-6 first">Post Code<span></span></div>
+              <div class="col-md-6 second"><p class="job-zip"><?php echo $value['job_zip']; ?></p> </div>
+            </div>
+            <div class="row half">
+              <div class="col-md-6 first">Job Start Time<span></span></div>
+              <div class="col-md-6 second"><p class="job-time"><?php echo $value['job_start_time']; ?> BST</p> </div>
+            </div>
+        </div>
+        <?php*/ ?>
+				<?php } ?>
+
+		</div>  
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.sj-term-div {
+    background: #fff;
+    float: left;
+    width: 100%;
+}
+	.sj-term-div table tbody tr td ul li {
+	    list-style: disc !important;
+	    margin: 5px 0 5px 30px;
+	}
+	.sj-term-div table tbody tr:first-child th {		
+		background-color: #8cc700 !important;
+		    background: -webkit-linear-gradient(#7aae00, #8cc700, #7aae00) !important;
+		    background: -o-linear-gradient(#7aae00, #8cc700, #7aae00) !important;
+		    background: -moz-linear-gradient(#7aae00, #8cc700, #7aae00) !important;
+		    background: linear-gradient(#7aae00, #8cc700, #7aae00) !important;	   
+		
+	    margin: 0;
+	    color: #fff;
+	    border: 1px solid #ccc;
+	    height: 48px;
+	    font-size: 18px;
+	    padding-left: 20px !important;
+	}
+	.sj-term-div table th, .sj-term-div table td {
+	    border: 1px solid #dddddd !important;
+	    border-right: 1px solid #24a9e0 !important;
+	    border-left: 1px solid #24a9e0 !important;
+	}
+	.sj-term-div table tr:last-child td {
+	    border-bottom: 1px solid #24a9e0 !important;
+	}
+	.table>tbody>tr>th{position: relative;}
+
+.sj-term-div table tbody td p {
+    text-transform: initial !important;
+    height: auto !important;
+    font-weight: normal !important;
+    padding: inherit !important;
+}
+
+</style>

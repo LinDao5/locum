@@ -1,0 +1,241 @@
+<?php //session_start();?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title><?php echo $this->escapeHtml($this->pageTitle); ?></title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="description" content="<?php echo $this->escapeHtml($this->metaDescription); ?>" />
+        <meta name="keywords" content="<?php echo $this->escapeHtml($this->metaKeywords); ?>" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/css/bootstrap.min.css'); ?>" rel="stylesheet" type="text/css">
+        <link href="<?php echo $this->cdn('/frontend/locumkit-template/css/font-awesome.min.css'); ?>" rel="stylesheet" type="text/css">
+    	<link href="<?php echo $this->cdn('/frontend/locumkit-template/css/style.css'); ?>" rel="stylesheet" type="text/css">
+		<link href="<?php echo $this->cdn('/frontend/locumkit-template/css/responsive.css'); ?>" rel="stylesheet" type="text/css">
+		<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-1.10.2.min.js'); ?>"></script>
+        <script src="<?php echo $this->cdn('/frontend/locumkit-template/js/bootstrap.min.js'); ?>"></script>
+        <?php echo $this->partial('seo-head'); ?>
+    </head>
+    <body>
+        <?php echo $this->partial('seo-body'); ?> 
+        
+      <?php date_default_timezone_set('Europe/London'); ?>
+      <div id="loader-div">
+         <div class="loader"></div>
+      </div>
+    <header class="header-wrapper" id="header" <?php if(isset($_GET['popup']) && $_GET['popup']=='yes'){echo 'style="display:none;"';}?>>
+
+	<div class="container">
+   		<div class="row">
+      		<nav class="navbar navbar-default">
+            	<!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="<?php echo $this->serverUrl();?>"><img src="<?php echo $this->cdn('/frontend/locumkit-template/img/logo.png')?>" alt="Locumkit" title="Locumkit"></a>
+                </div>            
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="top-main-nav pull-right">     
+                    <div class="uploadinfo pull-right">
+                        <ul>
+                            <?php if(isset($_SESSION['user_id'])&& $_SESSION['user_id']!=''){?>
+                             <li><a href="<?php echo $this->serverUrl();?>/user-profile" title="My Profile" alt="My Profile">My dashboard</a></li>
+                             <!-- <li><a href="<?php echo $this->serverUrl();?>/user-edit" title="Edit Profile" alt="Edit Profile"><i class="fa fa-pencil"></i></a></li> -->
+                             <li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="glyphicon glyphicon-off"></i></a></li>
+                            <?php }elseif(isset($_SESSION['user_email'])&& $_SESSION['user_email']!='' && (isset($_SESSION['is_guest']) && $_SESSION['is_guest'] == 1 ) || ( isset($_SESSION['un_verified_user']) && $_SESSION['un_verified_user'] == 1)){?>
+                             <li><a href="<?php echo $this->serverUrl();?>/guest-profile" title="Guest Profile" alt="Guest Profile">Profile</a></li>
+                             <li><a href="javascript:void(0);" id="log_out" title="Log Out" alt="Log Out" onClick="logout_user(1);"><i class="glyphicon glyphicon-off"></i></a></li>
+                            <?php }elseif(!isset($_SESSION['un_verified_user'])){?>
+							<li><a href="javascript:void(0);" title="Log In" alt="Log In" data-toggle="modal" data-target="#login-form-model">Log In</a></li>
+                            <li><a href="<?php echo $this->serverUrl();?>/register" title="Register" alt="Register">Register</a></li>
+                            <div id="login-form-model" class="modal fade" role="dialog">
+							<div class="modal-dialog">
+							    <!-- Modal content-->
+							    <div class="modal-content">
+									<div class="modal-header no-border-bottom">
+										<button type="button" class="close" data-dismiss="modal" onclick="close_dive('profession_question');">&times;</button>
+										<h4 class="modal-title">Login Form</h4>
+									</div>
+								    <div class="modal-body">
+									    <form id="one-page-form" action="/login-form" method="post" class="login-from" class="login-form-pop">
+		                                 <?php if(!empty($return['error_message'])): ?>
+		                                        <div class="notification error"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+		                                    <?php endif; ?>
+		                                    <fieldset class="has-warning">
+		                                        <span class="block input-glyphicon input-glyphicon-right">
+		                                            <input name="login" type="text" class="form-control margin-bottom" placeholder="<?php echo $this->escapeHtml($this->translate('Enter username or email')); ?>" autofocus required />
+		                                        </span>
+		                                        <span class="block input-glyphicon input-glyphicon-right">
+		                                            <input name="password" type="password" class="form-control margin-bottom" placeholder="<?php echo $this->escapeHtml($this->translate('Enter Password')); ?>" required />
+		                                        </span>
+		                    
+		                                        <div class="clearfix buttons">
+<input type="submit" value="Log In" style="display:none;">
+
+		                                            <button class="pull-left btn btn-small btn-warning">
+		                                                <i class="glyphicon glyphicon-log-in"></i>
+		                                                <?php echo $this->escapeHtml($this->translate('Log In')); ?>
+		                                            </button>
+		                                            <a href="<?php echo $this->serverUrl();?>/forgot-password" class="pull-right">Forgot Password?</a>
+		                                        </div>
+                                                <div class="clearfix buttons pull-right"><a href="<?php echo $this->serverUrl();?>/resend-email-verify" class="pull-right">Resend Email Verification</a>
+                         </div>
+		                                    </fieldset>
+		                                </form>
+								        
+								    </div>
+							      
+							    </div>
+							  </div>						  
+						</div>
+                            <?php }?>
+                        </ul>
+                    </div>
+                    <div class="collapse navbar-collapse pull-right" id="bs-example-navbar-collapse-1">
+                        <?php echo $this->partial('header'); ?>
+                    </div><!-- /.navbar-collapse -->
+                </div>
+            </nav>
+        </div>
+    </div>
+    </header>
+    <?php echo $this->content; ?>
+    <?php if(isset($_GET['popup']) && $_GET['popup']=='yes'){}else{?>
+    <?php echo $this->partial('footer'); ?>
+    <?php }?>
+    <a href="#" class="scrollToTop"><i class="fa fa-chevron-circle-up" aria-hidden="true"></i></a>
+	<script>
+		function logout_user(obj)
+		{ 
+			var str=obj.value; //alert(obj);
+		   if(str!=""){
+		   $.ajax({
+					'url'   :'/ajax-request',
+					'type'  :'POST',
+					'data'  :{'user_id':str, 'log_out':'1'},
+					'success':function(result){ //alert(result);
+						console.log(result);
+						if($.trim(result)=="1"){
+							$('div#alert-modal button.close.hide-pop-up').hide();
+							$("#loader-div").hide(100);		                    
+							messageBoxOpen('Logged out successfully.');
+							//$('div#alert-modal button.close-alert.btn.btn-default').html('Login');
+							$('div#alert-modal button.close-alert.btn.btn-default').remove();
+							window.setTimeout(function(){
+						        window.location.href = "<?php echo $this->serverUrl();?>";
+						    }, 500);
+						}
+					}
+				});
+		   }
+		}	
+	</script>
+	<!--  sticky Header script and scroll to top -->
+	<script type="text/javascript">
+        $(function(){
+	        var headerTop = $('#header').offset().top;
+	        $(window).scroll(function(){
+		        if( $(window).scrollTop() > headerTop ) {
+			        $('#header').css({position: 'fixed', top: '0px'});
+					$('#header').addClass('fixed-header-wrapper');
+					$('#header .navbar-default .navbar-brand img').css({width: '70px', transition: 'all 0.4s ease 0s'});
+					$('#header .navbar-default .navbar-brand ').css({padding: '5px 15px', transition: 'all 0.4s ease 0s'});
+					$('#header .navbar-default .top-main-nav').css({padding: '15px 0 10px', transition: 'all 0.4s ease 0s'});
+			    } else {
+			        $('#header').css({position: 'static', top: '0px'});
+					$('#header').removeClass('fixed-header-wrapper');
+					$('#header .navbar-default .navbar-brand img').css({width: '80px', transition: 'all 0.4s ease 0s'});
+					$('#header .navbar-default .navbar-brand ').css({padding: '15px', transition: 'all 0.4s ease 0s'});
+					$('#header .navbar-default .top-main-nav').css({padding: '30px 0 15px', transition: 'all 0.4s ease 0s'});
+		        }
+	        });
+        });
+
+        $(document).ready(function(){
+			//Check to see if the window is top if not then display button
+			$(window).scroll(function(){
+				if ($(this).scrollTop() > 100) {
+					$('.scrollToTop').fadeIn();
+				} else {
+					$('.scrollToTop').fadeOut();
+				}
+			});
+
+			//Click event to scroll to top
+			$('.scrollToTop').click(function(){
+				$('html, body').animate({scrollTop : 0},800);
+				return false;
+			});
+
+		});
+    </script>
+    <!-- sticky Header script and scroll to top script  End -->
+<script>
+
+  
+    
+        /*use for manage bank status*/
+       $('input#modal-in_bank').change(function(){
+        var c = this.checked ? '1' : '0';
+        if(c==1){
+            
+            $('#fordisplay').show();
+        }else{
+            $('#fordisplay').hide();
+            }
+       });
+
+       $('input#modal-ex_bank').change(function(){
+        var c = this.checked ? '1' : '0';
+        if(c==1){
+            
+            $('#fordisplayex').show();
+        }else{
+            $('#fordisplayex').hide();
+            }
+       }); 
+
+    function managebankincome(id) {
+	$('#fordisplay').hide();
+	$('#in_bankdate').val('');
+	$('#modal-in_bank').attr('checked', false); 
+    $('#in_bankid').val(id);
+    $('#manage-bank-income').modal('show');
+    }   
+    function managebankexpanse(id) {
+	 $('#fordisplayex').hide();
+	$('#ex_bankdate').val('');
+	$('#modal-ex_bank').attr('checked', false); 
+    $('#ex_bankid').val(id);
+    $('#manage-bank-expense').modal('show');
+    }
+    /*use for manage bank status end*/
+    $('div.alert-modal button.close-alert').click(function(){
+        messageBoxClose();
+    }); 
+    $('div.alert-modal button.close.hide-pop-up').click(function(){
+        messageBoxClose();
+    });
+    function messageBoxClose(){
+        $('div#alert-modal').removeClass('in');
+        $('div#alert-modal').css('display','none');
+        $('div#alert-confirm-modal').removeClass('in');
+        $('div#alert-confirm-modal').css('display','none');
+    }
+    function messageBoxOpen(msg, url){
+        $('div#alert-modal #alert-message').html(msg);
+        $('div#alert-modal').addClass('in');
+        $('div#alert-modal').css('display','block'); 
+        if(url != null ) {  
+           $('button.close-alert').attr('onClick','window.location.replace("'+url+'")');
+        }
+    }
+
+
+        $("#loader-div").hide(100);
+</script>
+    </body>
+</html>

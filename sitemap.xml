@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">	  	  
+<!-- www.check-domains.com sitemap generator -->
+
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>1.0000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/register</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/forgot-password</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/resend-email-verify</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/locums</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/employer</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/about</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/contact</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/term-condition</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/privacy-policy</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/sitemap</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/blog?blog=1</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/blog?blog=2</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/blog?blog=3</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.8000</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/benefits</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.6400</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/maps</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.6400</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/login-form</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.6400</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/blog/recent-posts</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.6400</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/package/</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.6400</priority>
+</url>
+<url>
+   <loc>http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/blog</loc>
+   <lastmod>2019-03-28T06:03:55+00:00</lastmod>
+   <changefreq>weekly</changefreq>
+   <priority>0.6400</priority>
+</url>
+</urlset>

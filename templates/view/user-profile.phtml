@@ -1,0 +1,1975 @@
+<?php
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){  
+        $uid=$_SESSION['user_id']; 
+    }else{  
+        $url= $this->serverUrl().'/login-form';echo "<script type='text/javascript'>window.location='".$url."'</script>";
+    }
+ 
+    use GcFrontend\Controller\DbController as DbController;
+    use Gc\User\Role\Model;
+    use Gc\User\Professional\Model as Model2;
+    use Gc\User\Package\Model as Model3;
+    use Gc\Db\AbstractTable;
+    use Zend\Db\Sql\Sql;
+    use Zend\Db\TableGateway\TableGateway;
+    use Zend\Db\Sql\Where;
+    use GcFrontend\Controller\EndecryptController as Ecryption;
+    use GcFrontend\Controller\FunctionsController;
+    use GcFrontend\Controller\PackagePrivilegesController;
+    use GcConfig\Controller\FinanceController as FinanceController ;
+
+    $financeController      = new FinanceController();
+    $functionsController    = new FunctionsController();
+    $packagePrivilegesController    = new PackagePrivilegesController();
+    $dbConfig               = new DbController();
+    $adapter                = $dbConfig->locumkitDbConfig();
+    $encypt                 = new Ecryption();
+    $endecrypt              = new Ecryption();
+    $sql                    = new Sql($adapter);
+    $update                 = $sql->update();
+    $select                 = $sql->select();
+    //$return = $this->script('user-edit-process');
+    $number_1 = mt_rand(1, 9);
+    $number_2 = mt_rand(1, 9);
+    $answer = substr(sha1($number_1+$number_2),5,10);
+    if(!empty($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+        $uid=$_SESSION['user_id'];
+    }
+    //echo $this->getRequest()->getServer();
+
+    $sqlString_data="select u.* from user u where u.id='$uid'";
+    $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+    $result_data = $results_get->current();
+    if($result_data['id']!=''){
+        // user extra info
+        $sqlString_data22="select * from user_extra_info where uid='$uid'";
+        $results_get22 = $adapter->query($sqlString_data22, $adapter::QUERY_MODE_EXECUTE);
+        $result_data22 = $results_get22->current();
+        $_SESSION['user_zip']=$result_data22['zip'];
+    }
+    /////
+    $roleTable = new Model();
+    $row       = $roleTable->fetchRow($roleTable->select(array('id' => (int) $result_data['user_acl_role_id'])));
+    if(isset($row)){
+        $_SESSION['user_role']=strtolower($row['name']); //role name in smallcase for equating things
+    }
+
+    $professionalTable = new Model2();
+    $row2       = $professionalTable->fetchRow($professionalTable->select(array('id' => (int) $result_data['user_acl_profession_id'])));
+    $package_id=$result_data['user_acl_package_id'];
+    $packageTable = new Model3();
+    $row3         = $packageTable->fetchRow($packageTable->select(array('id' => (int) $result_data['user_acl_package_id'])));
+
+    $sqlString_ans="select * from user_answer where user_id='$uid'";
+    $results_ans = $adapter->query($sqlString_ans, $adapter::QUERY_MODE_EXECUTE);
+    $result_data_ans = $results_ans->toArray();
+    foreach($result_data_ans as $res_qu){
+        $questions[]=$res_qu['question_id'];
+        $answers[$res_qu['question_id']]=$res_qu['type_value'];
+    }
+    $_SESSION['emp_question_id']=$questions; // define session array of question id
+    $_SESSION['emp_ans']=$answers; // define session array of ans to question
+
+    /* Block dates */
+    /*if(isset($_POST['datesdata']) && $_POST['datesdata']){
+      $allBlockDates = $_POST['datesdata'];
+      $sqlString_data="UPDATE user_block_date SET block_date = '$allBlockDates' WHERE uid = '$uid'";
+      $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+    }
+    */
+
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+    $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+
+    if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$uid,null) == 1) { // freelancer
+
+        $overallincome = $financeHelper->getIncomeByuser($uid);
+        $overallexpence = $financeHelper->getExpenceByuser($uid);
+
+        $overallincome_curryear = $financeHelper->getIncomeByuser($uid , date('Y'));
+        $overallexpence_curryear = $financeHelper->getExpenceByuser($uid , date('Y'));
+
+        $expenseChart = $financeHelper->chart_getAllExpense($uid, $financialYear, $filter);
+        $incomechart = $financeHelper->chart_getAllIncome($uid, $financialYear, $filter);
+
+        $help_btn = '<a class="btn btn-sm btn-block btn-info" href="/help-job-booking-freelancer">Job booking guide</a>';
+        $help_btn .= '<a class="btn btn-sm btn-block btn-info" href="/help-finance-model-freelancer">Finance section explained</a>';
+    }
+
+    if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ // Employer
+
+        $getEmpFinanceCost = $financeHelper->getEmpFinanceCost($uid,$financialYear);
+        $getEmpFinanceJob = $financeHelper->getEmpFinanceJob($uid,$financialYear);
+        $getEmpFinanceoverall = $financeHelper->getEmpFinanceBymonthoverall($uid);
+
+        $help_btn = '<a class="btn btn-sm btn-block btn-info" href="/help-job-booking-employer">Job booking guide</a><a class="btn btn-sm btn-block btn-info" href="/help-finance-model-employer">Finance section explained</a>';
+    }
+    $fmondetail =  $financeHelper->getUserFinanceyearStartMonth($uid , true);
+
+    $fmon = $fmondetail['month_start'] ;
+    $fmon_usertype = $fmondetail['user_type'] ;
+    $fmonid = $fmondetail['id'] ;
+    $currency = $this->config()->get('site_currency');
+?>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-ui.multidatespicker.js'); ?>"></script>
+<?php $bUrl = $this->pageBanner; ?>
+<section id="profile-banner" style="background:url('<?php echo $this->cdn($bUrl['value'])?>') no-repeat center center;-webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;background-attachment: fixed; width:100%;min-height: 350px; max-height:auto;display:none;">
+    <div class="container">
+        <div class="row">
+            <div class="banner-header" align="center">
+                <div class="banner-text-bottom">
+                    <div class="profile-banner-head"><?php echo $this->translate($this->bannerTitle); ?></div>
+                    <?php echo $this->translate($this->bannerContent); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap"> 
+        <div class="container">
+            <div class="row">
+                <ul>
+
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/user-profile">My Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">  
+            <div class="row">
+                <div class="col-md-10 col-sm-6 col-xs-12 pad0">
+                    <div class="set-icon registration-icon">
+                        <i class="glyphicon glyphicon-user" aria-hidden="true"></i>
+                    </div>
+                    <div class="set-title">
+                        <h3>My Dashboard</h3>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-6 col-xs-12 pad0">  
+                    <?php echo $help_btn ;?>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <?php if((!$functionsController->checkIfProfileComplete($uid, $_SESSION['user_profession_id'], $adapter)) && ( isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']== 2) ): ?>
+        <!-- Modal -->
+        <div class="modal fade" id="complate-profile-notification" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <div class="modal-body">
+                        <p class="complete-icon"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></p>
+                        <p>We noticed you have some questions unasnwered - Please complete your profile to ensure that we can match you to employers for job invitations.</p>
+                        <p> <a href="/user-question-edit">Click here</a> to complete your profile.</p>
+                    </div>                    
+                </div>
+            </div>
+        </div>
+        <!-- <div class="complate-profile-notification">
+            <p><marquee>Please complate your profile to make yourself appear in employer search list.</marquee></p>
+        </div> -->
+
+        <script type="text/javascript">
+            $(window).on('load',function(){
+                $('#complate-profile-notification').modal('show');
+            });
+        </script>
+
+    <?php endif; ?>
+</section>
+<div id="primary-content" class="main-content profiles">
+<div class="container">
+<div class="row">
+<div class="contents gray-gradient">
+<div class="welcome-heading">
+    <h1>Welcome <span><?php echo ucfirst($result_data['firstname'])." ".ucfirst($result_data['lastname']);?></span> [ID <?php echo $result_data['id'];?>]</h1>
+    <hr class="shadow-line">
+</div>
+<div class="profile-details">
+    <div class="profile-title">
+        <h1>My Dashboard</h1>
+    </div>
+    <?php $return=$this->script('user-delete');?>
+    <div class="profile-edit" style="display:none;">
+        <div class="<?php if($_SESSION['user_role_id']==2){?>col-md-3 col-sm-3<?php }else{?>col-md-3 col-sm-3<?php }?>">
+            <div class="margin-bottom prof-img">
+                <?php if($result_data22['profile_image']!=''){?>
+                    <img src="<?php echo $result_data22['profile_image'];?>" class="img-responsive">
+                <?php } else{?>
+                    <img src="<?php echo $this->cdn('/frontend/locumkit-template/img/no-photo-icon.png');?>" width="200" class="img-responsive">
+                <?php }?>
+            </div>
+            <div class="profile-name">
+                <h2><?php echo $result_data['firstname'];?> <?php echo $result_data['lastname'];?></h2>
+            </div>
+        </div>
+        <div class="<?php if($_SESSION['user_role_id']==2){?>col-md-3 col-sm-3<?php }else{?>col-md-3 col-sm-3<?php }?>">
+            <div class="profile-tab">
+                <h3>Membership ID</h3>
+                <span><?php echo $result_data['id'] ?></span>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-3">
+            <div class="profile-tab">
+                <h3>Membership  Since</h3>
+                <span><?php echo $result_data['created_at'];?></span>
+            </div>
+        </div>
+        <?php if($_SESSION['user_role_id']==3){?>
+            <div class="col-md-3 col-sm-3">
+                <div class="profile-tab">
+                    <h3>Membership  Experience</h3>
+                    <?php $currentDate = date('Y-m-d H:i:s');
+                    $datetime1 = new DateTime($result_data['created_at']);
+                    $datetime2 = new DateTime($currentDate);
+                    $interval = $datetime1->diff($datetime2);
+                    ?>
+                    <span><?php echo $interval->format('%y yr - %m m - %d days'); ?></span>
+                </div>
+            </div>
+        <?php }?>
+        <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ //freelancer?>
+            <div class="col-md-2 col-sm-2">
+                <div class="profile-tab">
+                    <h3>Last Login</h3>
+                    <?php
+                    /* Last login user date */
+                    $sqlLastLogin="SELECT last_login_at FROM last_login_user WHERE uid = '$uid'";
+                    $getLastLoginRecord = $adapter->query($sqlLastLogin, $adapter::QUERY_MODE_EXECUTE);
+                    $lastloginRecord = (array)$getLastLoginRecord->current();
+                    ?>
+                    <span><?php echo date('d-m-Y',strtotime($lastloginRecord['last_login_at'])); ?></span>
+                </div>
+            </div>
+        <?php }?>
+    </div>
+    <div class="profile-edit-btn">
+        <a class="gradient-threeline" href="/user-edit">View / Edit Profile</a>
+        <a class="gradient-threeline" href="/user-question-edit">Edit Registration</a>
+        <?php
+        if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){?>
+            <!--<a href="/private-job" class="gradient-threeline">Manage Private Job</a>-->
+            <!-- <a href="/upgrade-package?<?php echo 'u='.$encypt->encryptIt($uid).'&p='.$encypt->encryptIt($package_id).'&pack='.$encypt->encryptIt('change');?>" class="gradient-threeline" onClick="javascript: return confirm_change_pkg('Are you sure you want to change your package?');" id="change-pkg-btn">Change Package</a> -->
+        <?php }?>
+        <?php
+        //if(isset($row['name']) && $row['name']=='Employer'){?>
+        <a href="/job-listing?sort_by=job_date&order=DESC" class="gradient-threeline">Job Management</a>
+        <?php //}?>
+        <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ // Freelancer?>
+            <a href="/locumlogbook/questionaire/<?php echo $_SESSION['user_id'];  ?>/list1" class="gradient-threeline">LOCUM LOGBOOK</a>
+        <?php }?>
+        <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ // Employer?>
+            <a href="/manage-store" class="gradient-threeline">Manage Store</a>
+        <?php }?>
+    </div>
+    <div style="clear:both;"></div>
+    <!-- user delete form start-->
+    <div id="section1" style="text-align:left;"> 
+        <div id="delete_box" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header no-border-bottom">
+                        <button type="button" class="close" data-dismiss="modal" onclick="close_dive('delete_box');">&times;</button>
+                        <h4 class="modal-title">Locumkit</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form name="delete_profile_frm" id="delete_profile" action="<?php echo $this->escapeHtml($this->document('user-profile')->getUrl()); ?>" method="post" onSubmit="return validate()">
+                            <input type="hidden" name="user_name" value="<?php echo $result_data['firstname']." ".$result_data['lastname']; ?>">
+                            <input type="hidden" name="user_email" value="<?php echo $result_data['email']; ?>">
+                            <input type="hidden" name="uid" value="<?php echo $result_data['id']; ?>" id="uid">
+                            <p>Reason For Deleting Profile:</p>
+                            <p class="padding-left-30"><input type="checkbox" name="reason[]" value="Not satisfied with the customer service ">&nbsp; Not satisfied with the customer service.</p>
+                            <p class="padding-left-30"><input type="checkbox" name="reason[]" value="Not value for money">&nbsp; Not value for money.</p>
+                            <p class="padding-left-30"><input type="checkbox" name="reason[]" value="Not enough bookings through the website">&nbsp; Not enough bookings through the website.</p>
+                <p class="padding-left-30"><input type="checkbox" name="reason[]" value="Not happy with website/difficult to use">&nbsp; Not happy with website/difficult to use.</p>
+                <!--<p class="padding-left-30"><input type="checkbox" name="reason[]" value="Something else?">&nbsp; Something else?</p>-->
+                            <p><input type="submit" name="delete_user" class="btn btn-small btn-warning" value="Submit"></p>
+                        </form>
+
+                    </div>
+                    <div class="modal-footer no-border-top">
+                        <div id="question_error" class="css_error margin-bottom"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!--user delete form end -->
+</div>
+<?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ // Employer?>
+    <div class="row avilability-div">
+        <div class="welcome-heading job-overview">
+            <h1><span>JOB OVERVIEW</span></h1>
+        </div>
+        <div class="col-md-6 profile-action-btn">
+            <div id="date-dialog"></div>
+            <div id="block-dates" class="box"></div>
+            <div class="coloe-info">
+                <ul>
+                    <!--<li><span class="color-box blue"></span> Current/Selected </li>-->
+                    <li><span class="color-box orange"></span> Booked</li>
+                    <li><span class="color-box green"></span> Available</li>
+                    <!--<li><span class="color-box red"></span> Not Available</li>-->
+                </ul>
+            </div>
+            <!--<a href="/job-search" class="block_date_btn"><i class="fa fa-search" aria-hidden="true"></i> Advanced Search</a>-->
+            <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ // freelancer?>
+                <!-- <a href="javascript:void(0)" onclick="save_dates()" class="block_date_btn"><i class="fa fa-calendar" aria-hidden="true"></i> Update Calender</a>-->
+                <input type="hidden" id="block_date_array" value="" name="block_dates">
+                <?php
+                // check for user_block table
+                $currentdate = date('d/m/Y');
+                $sqlString_blockd="select ja.*,jp.* from job_action ja,job_post jp where jp.e_id='$uid' and jp.job_date > '$currentdate'";
+                $results_blockarr = $adapter->query($sqlString_blockd, $adapter::QUERY_MODE_EXECUTE);
+                $result_blockarr = $results_blockarr->toArray();
+                $res_count=$results_blockarr->count();
+
+                $datesArray="";
+                // insert into table with new
+                $block_date="";
+                $block_date_arr=""; //print_r($result_blockarr);
+                foreach($result_blockarr as $newInsArr){
+                    $block_date[]=$newInsArr['job_date'];
+                    $newDate00 = date("d/m/Y", strtotime($newInsArr['job_date']));
+                    $block_date_arr[]="new Date('".$newDate00."').getTime()";
+                }
+                $insert_date=implode(',',$block_date);
+                // get current booking
+                ?>
+            <?php }?>
+        </div>
+        <div class="col-md-6 current-booking">
+            <h3>Current month bookings</h3>
+            <?php $sqlGetBookings = "SELECT job_id,job_date,job_post_desc,job_rate FROM job_post WHERE (job_status=4 OR job_status=5) and e_id='$uid' and MONTH(STR_TO_DATE(job_date, '%d/%m/%Y')) = MONTH(NOW()) AND YEAR(STR_TO_DATE(job_date, '%d/%m/%Y')) = YEAR(NOW()) ORDER BY STR_TO_DATE(job_date, '%d/%m/%Y') ASC";
+            $getBooking = $adapter->query($sqlGetBookings, $adapter::QUERY_MODE_EXECUTE);
+            $getCurrentBookings = $getBooking->toArray();
+            //echo count($getCurrentBookings);
+            if(!empty($getCurrentBookings)){
+                ?>
+                <div class="emp-current-booking-info">
+                    <table class="table table-striped" id="current_booking-info">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Locum ID</th>
+                            <th>Locum Name</th>
+                            <th>Job Rate</th>
+                            <th>View</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        foreach($getCurrentBookings as $resultset){
+                            $timestamp = strtotime(str_replace('/', '-', $resultset['job_date']) );
+                            $day = date('D', $timestamp);
+                            $fid="N/A";
+                            $freelancer_name="N/A";
+                            $sql_fre = "SELECT firstname,lastname,id FROM user WHERE id IN ( SELECT f_id FROM job_action WHERE job_id = '".$resultset['job_id']."' AND action = '3')";
+                            $get_fre_info = $adapter->query($sql_fre, $adapter::QUERY_MODE_EXECUTE);
+                            $fre_info = $get_fre_info->toArray();
+                            $fre_info_count =$get_fre_info->count();
+                            if($fre_info_count>0){
+                                $fid=$fre_info[0]['id'];
+                                $freelancer_name=$fre_info[0]['firstname'].' '.$fre_info[0]['lastname'];
+                            }else{
+                                $sql_fre = "SELECT p_name,p_email,p_uid FROM private_user WHERE p_uid IN ( SELECT puid FROM private_user_job_action WHERE j_id = '".$resultset['job_id']."' AND status = '3')";
+                                $get_fre_info = $adapter->query($sql_fre, $adapter::QUERY_MODE_EXECUTE);
+                                $fre_info = $get_fre_info->toArray();
+                              //  $fid = $fre_info[0]['p_uid'];
+                                $fid = 'Private Locum';
+                                $freelancer_name=$fre_info[0]['p_name'];
+                            }
+
+                            $is_date_new = '';
+                            if (strtotime(str_replace('/', '-', $resultset['job_date']) ) < strtotime(date('d-m-Y')) ) {
+                                $is_date_new = '';
+                                $job_date_html = '<span class="old-date">'.$resultset['job_date'].'</span>';
+                            }else{
+                                $is_date_new = 'class="coming-date"';
+                                $job_date_html = '<span class="coming-date">'.$resultset['job_date'].'</span>';
+                            }
+
+                            ?>
+                            <tr <?php echo $is_date_new; ?>>
+                                <td data-order="<?php echo $resultset['job_date'];?>"><?php echo $job_date_html;?></td>
+                                <td><?php echo $day;?></td>
+                                <td><?php echo $fid; ?></td>
+                                <td><?php echo $freelancer_name; ?></td>
+                                <td><?php echo $this->config()->get('site_currency') ?><?php echo number_format($resultset['job_rate'],2);?></td>
+                                <td style="text-align:center; "><a href="/single-job?view=<?php echo $resultset['job_id']?>" ><i class="fa fa-eye" aria-hidden="true"></i></a></td>
+                            </tr>
+
+                        <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="row"><div class="col-md-8 pull-right" align="right"><a href="/job-listing" titlt="Read More">More</a></div></div>
+            <?php }else{?>
+                <div class="row">
+                    <div class="col-md-4 booking-dates"></div>
+                    <div class="col-md-8 booking-info">
+                        <p>No records found.</p>
+                    </div>
+                </div>
+            <?php } ?>
+        </div>
+    </div>
+    <?php   //booking date
+    $infoDate2 = date('d/m/Y'); //echo "inside---";
+    $result='';
+    $sql_usern="select jp.job_id,ja.f_id,jp.job_title,jp.job_date from job_post jp, job_action ja where ( jp.job_status = 4 OR jp.job_status = 5 ) and jp.job_id=ja.job_id and jp.e_id='$uid'";
+    $getRecordUsern = $adapter->query($sql_usern, $adapter::QUERY_MODE_EXECUTE);
+    $fetRecordUsern = $getRecordUsern->toArray();
+    $countRecordUsern=$getRecordUsern->count();
+    //print_r($fetRecordUsern);
+    if($countRecordUsern>0){ // for normal user
+        foreach($fetRecordUsern as $res){
+            $timestamp = strtotime(str_replace('/', '-', $res['job_date']) );
+            $bookDates[] = "'".date('Y-m-d', $timestamp)."'";
+        }
+
+    }
+    // for privat user
+    $sql_userp="select jp.job_id,ja.puid,jp.job_title,jp.job_date from job_post jp, private_user_job_action ja where ( jp.job_status = 4 OR jp.job_status = 5 )  and jp.job_id=ja.j_id and jp.e_id='$uid'";
+    $getRecordUserp = $adapter->query($sql_userp, $adapter::QUERY_MODE_EXECUTE);
+    $fetRecordUserp=$getRecordUserp->toArray();
+    $countRecordUserp=$getRecordUserp->count();
+    if($countRecordUserp>0){
+        foreach($fetRecordUserp as $res){
+            $timestamp = strtotime(str_replace('/', '-', $res['job_date']) );
+            $bookDates[] = "'".date('Y-m-d', $timestamp)."'";
+        }
+    }
+    //print_r($bookDates);
+    $bookDateString = '';
+    if (!empty($bookDates)) {
+        $bookDateString .= implode(',',$bookDates).',';
+    }
+    if(!empty($pbookDates)){
+        $bookDateString .= implode(',',$pbookDates);
+    }
+    ?>
+<?php }?>
+<?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ // freelancer?>
+    <div class="row avilability-div">
+    <div class="welcome-heading job-overview">
+        <h1><span>JOB OVERVIEW</span></h1>
+    </div>
+    <div class="col-md-6 profile-action-btn">
+        <div id="date-dialog"></div>
+        <div id="block-dates" class="box"></div>
+        <div class="coloe-info">
+            <ul>
+                <!--<li><span class="color-box blue"></span> Current/Selected </li>-->
+                <li><span class="color-box orange"></span> Booked</li>
+                <li><span class="color-box green"></span> Available</li>
+                <li><span class="color-box red"></span> Not available</li>
+                <li><span class="color-box step1"></span> Invoice</li>
+                <li><span class="color-box step2" style="margin-left: 3px;"></span> Wait payment</li>
+                <li><span class="color-box step3"></span> Payment received</li>
+            </ul>
+        </div>
+        <!--<a href="/job-search" class="block_date_btn"><i class="fa fa-search" aria-hidden="true"></i> Advanced Search</a>-->
+        <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ // freelancer?>
+            <!-- <a href="javascript:void(0)" onclick="save_dates()" class="block_date_btn"><i class="fa fa-calendar" aria-hidden="true"></i> Update Calender</a>-->
+            <input type="hidden" id="block_date_array" value="" name="block_dates">
+            <?php
+            // check for user_block table
+            $currentdate = date('d/m/Y');
+            $sqlString_blockd="select ja.*,jp.* from job_action ja,job_post jp where ja.f_id='$uid' and jp.job_id=ja.job_id and jp.job_date > '$currentdate'";
+            $results_blockarr = $adapter->query($sqlString_blockd, $adapter::QUERY_MODE_EXECUTE);
+            $result_blockarr = $results_blockarr->toArray();
+            $res_count=$results_blockarr->count();
+            $datesArray="";
+            $select1 = $sql->select();
+            $select1->from('user_work_calender');
+            $select1->where(array('uid'=>$uid));
+            $statement1 = $sql->prepareStatementForSqlObject($select1);
+            $results1 = $statement1->execute();
+            $rows1 = $results1->getResource()->fetchAll();
+            $rows22 = $results1->count();
+            if(!empty($rows22) && $rows22>0){
+                $newDatesArray = array();
+                foreach ($rows1 as $key => $value) {
+                    $newDatesArray = unserialize($value['block_date']);
+                }
+
+                if (!empty($newDatesArray)) {
+                    foreach ($newDatesArray as $key => $value) {
+                        $newDate00[] = "'".date("Y-m-d", strtotime($value['date']))."'";
+                    }
+                }
+                if (!empty($newDate00)) {
+                    $blockDateString = implode(',',$newDate00);
+                }else{
+                    $blockDateString = '';
+                }
+            }else{
+                // insert into table with new
+                $block_date="";
+                $block_date_arr=""; //print_r($result_blockarr);
+                foreach($result_blockarr as $newInsArr){
+                    $block_date[]=$newInsArr['job_date'];
+                    $newDate00 = date("d/m/Y", strtotime($newInsArr['job_date']));
+                    $block_date_arr[]="new Date('".$newDate00."').getTime()";
+                }
+                $insert_date=implode(',',$block_date);
+            }
+            // get current booking
+            ?>
+        <?php }?>
+    </div>
+    <div class="col-md-6 current-booking">
+        <h3>Current month bookings</h3>
+        <?php
+        /* Get the current job bookings */
+        /*All Private job Bookings*/
+        $pCurrentDate = date("Y-m-d");
+//        $sqlGetPBookings = "SELECT * from freelancer_private_job WHERE f_id = $uid ORDER BY priv_job_start_date ASC"; // blocked by cheng
+        $sqlGetPBookings = "SELECT fpj.*, fit.id as fit_id, fit.bank, fit.invoice_notrequired from freelancer_private_job fpj LEFT JOIN finance_income_table fit ON fpj.pv_id = fit.job_id AND fit.job_type = 2 WHERE f_id = $uid ORDER BY priv_job_start_date ASC";
+        $getPBooking = $adapter->query($sqlGetPBookings, $adapter::QUERY_MODE_EXECUTE);
+        $getPCurrentBookings = $getPBooking->toArray();
+        if (!empty($getPCurrentBookings)) {
+            foreach($getPCurrentBookings as $pBooking){
+                $pbookDates[] = "'".date('Y-m-d', strtotime($pBooking['priv_job_start_date']))."'";
+            }
+        }
+
+        /* Get current month Website job bookings */
+        $sqlGetBookings = "SELECT job_date,job_post_desc,job_rate,store_id FROM job_post WHERE (job_status = 4 OR job_status = 5 ) AND  job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND (action = 3 OR action = 4)) and MONTH (STR_TO_DATE(job_date, '%d/%m/%Y')) = MONTH(NOW()) and YEAR (STR_TO_DATE(job_date, '%d/%m/%Y')) = YEAR(NOW()) ORDER BY STR_TO_DATE(job_date, '%d/%m/%Y') ASC";
+        //$sqlGetBookings = "SELECT job_date,job_post_desc FROM job_post WHERE job_date >= '$currentdate' AND job_status = 4 AND job_id IN (SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) ";
+        $getBooking = $adapter->query($sqlGetBookings, $adapter::QUERY_MODE_EXECUTE);
+        $getCurrentBookings = $getBooking->toArray();
+        /* Gell All Website job bookings */
+//        $sqlGetAllBookings = "SELECT job_date,job_post_desc FROM job_post WHERE (job_status = 4 OR job_status = 5 ) AND job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND (action = 3 OR action = 4))"; // blocked by cheng
+        $sqlGetAllBookings = "SELECT jp.job_date, jp.job_post_desc, fit.id as fit_id, fit.bank, fit.invoice_notrequired FROM job_post jp LEFT JOIN finance_income_table fit ON jp.job_id = fit.job_id AND fit.job_type = 1 WHERE (jp.job_status = 4 OR jp.job_status = 5 ) AND jp.job_id IN ( SELECT job_id FROM job_action WHERE f_id =$uid AND (action = 3 OR action = 4))";
+
+        $getAllBooking = $adapter->query($sqlGetAllBookings, $adapter::QUERY_MODE_EXECUTE);
+        $getAllCurrentBookings = $getAllBooking->toArray();
+
+        if (!empty($getAllCurrentBookings)) {
+            foreach ($getAllCurrentBookings as $key => $allBooking) {
+                $timestamp = strtotime(str_replace('/', '-', $allBooking['job_date']) );
+                $bookDates[] = "'".date('Y-m-d', $timestamp)."'";
+            }
+        }
+        echo "<h4>Live Job(s)</h4>";
+
+        if(!empty($getCurrentBookings)){
+            echo '<div class="table-responsive"><table class="table table-striped short-job-desc"><thead><tr><th>Date</th><th>Day</th><th>Rate</th><th>Store</th><th>Location</th></tr></thead>';
+            echo "<tbody>";
+            foreach($getCurrentBookings as $key => $resultset){
+                /*echo "<pre>";
+                print_r($resultset);
+                echo "</pre>";*/
+                $sqlGetStore = "SELECT emp_store_name, emp_store_address,emp_store_region,emp_store_zip FROM employer_store_list WHERE emp_st_id='".$resultset['store_id']."' ";
+                $getStore = $adapter->query($sqlGetStore, $adapter::QUERY_MODE_EXECUTE);
+                $getCurrentStore = $getStore->current();
+                $timestamp = strtotime(str_replace('/', '-', $resultset['job_date']) );
+                $day = date('D', $timestamp);
+                $is_date_new = '';
+                if (strtotime(str_replace('/', '-', $resultset['job_date']) ) < strtotime(date('d-m-Y')) ) {
+                    $is_date_new = '';
+                    $job_date_html = '<span class="old-date">'.$resultset['job_date'].'</span>';
+                }else{
+                    $is_date_new = 'class="coming-date"';
+                    $job_date_html = '<span class="coming-date">'.$resultset['job_date'].'</span>';
+                }
+                //print_r($getCurrentStore);
+                ?>
+                <tr <?php echo $is_date_new; ?>>
+                    <td data-order="<?php echo $resultset['job_date'];?>"><?php echo $job_date_html;?></td>
+                    <td>
+                        <span><?php echo $day;?></span>
+                    </td>
+                    <td>
+                        <?php echo $this->config()->get('site_currency') ?><?php echo number_format($resultset['job_rate'],2);?>
+                    </td>
+                    <td>
+                        <?php echo $getCurrentStore['emp_store_name'];?>
+                    </td>
+                    <td>
+                        <?php echo $getCurrentStore['emp_store_region'];?>
+                    </td>
+                </tr>
+            <?php  }?>
+            </tbody>
+            </table></div>
+            <div class="row"><div class="col-md-8 pull-right" align="right"><a href="/job-listing" titlt="Read More">More</a></div></div>
+
+
+
+        <?php }else{ ?>
+            <div class="row">
+                <!-- <div class="col-md-4 booking-dates"></div> -->
+                <div class="col-md-12 booking-info">
+                    <p>No record found.</p>
+                </div>
+            </div>
+        <?php }
+
+        /*current month Private job Bookings*/
+        $first_day_this_month = date('Y-m-01');
+        $last_day_this_month  = date('Y-m-t');
+        //$pCurrentDate = date("Y-m-d");
+        $sqlGetCurrentMonthPBookings = "SELECT * from freelancer_private_job WHERE priv_job_start_date >= '$first_day_this_month' AND priv_job_start_date <= '$last_day_this_month' AND f_id = $uid  ORDER BY priv_job_start_date ASC";
+        $getCurrentMonthPBooking = $adapter->query($sqlGetCurrentMonthPBookings, $adapter::QUERY_MODE_EXECUTE);
+        $getCurrentMonthPBooking = $getCurrentMonthPBooking->toArray();
+
+        echo "<h4>Private Job(s)</h4>";
+        if(!empty($getCurrentMonthPBooking)){
+            echo '<div class="emp-current-booking-info private-jobs-book"><table class="table table-striped short-job-desc"><thead><tr><th>Date</th><th>Day</th><th>Rate</th><th>Store</th><th>Location</th></tr></thead>';
+            echo "<tbody>";
+            foreach($getCurrentMonthPBooking as $pkey => $presultset){
+                $ptimestamp = date('d/m/Y', strtotime($presultset['priv_job_start_date']));
+                $pday = date('D', strtotime($presultset['priv_job_start_date']));
+                $is_date_new = '';
+                if (strtotime(str_replace('/', '-', $ptimestamp) )  < strtotime(date('d-m-Y')) ) {
+                    $is_date_new = '';
+                    $job_date_html = '<span class="old-date">'.$ptimestamp.'</span>';
+                }else{
+                    $is_date_new = 'class="coming-date"';
+                    $job_date_html = '<span class="coming-date">'.$ptimestamp.'</span>';
+                }
+                
+
+                ?>
+                <tr <?php echo $is_date_new; ?>>
+                    <td data-order="<?php echo $ptimestamp;?>"><?php echo $job_date_html;?></td>
+                    <td>
+                        <?php echo $pday;?>
+                    </td>
+                    <td>
+                        <?php echo $this->config()->get('site_currency') ?><?php echo $presultset['priv_job_rate'];?>
+                    </td>
+                    <td>
+                        <p><?php echo $presultset['priv_job_title'];?></p>
+                    </td>
+                    <td>
+                        <?php echo $presultset['priv_job_location'];?>
+                    </td>
+                </tr>
+            <?php  }?>
+            </tbody>
+            </table>
+            </div>
+            <div class="row"><div class="col-md-8 pull-right" align="right"><a href="/private-job" titlt="Read More">More</a></div></div>
+
+        <?php }else{ ?>
+            <div class="row">
+                <!-- <div class="col-md-4 booking-dates"></div> -->
+                <div class="col-md-12 booking-info">
+                    <p>Currently there are no private job bookings. <a href="<?php echo $this->serverUrl();?>/private-job">Click here</a> to add.</p>
+                </div>
+            </div>
+        <?php }
+        $bookDateString = '';
+        if (!empty($bookDates)) {
+            $bookDateString .= implode(',',$bookDates).',';
+        }
+        if(!empty($pbookDates)){
+            $bookDateString .= implode(',',$pbookDates);
+        }
+
+        ?>
+
+    </div>
+    </div>
+<?php }?>
+<!-- Waiting job  Start -->
+<?php
+if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {
+
+    /* Get list of jobs in waiting */
+    $aviJobArray = $functionsController->getLocumInterestedJobList($uid, $adapter);
+    //print_r($aviJobArray);
+    if (!empty($aviJobArray)) {
+        ?>
+        <div class="row job-interested-div" style="clear: both;">
+            <div class="welcome-heading">
+                <h1><span>JOB(S) YOU MAY BE INTERESTED IN </span></h1>
+            </div>
+            <div class="job-list-table">
+                <div class="job-list-table-inner">
+                    <table class="table table-striped">
+                        <colgroup>
+                            <col width="10%">
+                            <col width="10%">
+                            <col width="8%">
+                            <col width="20%">
+                            <col width="35%">
+                            <col width="20%">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th>Job Id</th>
+                            <th>Job Date</th>
+                            <th>Rate</th>
+                            <th>Store Name</th>
+                            <th>Location</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        foreach ($aviJobArray as $aviJob) {
+                            $count_book_date = $functionsController->getBookDate($uid,$aviJob['job_date'],$adapter);
+                            if(empty($count_book_date)):
+                                $sqlFreezeJobId="SELECT * FROM  job_action WHERE  job_id = '".$aviJob['job_id']."' AND  f_notification = '1' AND f_id = '$uid'";
+                                $freezeJobIdObj = $adapter->query($sqlFreezeJobId, $adapter::QUERY_MODE_EXECUTE);
+                                $freezeJobId = $freezeJobIdObj->current();
+                                $jobAllowFreezeDate = strtotime('+2 days');
+                                $jobWorkDate = strtotime(str_replace('/', '-', $aviJob['job_date']));
+                                ?>
+                                <tr>
+                                   <td><?php echo $aviJob['job_id']; ?></td>
+                                    <td><?php echo $aviJob['job_date']; ?></td>
+                                    <td><?php
+                                        $rateArray = explode('.', $aviJob['job_rate']);
+                                        echo $this->config()->get('site_currency').number_format($rateArray[0],2); ?>
+
+                                    </td>
+                                    <td><?php
+                                        $sqlGetStore = "SELECT emp_store_name FROM employer_store_list WHERE emp_st_id='".$aviJob['store_id']."' ";
+                                        $getStore = $adapter->query($sqlGetStore, $adapter::QUERY_MODE_EXECUTE);
+                                        $getCurrentStore = $getStore->current();
+                                        echo $getCurrentStore['emp_store_name'];
+                                        ?></td>
+                                    <td><?php echo $aviJob['job_address'].', '.$aviJob['job_region'].', '.$aviJob['job_zip']; ?></td>
+                                    <td class="text-center"><a class="job-accept-btn" href="/accept-job?j=<?php echo $endecrypt->encryptIt($aviJob['job_id']) ?>&jtype=<?php echo $endecrypt->encryptIt('1') ?>&utype=<?php echo $endecrypt->encryptIt('n') ?>&u=<?php echo $endecrypt->encryptIt($uid) ?>">Accept</a> <?php if($aviJob['job_status'] != 6 && empty($freezeJobId) && $jobAllowFreezeDate < $jobWorkDate){ ?> <a class="job-freeze-btn" href="/freeze-job?j=<?php echo $endecrypt->encryptIt($aviJob['job_id']) ?>&jtype=<?php echo $endecrypt->encryptIt('1') ?>&utype=<?php echo $endecrypt->encryptIt('n') ?>&u=<?php echo $endecrypt->encryptIt($uid) ?>"> Freeze</a><?php } ?></td>
+                                </tr>
+                            <?php endif; ?>
+                        <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <?php } ?>
+<?php } ?>
+<!-- Waiting job End -->
+
+
+<?php 
+if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$uid,null)){ // Freelancer?>
+
+<!-- Finance Start -->
+<div class="row feedback-div" style="clear: both;">
+    <div class="welcome-heading finance">
+        <h1><span>FINANCES</span></h1>
+    </div>
+</div>
+<!-- Finance End -->
+<?php if($overallincome['job_rate'] != '' || $overallexpence['cost'] != ''){ ?> 
+<div class="finance-blk-wppr">
+<div class="col-md-3 col-xs-6" align="center"><p class="finance-price"><?php echo $currency.$financeHelper->setPriceFormate($overallincome_curryear['job_rate']); ?></p><span class="finance-txt-css">TOTAL INCOME<span></div>    
+     <div class="col-md-3 col-xs-6" align="center"><p class="finance-price"><?php echo $currency.$financeHelper->setPriceFormate($overallexpence_curryear['cost']); ?></p><span class="finance-txt-css">TOTAL EXPENSE</span></div>
+     </div>
+     <!--<div class="col-md-3" align="center"><p class="finance-price">$50</p><span class="finance-txt-css">AVERAGE EARNED</span></div>-->
+     <div class="col-md-3" align="center"><p class="finance-price"><?php $profit = $overallincome_curryear['job_rate'] - $overallexpence_curryear['cost'];
+                    echo $currency.$financeHelper->setPriceFormate($profit); ?></p><span class="finance-txt-css">NET INCOME</span></div>                
+<div class="col-md-3" align="center"><p class="finance-price"><?php  echo $currency.$financeHelper->setPriceFormate($financeController->taxclaculation($profit , $fmon_usertype)); ?></p><span class="finance-txt-css">ESTIMATED TAX</span></div>
+
+
+<?php } ?>
+    <!-- Report Start -->
+    <div class="row feedback-div margin-top" style="clear: both;">
+    <?php if($overallincome['job_rate'] != '' || $overallexpence['cost'] != ''){ ?> 
+    
+        <!--<div class="welcome-heading">
+            <h2><span>Income & Expenditure Report</span></h2>
+        </div>-->
+        <div class="col-md-6 finance-graph incm-desktp" align="center">
+            <h2 class="marb0"><span class="color-finance">INCOME<span></h2>
+            <span class="finance-txt-css">Year <?php echo  $financeHelper->getMonthFinancialYear($uid,$financialYear) ; ?> </span>
+            <!--<p><img src="<?php //echo $this->cdn('/frontend/locumkit-template/img/barChart01.png');?>" class="img-responsive"></p>-->
+
+            <div class="income-graph graph-chart">
+                <canvas id="myChart" width="400" height="200" class="well"></canvas>
+                <div id="myChart-legend" class="chart-legend"></div>
+            </div>
+
+            <!--<p><span class="finance-price">$500</span></p>-->
+
+        </div>
+        <div class="col-md-6 finance-graph expense-desktop" align="center">
+            <h2 class="marb0"><span class="color-finance">EXPENSES</span></h2>
+            <span class="finance-txt-css">Year <?php echo  $financeHelper->getMonthFinancialYear($uid,$financialYear) ; ?> </span>
+            <!--<p class="margin-top-30"><img src="<?php // echo $this->cdn('/frontend/locumkit-template/img/barChart02.png');?>" class="img-responsive"></p>-->
+
+            <div class="income-graph graph-chart">
+                <canvas id="myChart2" width="400" height="200" class="well"></canvas>
+                <!-- <div id="myChart2-legend" class="chart-legend"></div>-->
+            </div>
+
+            <!--<p><span class="finance-price">$100</span></p>-->
+
+        </div>
+        
+         <div class="col-md-12" align="center">
+            <div class="profile-edit-btn">
+<?php if($fmon_usertype == 'limitedcompany' || $fmonid == ''){ ?> 
+          <a class="btn btn-info" href="javascript:void(0);" id="manageFinancialyear"  onclick="manageFinancialyear();"><?php echo $fmonid ? 'Update' : 'Set'; ?> financial year</a>              
+<?php } ?>      
+    <a class="btn btn-info" href="/finance-detail">See more</a> 
+      <!--<a class="btn btn-info" href="/help">Help ?</a>-->
+            </div>          
+            <p>&nbsp;</p>
+        </div>
+<?php }else{
+    echo "<h5 style='text-align: center; font-size: 22px; color: red;'> No records found. </h5>";   ?>
+     <div class="col-md-12 margin-top" align="center">
+            <div class="profile-edit-btn">
+<?php if($fmonid){}else{ ?> 
+  <a class="btn btn-info" href="javascript:void(0);" id="manageFinancialyear" onclick="manageFinancialyear();"><?php echo $fmonid ? 'Update' : 'Set'; ?> financial year</a> 
+<?php } ?>
+                <a class="btn btn-info" href="/add-income">Add Income</a> 
+                <a class="btn btn-info" href="/add-expense">Add Expense</a> 
+                <!--<a class="btn btn-info" href="/help">Help ?</a>-->
+            </div>          
+            <p>&nbsp;</p>
+        </div>
+        <?php   } ?>
+       
+    </div>
+    <!-- Report End -->
+    
+<?php } ?>
+
+
+
+<?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ // Employer?>
+
+    <!-- Finance Start -->
+    <div class="row feedback-div" style="clear: both;">
+        <div class="welcome-heading finance">
+            <h1><span>FINANCES</span></h1>
+        </div>
+    </div>
+    <!-- Finance End -->
+
+    <!-- Report Start -->
+
+    <div class="row feedback-div margin-top" style="clear: both;">
+        <!--<div class="welcome-heading">
+            <h2><span>Money spent & No of jobs per month</span></h2>
+        </div>-->
+        
+        <?php if($getEmpFinanceoverall != 0){ ?> 
+        
+        <div class="col-md-6 finance-graph" align="center">
+            <h2 class="marb0"><span class="color-finance">Expenditure on locum<span></h2>
+            <span class="finance-txt-css">Year <?php echo  $financeHelper->getMonthFinancialYear($uid,$financialYear) ; ?></span>
+            <!--<p><img src="<?php //echo $this->cdn('/frontend/locumkit-template/img/barChart01.png');?>" class="img-responsive"></p>-->
+
+            <div class="income-graph graph-chart">
+                <canvas id="myChart_emp" width="500" height="230" class="well"></canvas>
+                <div id="myChart-legend_emp" class="chart-legend"></div>
+            </div>
+
+            <!--<p><span class="finance-price">$500</span></p>-->
+
+        </div>
+        <div class="col-md-6 finance-graph" align="center">
+            <h2 class="marb0"><span class="color-finance">No. of locums recruited</span></h2>
+            <span class="finance-txt-css">Year <?php echo  $financeHelper->getMonthFinancialYear($uid,$financialYear) ; ?></span>
+            <!--<p class="margin-top-30"><img src="<?php // echo $this->cdn('/frontend/locumkit-template/img/barChart02.png');?>" class="img-responsive"></p>-->
+
+            <div class="income-graph graph-chart">
+                <canvas id="myChart2_emp" width="500" height="230" class="well"></canvas>
+                <div id="myChart2-legend_emp" class="chart-legend"></div>
+            </div>
+
+            <!--<p><span class="finance-price">$100</span></p>-->
+
+        </div>
+        
+        <div class="col-md-12" align="center">
+            <div class="profile-edit-btn">
+                <a class="btn btn-info" href="javascript:void(0);" id="manageFinancialyear" onclick="manageFinancialyear();"><?php echo $fmonid  ? 'Update' : 'Set'; ?> financial year</a>  
+                <a class="btn btn-info" href="/employer-finance">See more</a>
+                <!--<a class="btn btn-info" href="/help">Help ?</a>-->
+            </div>
+            <p>&nbsp;</p>
+        </div>
+<?php }else{
+    echo "<h5 style='text-align: center; font-size: 22px; color: red;'> No records found. </h5>";   ?>
+    <div class="col-md-12 margin-top" align="center">
+        <div class="profile-edit-btn">
+            <a class="btn btn-info" href="javascript:void(0);" id="manageFinancialyear" onclick="manageFinancialyear();"><?php echo $fmonid ? 'Update' : 'Set'; ?> financial year</a>  
+            <a class="btn btn-info" href="/manage-emp-finance">Add Transactions</a>
+                <!--<a class="btn btn-info" href="/help">Help ?</a>-->
+        </div>
+        <p>&nbsp;</p>
+    </div>
+<?php } ?>
+
+        
+
+
+    </div>
+    <!-- Report End --> 
+
+<?php } ?>
+
+
+
+<?php if(isset($_SESSION['user_role_id']) && (( $_SESSION['user_role_id']==2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$uid,null)) || $_SESSION['user_role_id'] == 3) ){ ?>
+    <div class="row feedback-div feedback-section" style="clear: both;">
+        <div class="welcome-heading feedback">
+            <h1><span>FEEDBACK</span></h1>
+        </div>
+        <?php
+
+        if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {
+            $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $uid, 3);
+        }else{
+            $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $uid, 2);
+        }
+
+        if (!empty($currentFeedbackData)) {   ?>
+            
+            <!--<div class="col-md-6 finance-graph">
+               <?php // $perRatingchart = $functionsController->getOverallRatingforchart($currentFeedbackData);  ?>
+
+              <div class="graph-chart income-graph">
+                  <canvas id="myChartFeed" width="500" height="230" class="well"></canvas>
+                  <div id="myChartFeed-legend" class="chart-legend"></div>
+              </div>    
+           </div>-->
+                        
+            <div class="col-md-5 total-rating" style="float: left;"> <!-- col-md-6 total-rating re-custom-total-rating-->
+                <div class="rating-bordered">
+                      <h3>Overall average score</h3>
+                    <?php $perRating = $functionsController->getOverallRating($currentFeedbackData);   ?>
+                    <div class="progress">
+                        <div  class="progress-bar" role="progressbar" aria-valuenow="<?php echo $perRating ?>"
+                              aria-valuemin="<?php echo $perRating ?>" aria-valuemax="100" style="width:<?php echo round($perRating,2) ?>%">
+                            <div id="profle-progress-bar"><?php echo round($perRating,2) ?>%</div>
+
+                        </div>
+                    </div>
+                    <h4> Rated by <span><?php echo $totalFeedback = count($currentFeedbackData); ?> </span> <?php echo $_SESSION['user_role_id'] == 2 ? 'employers' : 'locums'; ?> </h4>
+                </div>
+            </div>
+           
+            <div class="col-md-6 individual-rating">
+                <h3>Individual ratings</h3>
+                <div id="myCarousel" class="carousel slide" data-ride="carousel">
+                  <!-- Wrapper for slides -->
+                  <div class="carousel-inner" role="listbox">
+                    <?php
+                      if (!empty($currentFeedbackData)) {
+                        $i = 0;
+                       foreach ($currentFeedbackData as $key => $value) {
+
+                        if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {
+                            $feedback_uid = $value['emp_id'];
+                            $feedbackUserData = $functionsController->getFeedbackUserInfo($adapter, $feedback_uid);
+                            $feedusername = @$feedbackUserData['firstname'] ? $feedbackUserData['firstname'].' '.$feedbackUserData['lastname'] : $feedbackUserData['user_name'] ;
+                        }else{
+                            $feedback_uid = $value['fre_id'];
+                            $feedbackUserData = $functionsController->getFeedbackUserInfo($adapter, $feedback_uid);
+                            $feedusername = @$feedbackUserData['firstname'] ? $feedbackUserData['firstname'].' '.$feedbackUserData['lastname'] : $feedbackUserData['user_name'] ;                             
+                        }
+
+                    ?>
+                    <div class="item <?php if($i == 0){echo 'active';} ?>">
+                        <div class="row">
+                            <div class="col-md-6 feedback-img">
+                            <!-- <img src="<?php // if($feedbackUserData['profile_image']){ echo $feedbackUserData['profile_image'];}else{ echo "public/frontend/locumkit-template/img/no-photo-icon.png";} ?>" alt="Chania">-->
+                                <div class="user-info">
+                                <?php
+                                if(!empty($feedbackUserData)){ ?>
+                                    <h3> <i class="fa fa-user" aria-hidden="true"></i> <?php echo $feedusername ?></h3>
+                                <?php } ?>
+                                </div>
+                            </div> 
+                            <div class="col-md-12 feebacl-comment-section">
+                               <p><?php // echo substr($value['comments'], 0, 350); ?></p>
+                               <div class="user-info">
+                                <?php                                
+                                if(!empty($feedbackUserData)){ ?>
+                                  <ul>
+                                    <li>
+                                      <div id="stars-rating" class="user-rating">
+                                          <?php
+                                              $totalStar = 5;
+                                              $ratingStar = $value['rating'];
+                                              $currentStar = 1;
+                                              while($totalStar > 0){
+                                                  if($ratingStar >= $currentStar){
+                                                    $starClass = 'fa-star';
+                                                }else{
+                                                    $starClass = 'fa-star-o';
+                                                }
+                                          ?>
+                                              <i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+                                          <?php $totalStar--; $currentStar++; } ?>
+                                      </div>
+                                    </li>
+                                    <!--<li><h6><i class="fa fa-user" aria-hidden="true"></i> <?php // echo $feedbackUserData['firstname'].' '.$feedbackUserData['lastname'] ?></h6></li>-->
+                                  </ul>
+                                  <div class="feedback-date"><i class="fa fa-calendar" aria-hidden="true"></i> <?php echo date('d/m/Y', strtotime($value['created_date'])); ?></div>
+                                <?php } ?>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <?php
+                        $i++;
+                        }
+                      }
+                    ?>
+                  </div>
+                  <div class="carousel-nav">
+                     <!-- Left and right controls -->
+                     <a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
+                       <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                       <span class="sr-only">Previous</span>
+                     </a>
+                     <a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
+                       <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                       <span class="sr-only">Next</span>
+                    </a>
+                  </div>
+                </div>
+            </div>
+                        
+            <div class="all-feedback-btn">
+             <!--<a class="btn btn-info" href="/feedback-report" role="button">
+                   View All Response Bar
+                </a>- -->
+                <a class="btn btn-info" href="/feedback-detail" role="button">
+                    View all
+                </a>
+            </div>
+
+        <?php }else{
+            echo "<h5 style='text-align: center; font-size: 22px; color: red;'> No record found. </h5>";
+        } ?>
+    </div>
+<?php }else{ ?>
+    <br/>
+<?php } ?>
+<!-- Cancellation Section -->
+<div class="row feedback-div cancellation-percentage" style="clear: both;">
+    <div class="welcome-heading ">
+        <?php
+        $cancellationRate = 0;
+        $progress = 0;
+        if ($_SESSION['user_role_id'] == 3 ) {
+            $cancellationRate = $functionsController->getEmpCancellationRate($uid,$adapter);
+            $progress = $cancellationRate;
+        }elseif($_SESSION['user_role_id'] == 2 ){
+            $cancellationRate = $functionsController->getFreCancellationRate($uid,$adapter);
+            $progress = $cancellationRate;
+        }
+        if ($progress < 45) {
+            $style = "background:#20b117;color: #000;padding: 0px 6px;";
+        }elseif($progress > 45 && $progress < 75){
+            $style = "background:#fb962d";
+        }else{
+            $style = "background:#fb2d2d";
+        }
+        ?>
+        <div class="col-md-12 col-sm-12 col-xs-12 cancellatn-perblk">
+            <!--<h3 class="text-center"><a href="javascript:void(0);" title="Last 6 months cancellation percentage."><span>Cancellation percentage : <?php echo $progress; ?>% </span><em>(for last six months)</em></a></h3>-->
+            <h3 class="text-center"><span>Cancellation percentage : <?php echo $progress; ?>% </span><em>(for last six months)</em></h3>
+        </div>
+        <!-- <div class="col-md-6 col-sm-6 col-xs-12">
+                          <div class="progress" >
+                            <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo $progress; ?>" aria-valuemin="0" aria-valuemax="100" style="width:<?php echo $progress; ?>%; <?php echo $style; ?>">
+                              <?php echo $progress; ?>%
+                            </div>
+                          </div>
+                        </div> -->
+    </div>
+</div>
+
+
+
+
+<!-- NEWS SECTION START -->
+<div class="row feedback-div margin-top" style="clear: both;">
+    <div class="welcome-heading industrial-news">
+        <h1><span>INDUSTRY NEWS</span></h1>
+    </div>
+    <?php
+    $user_role_title="";
+    if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {
+        $user_role_title="freelancer-news";
+    }else{
+        $user_role_title="employer-news";
+    }
+    $listnews =  $financeHelper->getIndustrynewsfordisplay($_SESSION['user_role_id'] , $_SESSION['user_profession_id']);
+    foreach($listnews as $news): ?>
+
+        <div class="col-md-4 col-sm-4 small-icon-box">
+            <div class="set-icon">
+                <figure>
+                   <!--<img src="<?php //echo $this->cdn($news['image_path']) ?>" alt="<?php //echo $news['title']; ?>" class="img-responsive">-->
+<img src="<?php echo $this->serverUrl().'/'.$news['image_path'] ?>" alt="<?php echo $news['title']; ?>" class="img-responsive" width="100%">
+
+                </figure>
+            </div>
+            <div class="set-content">
+                <h3><?php echo $this->translate($news['title']);?></h3>
+            
+<?php echo substr($this->translate($news['description']), 0,200)."..." ; ?>
+            </div><br>
+            <div class="set-button">
+                <a class="read-common-btn2" href="<?php echo $this->serverUrl().'/news/'.$news['slug'] ?>">Read More</a>
+            </div>
+        </div>
+    <?php endforeach; ?>
+</div>
+<!--  NEWS SECTION END -->
+
+
+<div class="profile-details dlete-profile-section" >
+    <div class="profile-edit-btn">
+        <a href="javascript:void(o);" class="btn-small btn-warning" onClick="confirm_delete(<?php echo $result_data['id'];?>);"><?php echo $this->escapeHtml('Delete Profile'); ?></a>
+    </div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Modal add and update financial year-->
+<div id="manage-financial-year" class="modal fade financepopup" role="dialog">
+    <div class="modal-dialog">
+        <form action="" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title"><?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ ?> Employment status <?php }else{ ?> Select financial year <?php } ?></h4>
+                </div>
+                <div class="modal-body">
+                    <div class="col-md-12 pad0 financeform">
+                        <div class="form-group" id="bank_date">
+                            <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2){ ?> 
+                            <div class="col-md-5">Who are you?</div>
+                            <div class="col-md-7">
+                                 <select name="fiusertype" id="fiusertype" class="form-control" required>
+                          <option value="">Select</option>
+                          <option value="soletrader" <?php echo @$fmon_usertype == 'soletrader' ? 'selected' : '' ; ?>>Sole trader</option>
+                          <option value="limitedcompany" <?php echo @$fmon_usertype == 'limitedcompany' ? 'selected' : '' ; ?>>Limited company</option>
+                                </select>
+                                </div>
+<br/>
+<br/>
+
+ <?php }else{ ?> 
+<input type="hidden" name="fiusertype" id="fiusertype" value="limitedcompany">
+<?php } ?>
+
+ <div class="fiusertypecon" <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2 && ($fmon_usertype == 'soletrader' || $fmon_usertype == '')){ ?> style="display:none;" <?php } ?>> 
+
+                            <div class="col-md-5">Select financial year starting month</div>
+                                <div class="col-md-7">
+                                 <select name="finmonth" id="finmonth" class="form-control" required>
+                                <option value="">Select</option>
+                                <?php $mts = $financeHelper->getMonthNamer() ;
+                                foreach($mts as $key=>$mt){ ?>
+                                    <option value="<?php echo $key ;?>" <?php echo @$key==$fmon ? 'selected' : '';?>><?php echo $mt ;?></option>
+                                <?php  } ?>
+                                </select>
+                                </div>
+</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default pull-right" onclick="savefinancialyear();" data-dismiss="modal">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Calender Pop up -->
+<div class="modal fade" id="fs-calender-action" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close close-alert" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Date Information - <span id="fs-selected-date"></span></h4>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer"></div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function confirm_delete(id){
+        $('div#alert-confirm-modal #alert-message').html('<span>Are you sure you want to delete your account? <br/> Please note - Once account is deleted all data will be erased.</span>');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            messageBoxClose();
+            $('#delete_box').show();
+            $('#delete_box').addClass('in');
+            $('#delete_box').css('display','block');
+        });
+
+    }
+    function close_dive(id){
+        $("#"+id).hide();
+        $('.modal-backdrop').hide();
+        //location.reload();
+    }
+    function validate()
+    {
+        var chks = document.getElementsByName('reason[]');
+        var hasChecked = false;
+        for (var i = 0; i < chks.length; i++)
+        {
+            if (chks[i].checked)
+            {
+                hasChecked = true;
+                break;
+            }
+        }
+        if (hasChecked == false)
+        {
+            //alert("Please select at least one.");
+            messageBoxOpen('Please select a reason to delete your account.');
+            $('.alert-modal .modal-footer button.btn.btn-default').removeAttr('onclick');
+            return false;
+        }
+        return true;
+    }
+</script>
+<?php date_default_timezone_set('Europe/London');?>
+<script type="text/javascript">
+previousDateSpam();
+previousDateBookHistory();
+var disableddates = [<?php echo $blockDateString; ?>];
+
+var bookdates = [<?php echo $bookDateString; ?>];
+function DisableSpecificDates(date) {
+    var string = $.datepicker.formatDate('yy-mm-dd', date);
+    var today = $.datepicker.formatDate('yy-mm-dd', new Date());
+
+    var currentTime = new Date("<?php echo date('Y-m-d H:i:s'); ?>");
+    var block_today = 0;
+    if(string == today ){
+        if (currentTime.getHours() > 11){
+            block_today = 1;
+        }
+        if (currentTime.getHours() == 11 && currentTime.getMinutes() > 30){
+            block_today = 1;
+        }
+    }
+    if(string < today ){
+         if ($.inArray(string, disableddates) > -1 ) {
+            //$('.ui-state-disabled').addClass('blocked-date');
+            return [true,"ui-datepicker-unselectable ui-state-disabled block-date",""];
+        }else if($.inArray(string, bookdates) > -1 ) {
+             <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                 // alert($.inArray(string, bookdates));
+                 var pCurrentBookins = <?php echo json_encode($getPCurrentBookings); ?>;
+                 var currentBookins = <?php echo json_encode($getAllCurrentBookings); ?>;
+                 //console.log(<?php //echo count($getAllCurrentBookings); ?>//);
+                 //console.log(<?php //echo count($getPCurrentBookings); ?>//);
+                 var cntCurrentBookings = <?php echo count($getAllCurrentBookings); ?>;
+                 // console.log(cntCurrentBookings);
+                 var bank, invoice_notrequired, fit_id;
+                 if($.inArray(string, bookdates) > cntCurrentBookings) {
+                     //console.log(pCurrentBookins[$.inArray(string, bookdates) - <?php //echo count($getAllCurrentBookings); ?>//]);
+                     bank = pCurrentBookins[$.inArray(string, bookdates) - <?php echo count($getAllCurrentBookings); ?>].bank;
+                     fit_id = pCurrentBookins[$.inArray(string, bookdates) - <?php echo count($getAllCurrentBookings); ?>].fit_id;
+                     //console.log(pCurrentBookins);
+                     invoice_notrequired = pCurrentBookins[$.inArray(string, bookdates) - <?php echo count($getAllCurrentBookings); ?>].invoice_notrequired;
+                 }
+
+                 else {
+                     // console.log(currentBookins[$.inArray(string, bookdates)]);
+
+                     // console.log(currentBookins);
+                     bank = currentBookins[$.inArray(string, bookdates)].bank;
+                     fit_id = currentBookins[$.inArray(string, bookdates)].fit_id;
+                     // console.log(bank);
+                     invoice_notrequired = currentBookins[$.inArray(string, bookdates)].invoice_notrequired;
+                 }
+
+                 if(fit_id == null) {
+                     return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+                 } else {
+                     if(bank == '1') {
+                         // step 3 -  once money has come in user click on bank, enters bank date and submit
+                         return [true," ui-datepicker-unselectable ui-state-disabled booked-date step3",""];
+                     } else {
+                         if(invoice_notrequired == null || invoice_notrequired == 0){
+                             // step 1 - user is still to send invoice
+                             return [true," ui-datepicker-unselectable ui-state-disabled booked-date step1",""];
+                         } else if(invoice_notrequired == 1){
+                             // step 2 - When invoice is not required or invoice is sent
+                             return [true," ui-datepicker-unselectable ui-state-disabled booked-date step2",""];
+                         } else {
+                             return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+                         }
+                     }
+                 }
+
+             <?php } else { ?>
+                return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+             <?php } ?>
+
+        }
+    }
+
+    if ($.inArray(string, disableddates) > -1 ) {
+        //$('.ui-state-disabled').addClass('blocked-date');
+        return [true,"block-date",""];
+    }else if($.inArray(string, bookdates) > -1 ){
+        <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+            // alert($.inArray(string, bookdates));
+            var pCurrentBookins = <?php echo json_encode($getPCurrentBookings); ?>;
+            var currentBookins = <?php echo json_encode($getAllCurrentBookings); ?>;
+            //console.log(<?php //echo count($getAllCurrentBookings); ?>//);
+            //console.log(<?php //echo count($getPCurrentBookings); ?>//);
+            var cntCurrentBookings = <?php echo count($getAllCurrentBookings); ?>;
+            // console.log(cntCurrentBookings);
+            var bank, invoice_notrequired, fit_id;
+            if($.inArray(string, bookdates) > cntCurrentBookings) {
+                //console.log(pCurrentBookins[$.inArray(string, bookdates) - <?php //echo count($getAllCurrentBookings); ?>// - 1]);
+                bank = pCurrentBookins[$.inArray(string, bookdates) - <?php echo count($getAllCurrentBookings); ?> - 1].bank;
+                fit_id = pCurrentBookins[$.inArray(string, bookdates) - <?php echo count($getAllCurrentBookings); ?> - 1].fit_id;
+                invoice_notrequired = pCurrentBookins[$.inArray(string, bookdates) - <?php echo count($getAllCurrentBookings); ?> - 1].invoice_notrequired;
+            }
+
+            else {
+                // console.log(currentBookins[$.inArray(string, bookdates)]);
+                bank = currentBookins[$.inArray(string, bookdates)].bank;
+                fit_id = currentBookins[$.inArray(string, bookdates)].fit_id;
+                invoice_notrequired = currentBookins[$.inArray(string, bookdates)].invoice_notrequired;
+            }
+
+            if(fit_id == null) {
+                return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+            } else {
+                if(bank == '1') {
+                    // step 3 -  once money has come in user click on bank, enters bank date and submit
+                    return [true," ui-datepicker-unselectable ui-state-disabled booked-date step3",""];
+                } else {
+                    if(invoice_notrequired == null || invoice_notrequired == 0){
+                        // step 1 - user is still to send invoice
+                        return [true," ui-datepicker-unselectable ui-state-disabled booked-date step1",""];
+                    } else if(invoice_notrequired == 1){
+                        // step 2 - When invoice is not required or invoice is sent
+                        return [true," ui-datepicker-unselectable ui-state-disabled booked-date step2",""];
+                    } else {
+                        return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+                    }
+                }
+            }
+
+        <?php } else { ?>
+            return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+        <?php } ?>
+
+    }else if(string > today ){
+        return [true,"available-date",""];
+    }else if(string == today && block_today == 0){
+        return [true,"available-date",""];
+    }else if(string == today && block_today == 1){
+        return [true,"ui-datepicker-unselectable ui-state-disabled",""];
+    }else{
+        return [true,"ui-datepicker-unselectable ui-state-disabled",""];
+    }
+
+}
+
+
+
+$('#block-dates').datepicker({
+    dateFormat: 'yy-m-d',
+    inline: true,
+    beforeShowDay: DisableSpecificDates,
+    minDate : -120,
+    /* onSelect freezes the dialog box and populates with a link
+     want to populate the dialog on hover and then freeze so that link can be followed*/
+    onSelect: function(date) {
+        performDateOperation();
+    }
+
+});
+
+
+
+$("#block-dates table.ui-datepicker-calendar a").mouseover(function() {
+    $(this).attr('title', 'Click for details');
+});
+
+$("#block-dates td.available-date a").click(function() { 
+    $('#fs-calender-action').modal('show');   
+    event.preventDefault();    
+    var MyDateString = (0 + $(this).text()).slice(-2)+"/"+ ('0' + (parseInt($(this).parents().attr('data-month')) + 1) ).slice(-2)+"/"+$(this).parents().attr('data-year');     
+    var date = $(this).parents().attr('data-year')+'-'+ (parseInt($(this).parents().attr('data-month')) + 1 )  +'-'+$(this).text();
+    <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+        if ($.inArray(MyDateString, disableddates) > -1 ) {
+            var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate)<input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+        }else{
+            var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate) <input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><br/><p><a href="<?php echo $this->serverUrl().'/private-job?p-date=';?>'+date+'" title="Add Private job" style="color:blue;">Click here</a> to add private job</p><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+        }
+    <?php } else{?>
+        var available_html = ''; 
+        available_html += '<p><b>This date is avilable to post job.</b><br/><span style="font-size:12px">(<a href="<?php echo $this->serverUrl().'/managejob?doj=';?>'+date+'">Click here</a> to post job.)</span></p><hr/>';
+        $('#fs-calender-action .modal-body').html(available_html);
+        $('#fs-calender-action').modal('show');
+    <?php }?>
+    var uid = "<?php echo $uid ?>";
+    $.ajax({
+        'url'   :'/ajax-request',
+        'type'  :'POST',
+        'data'  : {'info_about_date' : date, 'uid':uid},
+        'success':function(result){             
+            var available_html = ''; 
+            $('#fs-selected-date').html(MyDateString);    
+            <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                available_html  += "<p>This date is currently set as available to work </p> <p><b>Minimum Rate :</b> <?php echo $this->config()->get('site_currency') ?>"+result+"</p>";                    
+            <?php }else{?>
+                if(result == 0){
+                    available_html  += "<p>This date is Available to post job.</p>";
+                }else{
+                    available_html  += result;
+                }
+            <?php } ?>
+            $('#fs-calender-action .modal-body').html(available_html + dateInfoForm);            
+        }
+    }); 
+});
+
+$("#block-dates td.booked-date a").click(function() {
+    $('#fs-calender-action').modal('show');
+    event.preventDefault();
+    $('#fs-calender-action .modal-body').html('<div id="loader-div-dialog"><div class="loader-dialog"></div></div>');
+    var hoverDate = $(this).text()+" "+$(".ui-datepicker-month",$(this).parents()).text()+" "+$(".ui-datepicker-year",$(this).parents()).text();
+    $('#fs-selected-date').html((0 + $(this).text()).slice(-2)+"/"+ (0 + $(this).parents().attr('data-month')).slice(-2)+"/"+$(this).parents().attr('data-year'));
+    //alert(hoverDate);
+    var uid = $("#uid").val();
+    $.ajax({
+        'url'   :'/ajax-request',
+        'type'  :'POST',
+        'data'  : {'book_info_about_date' : hoverDate, 'uid':uid},
+        'success':function(result){
+            $("#loader-div-dialog").hide(100);            
+            <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                $('#fs-calender-action .modal-body').html(result);
+            <?php }else{?>
+                if(result==0){
+                    $('#fs-calender-action .modal-body').html("<p>This date is available to post job.</p>");
+                }else{
+                    $('#fs-calender-action .modal-body').html(result);
+                }
+            <?php }?>            
+        }
+    });
+});
+
+
+$("#block-dates td.block-date a").click(function() {
+    event.preventDefault();
+    var MyDateString = (0 + $(this).text()).slice(-2)+"/"+ ('0' + (parseInt($(this).parents().attr('data-month')) + 1) ).slice(-2)+"/"+$(this).parents().attr('data-year');     
+    var date = $(this).parents().attr('data-year')+'-'+ (parseInt($(this).parents().attr('data-month')) + 1 ) +'-'+$(this).text();
+    <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+        if ($.inArray(MyDateString, disableddates) > -1 ) {
+            var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate)<input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+        }else{
+            var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate) <input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><br/><p><a href="<?php echo $this->serverUrl().'/private-job?p-date=';?>'+date+'" title="Add Private job" style="color:blue;">Click here</a> to add private job</p><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+        }
+    <?php } else{?>
+        var available_html = ''; 
+        available_html += '<p><b>This date is avilable to post job.</b><br/><span style="font-size:12px">(<a href="<?php echo $this->serverUrl().'/managejob?doj=';?>'+date+'">Click here</a> to post another job.)</span></p><hr/>';
+        $('#fs-calender-action .modal-body').html(available_html);
+        $('#fs-calender-action').modal('show');
+    <?php }?>
+    var uid = "<?php echo $uid ?>";
+    $.ajax({
+        'url'   :'/ajax-request',
+        'type'  :'POST',
+        'data'  : {'info_about_date' : date, 'uid':uid},
+        'success':function(result){              
+            var available_html = ''; 
+            $('#fs-selected-date').html(MyDateString);    
+            <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                available_html  += "<p>This date is currently set as not available to work </p> <p><b>Minimum Rate :</b> <?php echo $this->config()->get('site_currency') ?>"+result+"</p>"; 
+            <?php }else{?>
+                if(result == 0){
+                    available_html  += "<p>This date is available to post job.</p>";
+                }else{
+                    available_html  += result;
+                }
+            <?php } ?>
+            $('#fs-calender-action .modal-body').html(available_html + dateInfoForm);
+            $('#fs-calender-action').modal('show');
+        }
+    }); 
+});
+
+/* Recall All functionality on next and prev action of calander */
+function calenderAction() {
+    $("#block-dates table.ui-datepicker-calendar a").mouseover(function() {
+        //dlg.dialog("open");
+        $(this).attr('title', 'Click for details');
+    });   
+
+    $("#block-dates td.available-date a").click(function() { 
+        $('#fs-calender-action').modal('show');   
+        event.preventDefault();    
+        var MyDateString = (0 + $(this).text()).slice(-2)+"/"+ ('0' + (parseInt($(this).parents().attr('data-month')) + 1) ).slice(-2)+"/"+$(this).parents().attr('data-year');     
+        var date = $(this).parents().attr('data-year')+'-'+ (parseInt($(this).parents().attr('data-month')) + 1 ) +'-'+$(this).text();
+        <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+            if ($.inArray(MyDateString, disableddates) > -1 ) {
+                var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate)<input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+            }else{
+                var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate) <input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><br/><p><a href="<?php echo $this->serverUrl().'/private-job?p-date=';?>'+date+'" title="Add Private job" style="color:blue;">Click here</a> to add private job</p><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+            }
+        <?php } else{?>
+            var available_html = ''; 
+            available_html += '<p><b>This date is avilable to post job.</b><br/><span style="font-size:12px">(<a href="<?php echo $this->serverUrl().'/managejob?doj=';?>'+date+'">Click here</a> to post job.)</span></p><hr/>';
+            $('#fs-calender-action .modal-body').html(available_html);
+            $('#fs-calender-action').modal('show');
+        <?php }?>
+        var uid = "<?php echo $uid ?>";
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  : {'info_about_date' : date, 'uid':uid},
+            'success':function(result){  
+                console.log(result);           
+                var available_html = ''; 
+                $('#fs-selected-date').html(MyDateString);    
+                <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                    available_html  += "<p>This date is currently set as available to work </p> <p><b>Minimum Rate :</b> <?php echo $this->config()->get('site_currency') ?>"+result+"</p>";                    
+                <?php }else{?>
+                    if(result == 0){
+                        available_html  += "<p>This date is available to post job.</p>";
+                    }else{
+                        available_html  += result;
+                    }
+                <?php } ?>
+                $('#fs-calender-action .modal-body').html(available_html + dateInfoForm);            
+            }
+        }); 
+    });
+
+    $("#block-dates td.booked-date a").click(function() {
+        $('#fs-calender-action').modal('show');
+        event.preventDefault();
+        $('#fs-calender-action .modal-body').html('<div id="loader-div-dialog"><div class="loader-dialog"></div></div>');
+        var hoverDate = $(this).text()+" "+$(".ui-datepicker-month",$(this).parents()).text()+" "+$(".ui-datepicker-year",$(this).parents()).text();
+        $('#fs-selected-date').html((0 + $(this).text()).slice(-2)+"/"+ (0 + $(this).parents().attr('data-month')).slice(-2)+"/"+$(this).parents().attr('data-year'));
+        //alert(hoverDate);
+        var uid = $("#uid").val();
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  : {'book_info_about_date' : hoverDate, 'uid':uid},
+            'success':function(result){
+                $("#loader-div-dialog").hide(100);            
+                <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                    $('#fs-calender-action .modal-body').html(result);
+                <?php }else{?>
+                    if(result==0){
+                        $('#fs-calender-action .modal-body').html("<p>This date is available to post job.</p>");
+                    }else{
+                        $('#fs-calender-action .modal-body').html(result);
+                    }
+                <?php }?>            
+            }
+        });
+    });
+
+
+    $("#block-dates td.block-date a").click(function() {
+        event.preventDefault();
+        var MyDateString = (0 + $(this).text()).slice(-2)+"/"+ ('0' + (parseInt($(this).parents().attr('data-month')) + 1) ).slice(-2)+"/"+$(this).parents().attr('data-year');     
+        var date = $(this).parents().attr('data-year')+'-'+ (parseInt($(this).parents().attr('data-month')) + 1 ) +'-'+$(this).text();
+        <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+            if ($.inArray(MyDateString, disableddates) > -1 ) {
+                var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate)<input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+            }else{
+                var dateInfoForm = '<form method="POST" id="calander_date_info" ><input type="radio" name="availability" value="1" onClick="showMinRate()" id="available"> Available (edit rate) <input type="number" name="min_rate_date" value="" min="1" class="form-control margin-bottom" id="min_rate_date" style="display:none" placeholder="Please enter minimum rate"><br/><input type="radio" name="availability" value="2" onClick="hideMinRate()" id="not_available"> Not available<br/><br/><p><a href="<?php echo $this->serverUrl().'/private-job?p-date=';?>'+date+'" title="Add Private job" style="color:blue;">Click here</a> to add private job</p><input type="hidden" name="selected_date" id="selected_date" value="'+date+'" class="form-control margin-bottom"><input type="hidden" name="uid"  value="<?php echo $uid ?>" class="form-control margin-bottom"><a href="javascript:void(0)" onClick="return action_save_date_record()" class="save_date_info">Save</a></form>';
+            }
+        <?php } else{?>
+            var available_html = ''; 
+            available_html += '<p><b>This date is avilable to post job.</b><br/><span style="font-size:12px">(<a href="<?php echo $this->serverUrl().'/managejob?doj=';?>'+date+'">Click here</a> to post another job.)</span></p><hr/>';
+            $('#fs-calender-action .modal-body').html(available_html);
+            $('#fs-calender-action').modal('show');
+        <?php }?>
+        var uid = "<?php echo $uid ?>";
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  : {'info_about_date' : date, 'uid':uid},
+            'success':function(result){              
+                var available_html = ''; 
+                $('#fs-selected-date').html(MyDateString);    
+                <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+                    available_html  += "<p>This date is currently set as not available to work </p> <p><b>Minimum Rate :</b> <?php echo $this->config()->get('site_currency') ?>"+result+"</p>";                    
+                <?php }else{?>
+                    if(result == 0){
+                        available_html  += "<p>This date is Available to post job.</p>";
+                    }else{
+                        available_html  += result;
+                    }
+                <?php } ?>
+                $('#fs-calender-action .modal-body').html(available_html + dateInfoForm);
+                $('#fs-calender-action').modal('show');
+            }
+        }); 
+    });
+
+
+    <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ ?>
+        $('td.ui-datepicker-unselectable.ui-state-disabled.booked-date').click(function(){
+            var d = $(this).children().text();            
+            var m = $(this).attr('data-month');
+            var y = $(this).attr('data-year');
+            var post_job_date = y+"-"+(parseInt(m) + 1)+"-"+d; 
+            if (new Date(post_job_date) > new Date("<?php echo date('Y-m-d') ?>")){            
+                //$('div#loader-div').show();
+                window.setTimeout(function(){
+                    //window.location.href="<?php echo $this->serverUrl().'/managejob?doj=';?>"+post_job_date;
+                }, 1000);
+            };            
+        });
+    <?php } ?>
+}
+$("div#block-dates").click(function(){
+    previousDateSpam();
+    previousDateBookHistory();
+    calenderAction();
+});
+
+function action_save_date_record() {
+
+    var validate = '';
+    if ($('#available').is(':checked')) {
+        if ($('#min_rate_date').val() == '' || $('#min_rate_date').val() == null) {
+            //alert("Please enter minimum rate");
+            messageBoxOpen('Please enter minimum rate.');
+            $('.alert-modal .modal-footer button.btn.btn-default').removeAttr('onclick');
+            validate = 0;
+            return false;
+        }else{
+            validate = 1;
+        }
+    }else if($('#not_available').is(':checked')){
+        validate = 1;
+    }else{
+        //alert("Please select one option from availability");
+        messageBoxOpen('Please select one option from availability');
+        $('.alert-modal .modal-footer button.btn.btn-default').removeAttr('onclick');
+        validate = 0;
+        return false;
+    }
+    if (validate == 1) {
+        //$("#loader-div").show(100);
+        $('div#fs-calender-action').modal('hide');
+        var date_info = $("#calander_date_info").serialize();
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  : {'calender_update' : date_info},
+            'success':function(result){
+                console.log(result.trim());
+                $('.ui-dialog').css('display','none');
+                //alert("You calendar updated successfully.");
+                //$('#alert-modal').modal('show');
+                $('.alert-modal button.close.hide-pop-up').hide();
+                if(result.trim() == 1){
+                    messageBoxOpen('We have updated your calendar with the required rates.');
+                }else{
+                    messageBoxOpen('Your availability has been updated.');
+                }
+                
+                $('.alert-modal .modal-footer button.btn.btn-default').attr('onclick',"window.location.reload()");
+                //location.reload();
+            }
+        });
+    }
+
+}
+function showMinRate(){
+    $('#min_rate_date').show(1000);
+}
+function hideMinRate(){
+    $('#min_rate_date').hide(1000);
+}
+function previousDateSpam() {
+    $("td.ui-datepicker-unselectable.ui-state-disabled a").each( function() {
+        $(this).replaceWith(function(){
+            return $("<span class='ui-state-default'>" + $(this).html() + "</span>");
+        });
+    });
+    $("td.ui-datepicker-week-end.block-date a").each( function() {
+        $(this).replaceWith(function(){
+            return $("<span class='ui-state-default'>" + $(this).html() + "</span>");
+        });
+    });
+}
+function previousDateBookHistory() {
+    $("td.ui-datepicker-unselectable.ui-state-disabled.booked-date span").each( function() {
+        $(this).replaceWith(function(){
+            return $("<a href='#' class='ui-state-default'>" + $(this).html() + "</a>");
+        });
+    });
+}
+</script>
+
+<?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2   && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$uid,null) == 1){ // freelancer?>
+    <script>
+
+        $(document).ready(function() {
+            $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+                var data_x = <?php echo json_encode($incomechart[0]) ?>;
+                var data1 = <?php echo json_encode($incomechart[3]) ?>;
+                var data2 = <?php echo json_encode($incomechart[2]) ?>;
+                var data = {
+                    labels : data_x,
+                    datasets : [
+                        {
+                            label: "Income",
+                            fillColor : "#85A04C",
+                            strokeColor : "#85A04C",
+                            pointColor : "rgba(220,220,220,1)",
+                            pointStrokeColor : "#fff",
+                            data : data1
+                        }
+                    ]
+                };
+                var yearlyExpense = <?php echo json_encode($expenseChart[0]) ?>;
+                var paidExpense = <?php echo json_encode($expenseChart[3]) ?>;
+                var pendingExpense = <?php echo json_encode($expenseChart[2]) ?>;
+                var dataExpense = {
+                    labels : yearlyExpense,
+                    datasets : [
+                        {
+                            label: "Expenses",
+                            fillColor : "#A44442",
+                            strokeColor : "#A44442",
+                            pointColor : "rgba(220,220,220,1)",
+                            pointStrokeColor : "#fff",
+                            data : paidExpense
+                        }                        
+                    ]
+                }
+                var options = {
+                    animation: true,
+                    multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+                };
+
+                //Get the context of the canvas element we want to select
+                var c = $('#myChart');
+                var ct = c.get(0).getContext('2d');
+                var ctx = document.getElementById("myChart").getContext("2d");
+                /*********************/
+                var myChart = new Chart(ctx).Bar(data,options);
+                //document.getElementById('myChart-legend').innerHTML = myChart.generateLegend();
+                //Get the context of the canvas element we want to select
+                var c = $('#myChart2');
+                var ct = c.get(0).getContext('2d');
+                var ctx = document.getElementById("myChart2").getContext("2d");
+                /*********************/
+                var myChart2 = new Chart(ctx).Bar(dataExpense,options);
+                //document.getElementById('myChart2-legend').innerHTML = myChart2.generateLegend();
+
+            });
+        });
+        
+    </script>
+
+<?php } ?>
+
+<?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ // Employer ?>
+    <script>
+
+        $(document).ready(function() {
+            $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+                var costmonth = <?php echo json_encode($getEmpFinanceCost[0]) ?>;
+                var cost = <?php echo json_encode($getEmpFinanceCost[1]) ?>;
+                var data = {
+                    labels : costmonth,
+                    datasets : [
+                        {
+                            label: "Money Expense",
+                            fillColor : "#A44442",
+                            strokeColor : "#A44442",
+                            pointColor : "rgba(220,220,220,1)",
+                            pointStrokeColor : "#fff",
+                            data : cost
+                        }
+                    ]
+                };
+
+                var month = <?php echo json_encode($getEmpFinanceJob[0]) ?>;
+                var jobno = <?php echo json_encode($getEmpFinanceJob[1]) ?>;
+                var dataExpense = {
+                    labels : month,
+                    datasets : [
+                        {
+                            label: "No. of jobs",
+                            fillColor : "#85A04C",
+                            strokeColor : "#85A04C",
+                            pointColor : "rgba(220,220,220,1)",
+                            pointStrokeColor : "#fff",
+                            data : jobno
+                        }
+                    ]
+                }
+                var options = {
+                    animation: true,                    
+                    tooltipTemplate: "<%= label %> : <?php echo $this->config()->get('site_currency') ?>  <%= value %>.00"
+                };
+                var options1 = {
+                    animation: true,                    
+                    tooltipTemplate: "<%= label %> : <%= value %>"
+                };
+
+                //Get the context of the canvas element we want to select
+                var c = $('#myChart_emp');
+                var ct = c.get(0).getContext('2d');
+                var ctx = document.getElementById("myChart_emp").getContext("2d");
+                /*********************/
+                var myChart = new Chart(ctx).Bar(data,options);
+                //document.getElementById('myChart-legend_emp').innerHTML = myChart.generateLegend();
+                //Get the context of the canvas element we want to select
+                var c = $('#myChart2_emp');
+                var ct = c.get(0).getContext('2d');
+                var ctx = document.getElementById("myChart2_emp").getContext("2d");
+                /*********************/
+                var myChart2 = new Chart(ctx).Bar(dataExpense,options1);
+                //document.getElementById('myChart2-legend_emp').innerHTML = myChart2.generateLegend();
+
+            });
+            <?php if(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){ ?>
+                $('td.ui-datepicker-unselectable.ui-state-disabled.booked-date').click(function(){
+                    var d = $(this).children().text();            
+                    var m = $(this).attr('data-month');
+                    var y = $(this).attr('data-year');
+                    var post_job_date = y+"-"+(parseInt(m) + 1)+"-"+d;  
+                    if (new Date(post_job_date) > new Date("<?php echo date('Y-m-d') ?>")){
+                        //$('div#loader-div').show();
+                        window.setTimeout(function(){
+                            //window.location.href="<?php echo $this->serverUrl().'/managejob?doj=';?>"+post_job_date;
+                        }, 1000);
+                    };            
+                });
+            <?php } ?>
+        });
+    </script>
+<?php } ?>
+<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script>
+    <?php if((isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==2   && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$uid,null) == 1) || (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3)){ ?>
+        function manageFinancialyear() {
+            $('#manage-financial-year').modal('show');
+        }
+
+        $('#fiusertype').change(function(){
+            var val = $(this).val() ;
+            if(val == 'soletrader'){
+                $(".fiusertypecon").hide('1000');
+                $('#finmonth').val('4') ;
+            }else if(val == 'limitedcompany'){
+                $(".fiusertypecon").show('1000');
+            }else{
+                $(".fiusertypecon").hide('1000');
+            }  
+        });
+    <?php } ?>
+    function savefinancialyear() {
+        var uid = '<?php echo $uid ; ?>';
+        var month = $('#finmonth').val();
+        var fiusertype = $('#fiusertype').val();
+
+        var fyid = '<?php echo @$fmonid ? $fmonid : '' ?>' ;
+
+        $.ajax({
+            'url'   :'/ajax-request',
+            'type'  :'POST',
+            'data'  : {'managefinancialyear' : 1, 'uid':uid , month:month , fyid:fyid , fiusertype:fiusertype },
+            'success':function(result){
+          location.reload();
+            }
+        });
+    }
+
+    function confirm_change_pkg(msg){
+        event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html(msg);
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){            
+            messageBoxClose();
+            window.location.href=$('a#change-pkg-btn').attr('href');
+        });
+    }
+
+    //datatable on job overview section
+    $(document).ready(function() {
+        $('.short-job-desc').DataTable( {
+            searching: false,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]],
+            "columnDefs": [ {
+                "targets": [1,2,3,4],
+                "orderable": false
+            } ]
+        } );
+        $('#current_booking-info').DataTable( {
+            searching: false,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]],
+            "columnDefs": [ {
+                "targets": [1,2,3,4,5],
+                "orderable": false
+            } ]
+        } );
+    } );
+
+    <?php if($fmon_usertype == '' && $_SESSION['user_role_id']==2 ){ ?> 
+        setTimeout(function(){
+            jQuery('#manageFinancialyear').click();
+        },1000);
+    <?php } ?>
+</script>
+
+<style type="text/css">
+    div#fs-calender-action .modal-header {
+        background: #24a9e0;
+        padding: 8px 15px;
+        color: #fff;
+    }
+    div#fs-calender-action .modal-footer {
+        padding: 2px;
+        background: #24a9e0;
+    }
+</style>

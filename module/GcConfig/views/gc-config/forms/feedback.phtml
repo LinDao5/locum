@@ -1,0 +1,70 @@
+<?php
+/**
+ * This source file is part of FUDUGO. *
+ * 
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User\Feedback
+ * @author     Suraj Wasnik (suraj.wasnik0126@gmail.com)
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.fudugo.com
+ */
+?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+   
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('fd_qus_cat_id')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('fd_qus_cat_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('fd_qus_cat_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('fd_qus_fre')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('fd_qus_fre')); ?>
+            <?php echo $this->formElementErrors($this->form->get('fd_qus_fre'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('fd_qus_emp')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('fd_qus_emp')); ?>
+            <?php echo $this->formElementErrors($this->form->get('fd_qus_emp'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('fd_qus_status')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('fd_qus_status')); ?>
+            <?php echo $this->formElementErrors($this->form->get('fd_qus_status'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('fd_qus_sort_order')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('fd_qus_sort_order')); ?>
+            <?php echo $this->formElementErrors($this->form->get('fd_qus_sort_order'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+    
+    
+   
+
+    
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save & add new')); ?>" name="addNew">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+</script>

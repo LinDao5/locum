@@ -1,0 +1,98 @@
+<?php
+date_default_timezone_set('Europe/London');
+
+use Gc\User\Finance\Employertrans\Model as EmployertransModel;
+use GcFrontend\Controller\EndecryptController as Ecryption;
+
+$encypt = new Ecryption();
+
+$action = new EmployertransModel();
+if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != '') {
+    $uid = $_SESSION['user_id'];
+}
+
+$request = $this->getRequest();
+$data = $request->getPost();
+
+if ($request->isPost() && $data['income_submit'] == 'income_submit') {
+
+    $entryyear = date('Y', strtotime(str_replace('/', '-', $data['in_date'])));
+
+    $data = $request->getPost();
+
+    $farray = array(
+        'job_id' => $data['job_id'],
+        'emp_id' => $uid,
+        'fre_id' => trim($data['fre_id']),
+        'fre_type' => $data['fre_type'],
+        'job_date' => $data['in_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $data['in_date']))) : null,
+        'job_rate' => trim($data['rate']),
+        'bonus' => trim($data['bonus']),
+        'paid' => $data['paid'],
+        'paid_date' => $data['paid_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $data['paid_date']))) : null,
+    );
+    $res = $action->save($farray);
+    if ($res) {
+        $this->flashMessenger()->addSuccessMessage('Added successfully');
+    } else {
+
+    }
+    if ($entryyear != date('Y')) {
+        $this->redirect()->toUrl('/employer-finance?year=' . $entryyear);
+    } else {
+        $this->redirect()->toUrl('/employer-finance');
+    }
+    return TRUE;
+
+}
+
+//use for update
+
+if ($request->isPost() && $data['income_submit'] == 'income_update' && $data['edit_id'] != '') {
+    $data = $request->getPost();
+
+
+    $farray = array(
+        'id' => $data['edit_id'],
+        'job_id' => $data['job_id'],
+        'emp_id' => $uid,
+        'fre_id' => $data['fre_id'],
+        'fre_type' => $data['fre_type'],
+        'job_date' => $data['in_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $data['in_date']))) : null,
+        'job_rate' => $data['rate'],
+        'bonus' => $data['bonus'],
+        'paid' => $data['paid'],
+        'paid_date' => $data['paid_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $data['paid_date']))) : null,
+    );
+    $action->save($farray);
+    $this->flashMessenger()->addSuccessMessage('Updated successfully');
+    // $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+    $this->redirect()->toUrl('/employer-finance');
+    return TRUE;
+
+}
+
+if ($request->isPost() && $data['in_data_delete'] == 'in_data_delete' && $data['delincomeId'] != '') {
+    $id = $data['delincomeId'];
+    $del_id = $encypt->decryptIt($id);
+    $action->deleteFinance($del_id, $uid);
+    $this->flashMessenger()->adderrorMessage('Transaction deleted');
+    $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+}
+
+if ($request->isPost() && $data['update-bank-btn'] == 'update-bank-btn') {
+    $post = $request->getPost();
+    $id = $post->get('in_bankid');
+    $isBank = $post->get('in_bank');
+    $bankDate = $post->get('in_bankdate');
+    $bankDate = $bankDate != '' ? date('Y-m-d', strtotime(str_replace('/', '-', $bankDate))) : null;
+    $incomeData = array(
+        'paid' => $isBank,
+        'paid_date' => $bankDate,
+    );
+    $action->update_bank($id, $incomeData);
+    $this->flashMessenger()->addSuccessMessage('Bank status update successfully');
+    $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+}
+
+?>

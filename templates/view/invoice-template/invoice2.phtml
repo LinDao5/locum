@@ -1,0 +1,165 @@
+<?php
+
+use GcFrontend\Controller\JobmailController as JobmailController;
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+use Gc\Registry;
+
+$financeHelper = new FinanceHelper();
+$jobmailController = new JobmailController();
+$currency = $this->config()->get('site_currency');
+
+$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+$site_name = $configGet->get('site_name');
+
+
+if ($action == 'sent') {
+    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != '') {
+        $uid = $_SESSION['user_id'];
+    } else {
+        exit;
+    }
+//    $invoiceno = $financeHelper->generateInvoicenum($data['supplier_email'],'locumkit@gmail.com',$jobdata['job_rate'],$uid);
+    foreach ($jobdata as $key => $value) {
+        $invoiceno = $financeHelper->generateInvoicenum($data['supplier_email'], 'locumkit@gmail.com', $value['job_rate'], $uid);
+    }
+} else {
+    $invoiceno = '-';
+}
+
+
+$tempalte = '<div style="width: 700px;margin:0 auto;"><div style=" border: 2px solid #dedede;float: left; width: 100%;" class="prevboxshadow"><div class="mail-header" style="width: 100%; float: left; clear: both; background: rgb(0, 169, 224) none repeat scroll 0px 0px; border-bottom:2px solid #dedede;">';
+$tempalte .= '<a href="' . $serverUrl() . '"><img src="' . $serverUrl() . '/public/frontend/locumkit-template/img/logo.png" alt="' . $site_name . '" width="100px"  style="margin:10px;"></a>';
+$tempalte .= '</div><div style="margin-bottom: -5px; float: left; width: 100%;">';
+$tempalte .= '<div style="">';
+$tempalte .= '<div style="">';
+$tempalte .= '<section>';
+$tempalte .= '<div>';
+$tempalte .= '<div  style="text-align: center;">';
+$tempalte .= '<h1 style="margin: 0; border-bottom:2px solid #dedede; padding: 10px 0;text-transform: capitalize;font-size: 23px;font-weight: 600;background: #e0e0e0;color: #000;">Invoice</h1>';
+$tempalte .= '</div>';
+$tempalte .= '<div style="text-align: right;">';
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<p style="padding: 15px; margin: 0 0px 0 -30px !important;"  class="pull-right">Latest activity invoice creadted on ' . date("d/m/Y") . '</p>';
+$tempalte .= '</div>';
+$tempalte .= '<div style="float: left; width: 100%;">';
+$tempalte .= '<table style="float: left; width: 100%;   border-spacing: 0;">';
+$tempalte .= '<thead>';
+$tempalte .= '<tr>';
+$tempalte .= '<th colspan="2" style="text-align: center;height: 45px; background:#e0e0e0;border-bottom: 2px solid #dedede;border-top: 2px solid #dedede;">Status : Draft</th>';
+$tempalte .= '</tr>';
+$tempalte .= '</thead>';
+$tempalte .= '<tbody>';
+$tempalte .= '<tr>';
+$tempalte .= '<td style="padding: 15px; text-align:left;">';
+$tempalte .= '<div>' . ucfirst($data['supplier_name']);
+$tempalte .= '</div><div>' . $data['supplier_address'] . '</div><div>Email :' . $data['supplier_email'] . '</div>';
+$tempalte .= '</td>';
+$tempalte .= '<td style=" width: 32%;text-align:left;"><div>Invoice number : ' . $invoiceno . '</div><div>Invoice Date : ' . date("d/m/Y") . '</div><div>Due Date :
+ ' . date("d/m/Y") . '</div></td>';
+$tempalte .= '</tr>';
+$tempalte .= '</tbody>';
+$tempalte .= '</table>';
+$tempalte .= '</div>';
+
+$tempalte .= '<table style="border-top: 2px solid #dedede;float: left; width: 100%;border-collapse:collapse;">'; //class="table table-striped"
+$tempalte .= '<thead style="background: #e0e0e0;">';
+$tempalte .= '<tr style="height: 45px; border-bottom: 2px solid #dedede;">';
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Job No.</th>';
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Title</th>';
+foreach ($jobdata as $key => $value) {
+    if ($value['description'] != '')
+        $tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Description</th>';
+}
+//if($jobdata['description'] != '')
+//    $tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Description</th>';
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Price</th>';
+$tempalte .= '<th style="text-align: center;border-bottom:2px solid #dedede;">Amount</th>';
+$tempalte .= '</tr>';
+$tempalte .= '</thead>';
+$tempalte .= '<tbody>';
+$tempalte .= '<tr style="height: 45px;">';
+
+//foreach ($jobdata as $key => $value) {
+//    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $value['job_id'] . '</td>';
+//    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $value['job_title'] . '</td>';
+//    if ($value['description'] != '')
+//        $tempalte .= '<th style="text-align: center; padding: 15px 0;">' . $value['description'] . '</th>';
+//    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $currency . $financeHelper->setPriceFormate($value['job_rate']) . '</td>';
+//    $tempalte .= '</br>';
+//    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $currency . $financeHelper->setPriceFormate($value['job_rate']) . '</td>';
+//
+//}
+
+foreach ($jobdata as $key => $job){
+    $tempalte .= '<tbody>';
+    $tempalte .= '<tr style="height: 45px;">';
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $job['job_id'] . '</td>';
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $value['job_title'] . '</td>';
+    if($jobdata['description'] != '')
+        $tempalte .= '<th style="text-align: center; padding: 15px 0;">'.$jobdata['description'].'</th>';
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $currency . $financeHelper->setPriceFormate($value['job_rate']) . '</td>';
+    $tempalte .= '<td style="text-align: center; padding: 15px 0;">' . $currency . $financeHelper->setPriceFormate($job['job_rate']) . '</td>';
+    $tempalte .= '</tr>';
+}
+
+
+
+//$tempalte .= '<td style="text-align: center; padding: 15px 0;">'.$jobdata['job_id'].'</td>';
+//$tempalte .= '<td style="text-align: center; padding: 15px 0;">'.$jobdata['job_title'].'</td>';
+//if($jobdata['description'] != '')
+//    $tempalte .= '<th style="text-align: center; padding: 15px 0;">'.$jobdata['description'].'</th>';
+//$tempalte .= '<td style="text-align: center; padding: 15px 0;">'.$currency.$financeHelper->setPriceFormate($jobdata['job_rate']).'</td>';
+//$tempalte .= '<td style="text-align: center; padding: 15px 0;">'.$currency.$financeHelper->setPriceFormate($jobdata['job_rate']).'</td>';
+$tempalte .= '</tr>';
+
+$tempalte .= '<tr style="height: 45px;">';
+$tempalte .= '<td></td>';
+$tempalte .= '<td></td>';
+foreach ($jobdata as $key => $value) {
+    if ($value['description'] != '')
+        $tempalte .= '<td></td>';
+}
+//if ($jobdata['description'] != '')
+//    $tempalte .= '<td></td>';
+
+$allJobRate = 0;
+$count = count($jobdata);
+for ($i = 0; $i < $count; $i++) {
+    $allJobRate = $allJobRate + $jobdata[$i]['job_rate'];
+}
+
+$tempalte .= '<td  style="text-align: center;border-top: 2px solid black;padding: 20px 0;"><b>TOTAL DUE</b></td>';
+
+
+$tempalte .= '<td  style="text-align: center;border-top: 2px solid black;padding: 20px 0;"><b>' . $currency . $financeHelper->setPriceFormate($allJobRate) . '</b></td>';
+
+
+//$tempalte .= '<td  style="text-align: center;border-top: 2px solid black;padding: 20px 0;"><b>' . $currency . $financeHelper->setPriceFormate($jobdata['job_rate']) . '</b></td>';
+$tempalte .= '</tr>';
+$tempalte .= '</tbody>';
+$tempalte .= '</table>';
+$tempalte .= '</div>';
+$tempalte .= '</section>';
+$tempalte .= '</div></div></div></div></div>';
+?>
+
+
+<?php
+if ($action == 'sent') {
+    $sts = $jobmailController->invoiceMail($tempalte, $data['supplier_email'], $invoiceno);
+    if ($sts) {
+        foreach ($jobdata as $key => $value) {
+            $financeHelper->updateIncomeInvoice($value['id'], $invoiceno);
+        }
+//        $financeHelper->updateIncomeInvoice($jobdata['id'], $invoiceno);
+        header("Location: /send-invoice?success=true");
+        exit();
+    } else {
+        header("Location: /send-invoice?success=false");
+        exit();
+    }
+} else {
+    echo $tempalte;
+}
+?>

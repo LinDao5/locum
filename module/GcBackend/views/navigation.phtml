@@ -1,0 +1,185 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Application
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+if($this->admin())
+{
+    $permissions = $this->admin()->getRole()->getUserPermissions();
+}
+?>
+
+<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#gotcms-main-menu">
+                <span class="sr-only"><?php echo $this->escapeHtml($this->translate('Toggle navigation')); ?></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="<?php echo $this->url('admin'); ?>" class="navbar-brand">
+                <span class="glyphicon glyphicon-flash"></span>
+                <?php echo $this->escapeHtml($this->translate('Locum kit')); ?>
+            </a>
+        </div>
+
+        <?php if ($this->admin()): ?>
+            <div class="collapse navbar-collapse" id="gotcms-main-menu">
+                
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="<?php echo $this->url('admin'); ?>" class="<?php if ($this->active == 'admin'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Dashboard')); ?>">
+                            <span class="glyphicon glyphicon-dashboard"></span> <?php echo $this->escapeHtml($this->translate('Dashboard')); ?>
+                        </a>
+                    </li>
+                    
+                    <?php if (!empty($permissions['content'])): ?>
+                    <li>
+                        <a href="<?php echo $this->url('content'); ?>" class="<?php if ($this->active == 'content'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Pages')); ?>">
+                            <span class="glyphicon glyphicon-edit"></span> <?php echo $this->escapeHtml($this->translate('Pages')); ?>
+                        </a>
+                    </li>
+                    <?php endif; ?>
+
+                    <?php if (!empty($permissions['development'])): ?>
+                    <li>
+                        <a href="<?php echo $this->url('development'); ?>" class="<?php if ($this->active == 'development'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Layout Setting')); ?>">
+                            <span class="glyphicon glyphicon-list-alt"></span> <?php echo $this->escapeHtml($this->translate('Layout')); ?>
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($permissions['modules'])): ?>
+                    <!-- <li>
+                        <a href="<?php echo $this->url('module'); ?>" class="<?php if ($this->active == 'module'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Modules')); ?>">
+                            <span class="glyphicon glyphicon-link"></span> <?php echo $this->escapeHtml($this->translate('Modules')); ?>
+                        </a>
+                    </li> -->
+                    <?php endif; ?>
+
+                    <?php if (!empty($permissions['stats'])): ?>
+                    <!-- <li>
+                        <a href="<?php echo $this->url('statistics'); ?>" class="<?php if ($this->active == 'statistics'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Stats')); ?>">
+                            <span class="glyphicon glyphicon-stats"></span> <?php echo $this->escapeHtml($this->translate('Stats')); ?>
+                        </a>
+                    </li> -->
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($permissions['settings'])): ?>
+                        <?php if (in_array("user/list", $permissions['settings']) || in_array("user/create", $permissions['settings']) || in_array("user/edit", $permissions['settings']) || in_array("user/delete", $permissions['settings'])):  ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/user'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Configuration')); ?>">
+                                    <span class="glyphicon glyphicon-user"></span> <?php echo $this->escapeHtml($this->translate('User')); ?>
+                                </a>
+                            </li>                                         
+                        <?php elseif(in_array("paymentHistory/list", $permissions['settings'])): ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/user/paymenthistory'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('User Payment History')); ?>">
+                                    <span class="glyphicon glyphicon-user"></span> <?php echo $this->escapeHtml($this->translate('User Payment History')); ?>
+                                </a>
+                            </li>    
+                        <?php elseif(in_array("question/list", $permissions['settings'])||in_array("question/create", $permissions['settings'])): ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/user/question'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Question Manager')); ?>">
+                                    <span class="glyphicon glyphicon-user"></span> <?php echo $this->escapeHtml($this->translate('User Question Manager')); ?>
+                                </a>
+                            </li>    
+                        <?php endif; ?>
+                        <?php if (in_array("config/system", $permissions['settings']) ) : ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/user/job'); ?>" class="<?php if ($this->active == 'job'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Job')); ?>">
+                                    <span class="glyphicon glyphicon-briefcase" style="    font-size: 15px;  margin-right: 3px;"></span> <?php echo $this->escapeHtml($this->translate('Job')); ?>
+                                </a>
+                            </li>                            
+                            <li>
+                                <a href="<?php echo $this->url('config/user/professional'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Configuration')); ?>">
+                                    <span class="glyphicon glyphicon-book"></span> <?php echo $this->escapeHtml($this->translate('Category')); ?>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?php echo $this->url('config/user/package'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Configuration')); ?>">
+                                    <span class="glyphicon glyphicon-gbp"></span> <?php echo $this->escapeHtml($this->translate('User Package')); ?>
+                                </a>
+                            </li> 
+                        <?php endif; ?>
+                        <?php if(in_array("finance/list", $permissions['settings']) || in_array("finance/balancesheet", $permissions['settings']) || in_array("finance/alltransactions", $permissions['settings']) || in_array("finance/profitloss", $permissions['settings']) ): ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/user/finance'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Configuration')); ?>">
+                                    <span class="glyphicon glyphicon-gbp"></span> <?php echo $this->escapeHtml($this->translate('Finance')); ?>
+                                </a>
+                            </li>                   
+                        <?php endif; ?>
+
+
+                        <?php if (in_array("feedback/feedbackList", $permissions['settings']) || in_array("feedback/feedbackEdit", $permissions['settings'])) : ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/user/feedback/user-feedback'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Configuration')); ?>">
+                                    <span class="glyphicon glyphicon-star-empty"></span> <?php echo $this->escapeHtml($this->translate('User Feedback')); ?>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
+                        <?php if (in_array("config/system", $permissions['settings']) || in_array("config/general", $permissions['settings']) || in_array("config/server", $permissions['settings']) || in_array("config/update", $permissions['settings'])): ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/general'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Configuration')); ?>">
+                                    <span class="glyphicon glyphicon-cog"></span> <?php echo $this->escapeHtml($this->translate('Configuration')); ?>
+                                </a>
+                            </li>
+                        <?php elseif (in_array("config/editEmail", $permissions['settings'])) : ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/email'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('Newsletter Email')); ?>">
+                                    <span class="glyphicon glyphicon-envelope"></span> <?php echo $this->escapeHtml($this->translate('Email Marketing')); ?>
+                                </a>
+                            </li>   
+                        <?php 
+                            elseif (in_array("report/list", $permissions['settings']) || in_array("report/newUser", $permissions['settings']) || in_array("report/packageReport", $permissions['settings']) || in_array("report/leaveUser", $permissions['settings']) || in_array("report/lastLoginUsers", $permissions['settings']) || in_array("report/empJobReport", $permissions['settings']) || in_array("report/freJobReport", $permissions['settings']) || in_array("report/pkgIncomeReport", $permissions['settings']) || in_array("report/privateFreelancerReport", $permissions['settings']) || in_array("report/privateStoreReport", $permissions['settings']) ) : 
+
+                        ?>
+                            <li>
+                                <a href="<?php echo $this->url('config/report'); ?>" class="<?php if ($this->active == 'config'): ?> active<?php endif; ?>" title="<?php echo $this->escapeHtml($this->translate('All Report')); ?>">
+                                    <span class="glyphicon glyphicon-list-alt"></span> <?php echo $this->escapeHtml($this->translate('Report')); ?>
+                                </a>
+                            </li>                        
+                        <?php endif; ?>
+
+
+                    <?php endif; ?>
+
+                </ul>
+                
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="<?php echo $this->url('config/user/logout'); ?>" class="" title="<?php echo $this->escapeHtml($this->translate('Logout')); ?>">
+                            <span class="glyphicon glyphicon-off"></span> <?php echo $this->escapeHtml($this->translate('Logout')); ?>
+                        </a>
+                    </li>
+                </ul>
+                
+            </div>
+        <?php endif; ?>
+        
+    </div>
+</div>

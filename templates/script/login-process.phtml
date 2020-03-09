@@ -1,0 +1,146 @@
+<?php
+date_default_timezone_set('Europe/London');
+
+use GcFrontend\Controller\DbController as DbController;
+use Zend\Db\Sql\Sql;
+use GcFrontend\Controller\FunctionsController as FunctionController;
+
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$sql = new Sql($adapter);
+$select = $sql->select();
+$select->from('user');
+
+$statement = $sql->prepareStatementForSqlObject($select);
+$results = $statement->execute();
+$row = $results->current();
+$name = $row['firstname']; // working
+
+if ($_SESSION['user_id'] == '') {
+    //$this->redirect()->toUrl('/login-form');
+    //return true;
+}
+if ($_SESSION['user_id'] != '') {
+    $this->redirect()->toUrl('/user-profile');
+    return true;
+}
+
+$request = $this->getRequest();
+
+if ($request->isPost()) {
+    $post = $request->getPost();
+    $login = $post->get('login');
+    $password = sha1($post->get('password'));
+    $answer_hash = $post->get('answer_hash');
+    $answer = substr(sha1($post->get('answer')), 5, 10);
+    $res_count = "";
+
+
+    $sqlString_get = "SELECT * FROM user WHERE (login='$login' OR email = '$login') AND password='$password'  AND (active='1' OR active = 3 OR active = 0 OR active = 4) "; // AND (active !='2'  )
+    $results0 = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+    $row111 = $results0->current();
+    $id = $row111['id'];
+    $user_acl_package_id = $row111['user_acl_package_id'];
+
+    if ($user_acl_package_id == 0 && $user_acl_package_id != '') { // employer
+        $res_count = 1;
+    } else {
+        //user payment info
+        $sqlString_pay = "select * from user_payment_info where payment_status='1' and uid='$id'";
+        $results_pay = $adapter->query($sqlString_pay, $adapter::QUERY_MODE_EXECUTE);
+        $row_pay = $results_pay->current();
+        $payst_count = $results_pay->count();
+
+        $sqlString_package = "select * from user_package_details where package_status='1' and user_id='$id' order by pid DESC";
+        $results_package = $adapter->query($sqlString_package, $adapter::QUERY_MODE_EXECUTE);
+        $row22 = $results_package->current();
+        $res_count = $results_package->count();
+    }
+
+
+    if (empty($login) or empty($password) or empty($id)) {
+
+        if (empty($res_count) && $res_count != 0) {
+            return array('error_message' => 'Your membership is expired.');
+        } elseif (empty($payst_count) && $payst_count != 0) {
+            return array('error_message' => 'Please complete your payment to get advantage of locum account.');
+        } elseif (isset($_GET['u']) && $_GET['u'] == "verified") {
+            return array('login' => $login, 'password' => $password, 'error_message' => 'Email verified please login and manage your profile.');
+        } else {
+
+            return array('login' => $login, 'password' => $password, 'error_message' => 'Login or Password may be incorrect.');
+
+
+        }
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $sqlString_sel = "select * from last_login_user where uid='$id'";
+        $results0 = $adapter->query($sqlString_sel, $adapter::QUERY_MODE_EXECUTE);
+        $row22 = $results0->current();
+        if (isset($row22['id']) && $row22['id'] != '') {
+            $lastLogin = $row22['login_at'];
+            $sqlString_update = "UPDATE last_login_user SET login_at = NOW(), last_login_at = '$lastLogin'  WHERE uid='$id'";
+            $results3 = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE);
+        } else {
+            $sqlString_ins = "insert into last_login_user (uid,login_at) values('$id',NOW())";
+            $results4 = $adapter->query($sqlString_ins, $adapter::QUERY_MODE_EXECUTE);
+        }
+
+        $_SESSION['user_email'] = $row111['email'];
+
+
+        /* Check Membership Plan */
+
+        $functionController = new FunctionController();
+        $check_membership = $functionController->checkUserMembershipPlan($id, $adapter);
+        $is_expired = 0;
+        if ($check_membership == 0) {
+            $is_expired = 1;
+        }
+
+
+        if (($row111['active'] == 0 || $row111['active'] == 3 || $row111['active'] == 4 || $is_expired == 1) && $row111['user_acl_role_id'] == 2) {
+
+            setcookie('PHPSESSID', session_id(), 0, '/');
+            session_start();
+            $_SESSION['is_guest'] = 1;
+            if ($is_expired) {
+                $_SESSION['renew_membership'] = 1;
+            }
+
+            $this->redirect()->toUrl('/guest-profile');
+            return TRUE;
+        } elseif ($row111['active'] == 0 && $row111['user_acl_role_id'] == 3) {
+
+            setcookie('PHPSESSID', session_id(), 0, '/');
+            session_start();
+            $_SESSION['un_verified_user'] = 1;
+            $this->redirect()->toUrl('/guest-emp-profile');
+            return TRUE;
+        } else {
+            /*header('P3P: CP=”NOI ADM DEV PSAi COM NAV OUR OTRo STP IND DEM”');
+            header('Set-Cookie: SIDNAME=ronty; path=/; secure');
+            header('Cache-Control: no-cache');
+            header('Pragma: no-cache');*/
+            setcookie('PHPSESSID', session_id(), 0, '/');
+            session_start();
+            $_SESSION['user_id'] = $id;
+            $_SESSION['user_email'] = $row111['email'];
+            $_SESSION['user_name'] = $row111['firstname'];
+            $_SESSION['user_role_id'] = $row111['user_acl_role_id'];  // user role:- 3:employer and 2:freelancer
+            $_SESSION['user_profession_id'] = $row111['user_acl_profession_id'];
+            $_SESSION['user_package_id'] = $row111['user_acl_package_id']; // package : 1:gold,2: silver and 3:bronze
+
+            if (isset($_SESSION['action_url']) && $_SESSION['action_url'] != '') {
+                //$_SESSION['redirect_job'] = 1;
+                $this->redirect()->toUrl($_SESSION['action_url']);
+                return TRUE;
+            } else {
+                echo "USER-profile"; //die();
+                $this->flashMessenger()->addSuccessMessage('Logged in Successfully.');
+                $this->redirect()->toUrl('/user-profile');
+                return TRUE;
+            }
+        }
+    }
+}

@@ -1,0 +1,465 @@
+<?php
+
+    use GcFrontend\Controller\PackagePrivilegesController;
+    $packagePrivilegesController    = new PackagePrivilegesController();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2   && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+        $uid = $_SESSION['user_id'];
+        $userRoleId = $_SESSION['user_role_id'];
+    }else{   
+        $url= $this->serverUrl().'/login-form';
+        echo "<script type='text/javascript'>window.location='".$url."'</script>";
+    }
+
+    use Gc\User\Finance\Bank\Collection as BankCollection;
+    $bankcollection = new BankCollection();
+
+    $return = $this->script('invoice-page-process');
+
+    /*Bank details*/
+    $bankreturn = $bankcollection->getBankInfoByUserId($uid);
+
+    $income_id = @$_GET['id'] ? $_GET['id'] : null;
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+    use Gc\User\Finance\AddSupplier\Collection as SupplierCollection;
+    $suppliercollection = new SupplierCollection();
+    $userdata = $financeHelper->loginUserDate($uid);
+    $income_data = $financeHelper->getjobDataInvoice($income_id,$uid);
+    $dataSupplier = $suppliercollection->getLocumSupplier($uid);
+
+
+    foreach($dataSupplier as $data){ $val[] = array('value'=>$data['name'] ,'data'=>$data ); }
+    foreach($dataSupplier as $data){ $val_store_name[] = array('value'=>$data['store_name'] ,'data'=>$data ); }
+
+
+    $show = $return['show'];
+    $templateData = $return['data'];
+    $set = @$templateData['set'] && $show== 'preview' ? $templateData['set'] : null;
+    $success = @$_GET['success'] ? $_GET['success'] : null;
+
+    $result = array();
+    foreach ($dataSupplier as $data) {
+      $id = $data['store_name'];
+      if (isset($result[$id])) {
+         $result[$id][] = $data;
+      } else {
+         $result[$id] = array($data);
+      }
+    }
+
+    foreach($result as $key => $data){
+    $keyr[] =   array('value'=>$key ,'data'=>$data);  
+    }
+
+?>
+
+<!-- top part -->
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                    <li><a href="#">Send Invoice</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Send invoice</h3>
+                </div>
+            </div>
+        </div>
+    </div>    
+</section>
+
+<div id="primary-content" class="main-content register">
+    <div class="container">
+        <div class="row"> 
+            <div class="contents white-bg">
+                <?php   if($success != '' && $success == true){ $msg = 'Invoice sent successfully';?>
+        			<div class="contents white-bg thank-you-page">
+                        <section>
+                  			<p style="text-align:center;">
+            				<img src="<?php echo $this->cdn('/frontend/locumkit-template/'); ?>img/logo.png" alt="logo">
+            				</p>
+            				<h1 class="successfull_msg"><?php echo $this->partial('flash-messages'); ?></h1>
+            				<h4 class="invoice_mail_msg "><?php echo $msg;?></h4>
+            				<div style="text-align:center;"><a href="<?php echo $this->serverUrl();?>/open-invoices" class="btn btn-info">Please click here to go back to Open invoices (debtors)</a></div>
+                         </section>
+                    </div>    			
+               <?php  } else if($income_id != null && $income_data['invoice_id'] != '' && $income_data['invoice_id'] != '0'){ ?>            
+                    <div class="alert alert-warning alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <h4><i class="icon fa fa-warning"></i> Alert!</h4>Invoice ID already generated !
+                  </div>           
+               <?php  }else if(!empty($income_data)) { ?> 
+
+                <section class="add_item send_invoice text-left pb30">
+                    <div class="col-md-12 pad0">
+                        <div class="text-capitalize text-center finance-page-head">Send invoice</div>
+                    </div>
+
+                    <div class="col-md-12 pad0"><?php echo $this->partial('flash-messages'); ?></div>
+
+                    <div class="col-md-12 pad0">
+                        <form role="form" id='invoice_form' action="<?php echo $this->escapeHtml($this->document('send-invoice')->getUrl()); ?>?id=<?php echo $income_id; ?>" method="post">
+                    		<section class="add_item_form form-inline">
+
+                                <!-- Your information part -->
+                    			<div class="col-md-12" id="form-div" <?php if($templateData['set'] != ''){ echo 'style="display:none"' ;} ?>>			
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <div class="col-md-4 information-tile text-right"><a href="#"  title="Click here for your information" data-toggle="collapse" data-target="#yourinfo"><i class="fa fa-info-circle" aria-hidden="true"></i>Your information</a></div>
+                                            <div class="col-md-7 "></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- don't show now -->
+                                    <div id="yourinfo" class="collapse">
+
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Your name</label></div>
+                                                <div class="col-md-7">
+                                                    <input type="hidden" class="form-control" name="your_email" id="your_email" value="<?php echo $userdata['email']; ?>" readonly/>
+                                                    <input type="text" class="form-control" name="your_name" id="your_name" value="<?php echo $userdata['firstname']." ".$userdata['lastname']  ;?>" readonly required />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Your address</label></div>
+                                                <div class="col-md-7">
+                                                    <textarea class="form-control" placeholder="Address" name="your_address" id="your_address" required readonly><?php echo $userdata['address'].", ".$userdata['city']  ;?></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Your contact No.</label></div>
+                                                <div class="col-md-7">
+                                                    <input type="text" class="form-control" name="your_contact" id="your_contact" placeholder="Contact Number" value="<?php echo $userdata['mobile'] ;?>" required readonly />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <!-- information input part -->
+                                    <div class="col-md-12"> 
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Supplier store Name <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                                                <div class="col-md-7"  id="searchfield">
+                                                    <input type="text" id="autocomplete" name="supplier_store" class="form-control" placeholder="Store Name" required value="<?php echo @$templateData['supplier_store'] && $show == 'preview' ? $templateData['supplier_store'] : '' ?>" autocomplete="off"/>
+                                                </div>
+                                            </div>
+                                        </div>  
+                                        <div class="col-md-12">
+                                            <input type="hidden" id="supplier_id" name="supplier_id" value="<?php echo @$templateData['supplier_id'] && $show == 'preview' ? $templateData['supplier_id'] : '' ?>"/>
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Supplier name <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                                                <div class="col-md-7" id="supplier_name_text">
+                                                    <input type="text" id="supplier_name" name="supplier_name" class="form-control" placeholder="Name" required value="<?php echo @$templateData['supplier_name'] && $show == 'preview' ? $templateData['supplier_name'] : '' ?>"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                    					<div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Supplier email id <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                                                <div class="col-md-7">
+                                                    <input type="email" id="supplier_email" name="supplier_email" class="form-control" placeholder="Email" required value="<?php echo @$templateData['supplier_email'] && $show == 'preview' ? $templateData['supplier_email'] : '' ?>"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Supplier address 1</label></div>
+                                                <div class="col-md-7">
+                                                    <!-- <textarea id="supplier_address" name="supplier_address" class="form-control" placeholder="Address"><?php echo @$templateData['supplier_address'] && $show == 'preview' ? $templateData['supplier_address'] : '' ?></textarea>-->
+                                                    <input type="text" id="supplier_address" name="supplier_address" class="form-control" placeholder="Address" value="<?php echo @$templateData['supplier_address'] && $show == 'preview' ? $templateData['supplier_address'] : '' ?>" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Supplier address 2</label></div>
+                                                <div class="col-md-7">
+                                                    <!-- <textarea id="supplier_address2" name="supplier_address2" class="form-control" placeholder="Address"><?php echo @$templateData['supplier_address2'] && $show == 'preview' ? $templateData['supplier_address2'] : '' ?></textarea>-->
+                                                    <input type="text" id="supplier_address2" name="supplier_address2" class="form-control" placeholder="Address" value="<?php echo @$templateData['supplier_address2'] && $show == 'preview' ? $templateData['supplier_address2'] : '' ?>" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">                 
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Town </label></div>
+                                                <div class="col-md-7">
+                                                    <input type="text" id="supplier_town" name="supplier_town" class="form-control" placeholder="Town" value="<?php echo @$templateData['supplier_town'] && $show == 'preview' ? $templateData['supplier_town'] : '' ?>"/>
+                                                </div>
+                                            </div>
+                    					</div>
+                    					<div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">County </label></div>
+                                                <div class="col-md-7" >
+                                                    <input type="text" id="supplier_country" name="supplier_country" class="form-control" placeholder="Country"  value="<?php echo @$templateData['supplier_country'] && $show == 'preview' ? $templateData['supplier_country'] : '' ?>"/>
+                                                </div>
+                                            </div>
+                                        </div>                            
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Postcode </label></div>
+                                                <div class="col-md-7" >
+                                                    <input type="text" id="supplier_postcode" name="supplier_postcode" class="form-control" placeholder="Postcode" value="<?php echo @$templateData['supplier_postcode'] && $show == 'preview' ? $templateData['supplier_postcode'] : '' ?>"/>
+                                                </div>
+                                            </div>
+                                        </div> 
+                                        <!-- Bank Details -->
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Your bank account name </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                                                <div class="col-md-7">
+                                                    <input id="acc-name" name="acc_name" type="text" value="<?php echo @$bankreturn['acc_name'] ? $bankreturn['acc_name'] : '' ; ?>" placeholder="Enter account name" class="form-control" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Your bank account number </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                                                <div class="col-md-7">
+                                                    <input id="acc-number" name="acc_number" type="number" minlength="8" maxlength="8" value="<?php echo @$bankreturn['acc_number'] ? $bankreturn['acc_number'] : '' ; ?>" placeholder="00000000" class="form-control" required>
+                                                    <div id="acc_number_error"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <div class="col-md-4"><label for="exampleInputPassword1">Your bank account sort code </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                                                <div class="col-md-7">
+                                                    <input id="acc-sort-code" name="acc_sort_code" type="text"  value="<?php echo @$bankreturn['acc_sort_code'] ? $bankreturn['acc_sort_code'] : '' ; ?>" placeholder="XX-XX-XX" class="form-control" required>
+                                                    <div id="acc_sort_code_error"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <div class="col-md-4"></div>
+                                            <div class="col-md-7">
+                                                <div class="form-group text-center">
+                    						        <button type="submit" name="preview_btn" value="preview" class="read-common-btn generated_btn pull-right">Next</button>
+                                                </div>
+                                            </div>
+                                        </div>                            
+                                    </div>							
+                                </div>
+
+
+                                <div class="col-md-12"  id="template-div"  <?php if($set == null){ echo 'style="display:none"' ;} ?>>
+                    		        <div class="col-md-12 marb30">
+                                        <h5 style=" text-align: center; margin-bottom: -15px; font-size: 24px;margin-top: -15px;">Invoice preview </h5>
+                                        <div class="form-group" style="display:none">
+                                            <div class="col-md-4 padr0"><label for="exampleInputPassword1">Select invoice template</label></div>
+                                            <div class="col-md-7 padr0">
+                                                <div class="input-group col-md-12">
+                                                    <select  class="form-control" name="set" id="set" required>
+                                                        <option value="invoice-1" <?php echo @$set == 'invoice-1' ? 'selected' : 'selected' ?>>Invoice Template One</option>
+                                                        <option value="invoice-2" <?php echo @$set == 'invoice-2' ? 'selected' : '' ?>>Invoice Template Two</option>
+                                                        <option value="invoice-3" <?php echo @$set == 'invoice-3' ? 'selected' : '' ?>>Invoice Template Three</option>
+                                                    </select>
+                                                    <span class="input-group-btn">
+                                                      <button type="submit" name="preview_btn" value="preview" class="btn btn-info btn-flat">Change & Preview</button>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                    			   
+                    			   
+                    			   
+                                    <?php
+                                        if(($show == 'preview' || $show == 'sent') && $templateData['set'] == 'invoice-1'){
+                                        echo "<hr>";
+                                            echo $this->partial('invoice-template/invoice1.phtml', array('action' => $show , 'data' => $templateData , 'jobdata' => $income_data));
+                                        }
+                                        if(($show == 'preview' || $show == 'sent') && $templateData['set'] == 'invoice-2'){
+                                        echo "<hr>";
+                                            echo $this->partial('invoice-template/invoice2.phtml', array('action' => $show , 'data' => $templateData , 'jobdata' => $income_data));
+                                        }
+                                        if(($show == 'preview' || $show == 'sent') && $templateData['set'] == 'invoice-3'){
+                                        echo "<hr>";
+                                            echo $this->partial('invoice-template/invoice3.phtml', array('action' => $show , 'data' => $templateData , 'jobdata' => $income_data));
+                                        }
+
+                                    ?>
+                    			
+                    				<?php if($show == 'preview'){ ?>                   
+                                        <div class="col-md-12 backsndbtn">
+                                            <div class="form-group text-center">
+                                                <button type="button" id="bak-form" class="read-common-btn grad_btn pull-left">Back</button>
+                                                <button type="submit" name="sent_mail" value="sent" class="read-common-btn grad_btn pull-right">Send</button>
+                                            </div>
+                                        </div>
+                    				<?php } ?>
+                                </div>
+                            </section>
+                		</form>		   
+                    </div>
+                </section>
+
+            </div>
+            <?php } ?>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    <?php if(isset($_POST) && !empty($_POST['acc_name'])): ?>
+        $('input#acc-name').val("<?php echo $_POST['acc_name'] ?>");
+        $('input#acc-number').val("<?php echo $_POST['acc_number'] ?>");
+        $('input#acc-sort-code').val("<?php echo $_POST['acc_sort_code'] ?>");
+    <?php endif; ?>
+
+    $("#bak-form").click(function(){
+        $('#form-div').show();
+        $('#template-div').hide();
+    });
+    																														   
+    $(function() {            
+        var  projects_storename = <?php echo json_encode($keyr); ?>;             
+          $( "#autocomplete" ).autocomplete({
+           minLength: 0,
+           source: projects_storename,
+          /*  focus: function( event, ui ) {
+              $( "#autocomplete" ).val(ui.value);
+                 return false;
+           }, */
+           select: function( event, ui ) { 
+           var tt =  ui.item.data ;
+           var opt = '<select class="form-control" name="supplier_name" id="supplier_name"><option value="">select</option>';
+          $.each( tt , function( key, value ) {
+           console.log(value);
+           opt += "<option value='"+value.name+"'>"+value.name+"</option>";
+          });
+           opt += "</select>";
+           $('#supplier_name_text').html(opt);
+           
+           
+            $('#supplier_id').val('');
+            $('#supplier_email').val('');
+            $('#supplier_address').val('');
+    		$('#supplier_address2').val('');
+    		$('#supplier_town').val('');
+    		$('#supplier_country').val('');
+            $('#supplier_postcode').val('');    
+           
+           
+           
+           }
+        })				
+        .data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+           return $( "<li>" )
+           .append( "<a>" + item.value + "</a>" )
+           .appendTo( ul );
+        };
+
+
+        $(document).on('change', '#supplier_name', function(){ 
+            var txt = $(this).val();
+            $.post("/ajax-request", {store_name: txt , supplier_data:'1' }, function(result){    
+                var r_data = JSON.parse(result);
+                $( "#autocomplete" ).val(r_data .store_name);
+                $('#supplier_id').val(r_data .supplier_id);
+                $('#supplier_name').val(r_data .name);
+                $('#supplier_email').val(r_data .email);
+                $('#supplier_address').val(r_data .address);
+        		$('#supplier_address2').val(r_data .addresssec);
+        		$('#supplier_town').val(r_data.town);
+        		$('#supplier_country').val(r_data.country);
+                $('#supplier_postcode').val(r_data.postcode);          
+            });
+        });
+
+    });
+
+    $('form#invoice_form').submit(function(){
+        if($('input#acc-number').val().length !== 8 || $('input#acc-sort-code').val().length !== 8){
+            if ($('input#acc-number').val().length !== 8) {
+                $('#acc_number_error').html('<div id="user_error" class="css_error">Please Enter Valid Account No .</div>') ;
+            }else{
+                $('#acc_number_error').html('');
+            };
+            if ($('input#acc-sort-code').val().length !== 8) {
+                $('#acc_sort_code_error').html('<div id="user_error" class="css_error">Please Enter Valid Sort Code .</div>') ;
+            }else{
+                $('#acc_sort_code_error').html('');
+            };
+alert($('input#acc-number').val().length);
+alert($('input#acc-sort-code').val().length);
+
+            return false;
+        }
+
+    });
+    $('input#acc-number').keydown(function (e) {
+        var key = e.charCode || e.keyCode || 0;
+        if ($(this).val().length === 8 && key != 8) {
+            return false;
+        }         
+    });
+
+    $('#acc-sort-code').keydown(function (e) {
+        var key = e.charCode || e.keyCode || 0;
+        $acc_sort_code = $(this);
+
+        // Auto-format- do not expose the mask as the user begins to type
+        if (key !== 8 && key !== 9) {
+            if ($acc_sort_code.val().length === 2) {
+                $acc_sort_code.val($acc_sort_code.val() + '-');
+            }
+            if ($acc_sort_code.val().length === 5) {
+                $acc_sort_code.val($acc_sort_code.val() + '-');
+            } 
+            if ($acc_sort_code.val().length === 8) {
+                return false;
+            }          
+        }
+
+        // Allow numeric (and tab, backspace, delete) keys only
+        return (key == 8 || key == 9 || key == 46 || (key >= 48 && key <= 57) || (key >= 96 && key <= 105)); 
+    }).bind('focus click', function () {
+        $acc_sort_code = $(this);
+
+        if ($acc_sort_code.val().length === 0) {
+        //$acc_sort_code.val('(');
+        }
+        else {
+        var val = $acc_sort_code.val();
+            $acc_sort_code.val('').val(val); // Ensure cursor remains at the end
+        }
+    }).blur(function () {
+        $acc_sort_code = $(this);
+
+        if ($acc_sort_code.val() === '(') {
+            $acc_sort_code.val('');
+        }
+    });
+
+         
+</script>
+

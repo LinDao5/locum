@@ -1,0 +1,80 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+?>
+<form class="relative form-horizontal" action="<?php echo $this->escapeHtml($this->form->getAttribute('action')); ?>" method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('name')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('name')); ?>
+            <?php echo $this->formElementErrors($this->form->get('name'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('price')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('price')); ?>
+            <?php echo $this->formElementErrors($this->form->get('price'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('description')); ?>
+        <div class="col-lg-10">
+            <?php echo $this->formElement($this->form->get('description')); ?>
+            <?php echo $this->formElementErrors($this->form->get('description'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <?php echo $this->formLabel($this->form->get('user_acl_package_resources_id')); ?>
+        <div class="col-lg-10 checkbox-resource">
+            <?php echo $this->formElement($this->form->get('user_acl_package_resources_id')); ?>
+            <?php echo $this->formElementErrors($this->form->get('user_acl_package_resources_id'), array('class' => 'text-danger')); ?>
+        </div>
+    </div>
+
+     <?php 
+        /*$permissions = $this->form->getValue('user_acl_package_resources_id'); 
+echo "<pre>";
+print_r($permissions);
+echo "</pre>";*/
+    ?>
+    
+
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save')); ?>" name="submit">
+    <input id="input-save" type="submit" class="btn btn-warning" value="<?php echo $this->escapeHtml($this->translate('Save & add new')); ?>" name="addNew">
+</form>
+
+<script type="text/javascript">
+$(function(){
+    Gc.saveCommand();
+    Gc.checkDataChanged();
+    Gc.initRoles();
+});
+</script>

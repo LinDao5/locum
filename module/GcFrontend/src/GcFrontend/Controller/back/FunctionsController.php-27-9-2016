@@ -1,0 +1,50 @@
+<?php
+/**
+ * PHP Version >=5.3
+ *
+ * @category   Gc_Application
+ * @package    GcFrontend
+ * @subpackage Controller
+ */
+
+ namespace GcFrontend\Controller;
+ use Gc\Mvc\Controller\Action;
+ use Gc\view\Helper\Config as ConfigModule;
+ use Gc\Core\Config as CoreConfig;
+ use Gc\Registry;
+
+ class FunctionsController extends Action
+ {
+   // job accept count
+   public function jobAcceptCount($freelancer_id,$adapter){
+		$sql_accept="select ja.* from job_action ja where ja.f_id='$freelancer_id' and ja.action=3"; // job accepted count 
+		$results_accept = $adapter->query($sql_accept, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_accept = $results_accept->current();
+		$count_accept = $results_accept->count();
+		return $count_accept;
+	}
+   // User blocked count	
+   public function blockUserCount($freelancer_id,$adapter){
+		$sql_bkl_user="select * from block_user where frelan_id='$freelancer_id'"; // block user count 
+		$results_bkl = $adapter->query($sql_bkl_user, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_bkl = $results_bkl->current();
+		$count_date_bkl = $results_bkl->count();
+		return $count_date_bkl;
+	}
+   // User block date :not Available on date	
+   public function userBlockDate($freelancer_id,$job_date,$adapter){
+		$sqlString_block="select * from user_work_calender where uid='".$freelancer_id."' and 'block_date' LIKE '%".$job_date."%'";	
+		$results_block = $adapter->query($sqlString_block, $adapter::QUERY_MODE_EXECUTE); 
+		$result_data_block = $results_block->current(); 
+		$count_block_date = $results_block->count();
+		return $count_block_date;
+	}
+	// 
+	public function userExpireCount($freelancer_id,$adapter){
+		$sqlString_expire="select * from user_package_details where user_id='".$freelancer_id."' and package_status=0";	
+		$results_expire = $adapter->query($sqlString_expire, $adapter::QUERY_MODE_EXECUTE); 
+		$count_expire = $results_expire->count();
+		return $count_expire;
+	}
+	
+ }

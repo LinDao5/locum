@@ -1,0 +1,260 @@
+<?php
+    use Gc\User\Finance\Model as FinanceModel;
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2){
+        $uid = $_SESSION['user_id'];
+        $userRoleId = $_SESSION['user_role_id'];
+    }else{
+        $url= $this->serverUrl().'/login-form';
+        echo "<script type='text/javascript'>window.location='".$url."'</script>";
+    }
+    $currency = $this->config()->get('site_currency');
+
+    $cat = @$_GET['cat'] ? $_GET['cat'] : null;
+    $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+    $cattype = $financeHelper->getIncometype();
+    $incomeRecord = $financeHelper->getAllIncome($uid,$financialYear,$filter , null ,$cat);
+    $incomechart = $financeHelper->chart_getAllIncome($uid,$financialYear,$filter ,$cat);
+    $cat_year[] = $financeHelper->getMonthFinancialYear($uid , $financialYear);
+    if($filter == 'year'){ $cat_year = $financeHelper->Getlast3year($uid,$financialYear); }
+    foreach($cat_year as $year){ $catIncome[] = $financeHelper->GetchartIncomeBYcondition($uid,$year); }
+    $return = $this->script('finance_detail_process'); 
+    $m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+?>
+	
+	<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl()?>/finance-detail">Finance</a></li>
+<li><a href="<?php echo $this->serverUrl();?>/freelancer-reports">REPORTS</a></li>
+                    <li><a href="#">Income BY Category</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Cash Flow</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content about">
+	<div class="container">
+		<div class="row">
+			<div class="contents white-bg">
+				<section class="text-left">
+
+                <div class="col-md-12 pad0">
+                <div class="text-capitalize text-center finance-page-head">Income by category</div>
+                </div>
+                <div class="cash_man_chart2 wholeborder padb0 incomeBycategoryWtdth">
+                    <form action="" class="add_item_form form-inline">
+                    
+                      <?php include 'select-financial-year.phtml'; ?>   
+                    <div class="col-md-12 pad0 mart30 marb20">
+                    
+                    <div class="col-md-8 cash_man_chart moreyearpie">                       				   
+                        <div class="form-group add_item_form form-inline marb0">
+                        <select name="filter" id="finance-year" class="form-control pull-right" onchange="this.form.submit()">
+                            <option value="month" <?php echo @$filter == 'month'  ? 'selected' : '' ?>>Monthly</option>
+                            <option value="year" <?php echo @$filter == 'year'  ? 'selected' : '' ?>>Yearly</option>
+                        </select>
+                        </div>
+                        
+						<?php 
+                        $cls = '';
+                        if(count($cat_year) == 1){ $cls = "oneyear";}else if(count($cat_year) == 2){ $cls = "twoyear"; }elseif(count($cat_year) == 3){ $cls = "threeyear"; }
+                        ?>
+                        <div class="<?php echo $cls; ?> canvas-scroll-x">
+                        <?php $j = 0 ; foreach($cat_year as $year){ ?> 
+                        <div class="mapdiv <?php if($j==0){ ?>topyear <?php } ?><?php if($j==1){ ?>midyear <?php } ?><?php if($j==2){ ?>loweryear <?php } ?>">
+                        <div class="canvascover">
+                        <div class="col-md-12">Total Income by category for the year <?php  echo $year ?></div>
+                        <canvas id="Chart_<?php echo $j  ?>" height="200" width="500" class="well"></canvas>
+                        <div id="js-legend_<?php echo $j  ?>" class="chart-legend"></div>
+                        </div>
+                        </div>
+                        <?php   $j++;  } ?>
+                    </div>
+                    </div>
+                    
+                        <div class="col-md-4 cash_man_chart">
+                            <div class="form-group add_item_form form-inline marb0">
+                            <select name="cat" class="form-control pull-right" onchange="this.form.submit()">
+                                <option value= ''>Choose Category </option>
+                                <?php foreach($cattype as $key => $type){
+                                    $key = @isset($type['id']) ? $type['id'] :  $key ;
+                                    $type = @isset($type['cat']) ? $type['cat'] :  $type ;
+                                    if($key == $cat){ $catnm = $type; } ?>
+                                    <option value='<?php echo $key ; ?>' <?php echo @$key == $cat  ? 'selected' :  '' ; ?>><?php echo $type ; ?></option>
+                                <?php } ?>
+                            </select>  
+                            </div>	
+                            <div class="mapdiv-wrap-sec canvas-scroll-x"> 
+								<div class="mapdiv">
+								<?php if($cat !='') { ?><div class="col-md-12 catefullname">Category :  <?php  echo  $catnm ?></div><?php } ?>
+                                <canvas id="myChart2" height="200" class="well"></canvas>
+                                <div id="myChartr2-legend" class="chart-legend"></div>
+                            </div>
+							</div>
+                        </div>
+                    </div>
+                    </form> 
+                    <div class="col-md-12 cash_table">
+                    <div class="table-responsive table-responsive-scroll finance-scroller">                
+                    <table class="table table-striped income_sum_table"  id="datatable">
+                                    <thead>
+                                    <tr>
+                                        <th class="col-md-1">Tran No</th>
+                                        <th class="col-md-1">Job No</th>
+                                        <th class="col-md-1">Date</th>
+                                        <!-- <th class="col-md-1">Net</th> -->
+                                        <!-- -<th class="col-md-1">Vat</th>- -->
+                                        <th class="col-md-1">Amount</th>
+                                        <th class="col-md-1">Category</th>
+                                        <th class="col-md-1">Bank</th>
+                                        <th class="col-md-1">Bank Date</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    <?php
+                                    if (!empty($incomeRecord)) :
+                                        $i0 =  $i30 = $i60 = $i90 = 0 ;
+                                        foreach($incomeRecord as $incomedata){
+                                            $jobId[] = $incomedata['job_id'];
+                                            $grossCost = $incomedata['job_rate'];
+                                            $isBank = $incomedata['bank'];
+                                            $diffDayarray[] = $diffDay = $financeHelper->getdataDifference($incomedata['job_date'])
+                                            ?>
+                                            <tr>
+                                                <td class="col-md-1" data-order="<?php echo $incomedata['trans_id']; ?>">#<?php echo $incomedata['trans_id']; ?></td>
+                                                <td class="col-md-1"><?php echo $incomedata['job_id']; ?></td>
+                                                <td class="col-md-1" data-order="<?php echo $incomedata['job_date']; ?>"  ><?php echo date_format(date_create($incomedata['job_date']), 'd/m/Y'); ?></td>
+                                                <!-- <td class="col-md-1"><?php echo $currency.$financeHelper->getNetRate($grossCost); ?></td> -->
+                                                <!-- <td class="col-md-1"><?php // echo $currency.$financeHelper->getVatRate($grossCost);?></td> -->
+                                                <td class="col-md-1"><?php echo $currency.$financeHelper->setPriceFormate($grossCost); ?></td>
+                                                <td class="col-md-1"><?php echo $financeHelper->getIncometype($incomedata['income_type']); ?></td>
+                                                <td class="col-md-1"><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankincome('.$incomedata['id'].')"><i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+                                                <td class="col-md-1" data-order="<?php echo $incomedata['bank_date']; ?>"><?php echo $incomedata['bank_date'] != '' ? date('d/m/Y',strtotime($incomedata['bank_date'])) : 'N/A' ?></td>
+                                            </tr>
+
+
+                                        <?php } endif;  ?>
+                                    </tbody>
+                                </table>
+                                <?php  if (empty($incomeRecord)) {  '<h4 class="no-finance-record">Data Not Found</h4>';  } ?>
+                    </div>
+                    </div>
+                </div>
+        </section>
+
+						</div>
+					</div>
+				</div>
+			</div>
+
+<script>
+    $(document).ready(function() {
+        $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+            var data_x = <?php echo json_encode($incomechart[0]) ?>;
+            var data1 = <?php echo json_encode($incomechart[1]) ?>;
+            var data2 = <?php echo json_encode($incomechart[2]) ?>;
+            var data = {
+                labels : data_x,
+                datasets : [
+                    {
+                        label : "Banked",
+                        fillColor : "#85A04C",
+                        strokeColor : "#85A04C",
+                        pointColor : "#85A04C",
+                        pointStrokeColor : "#85A04C",
+                        data : data1
+                    },
+                    {
+                        label : "Not banked",
+                        fillColor : "rgba(147, 176, 87, 0.5)",
+                        strokeColor : "rgba(147, 176, 87, 0.5)",
+                        pointColor : "rgba(147, 176, 87, 0.5)",
+                        pointStrokeColor : "rgba(147, 176, 87, 0.5)",
+                        data : data2
+                    }
+                ]
+            };
+
+            var options = {
+                bezierCurve: false,
+                animation: true,
+                datasetFill: false,
+                segmentShowStroke: true,
+                animateRotate: true,
+                animateScale: false,
+                tooltipTemplate: "<%= label %> : <?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+                multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+            };
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart2');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart2").getContext("2d");
+            /*********************/
+            var myChartr2 = new Chart(ctx).Line(data,options);
+            document.getElementById('myChartr2-legend').innerHTML = myChartr2.generateLegend();
+
+            // Pie chart
+            <?php $j = 0 ; foreach($cat_year as $year){ ?>
+            var PieData = <?php echo json_encode($catIncome[$j]); ?>;
+                if (PieData == '') {
+                    PieData = [{
+                        color:"#f0f0f0", 
+                        highlight:"#fdfdfd",
+                        label:"No records found", 
+                        value:100
+                    }];
+                    options = {
+                        bezierCurve: false,
+                        animation: true,
+                        datasetFill: false,
+                        segmentShowStroke: true,
+                        animateRotate: true,
+                        animateScale: false,
+                        tooltipTemplate: "<%= label %>",
+                        multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> 0.00",
+                    };  
+                    console.log(PieData);
+                };
+            var ctx = document.getElementById('Chart_<?php echo $j;?>').getContext("2d");
+            var myChartr = new Chart(ctx).Pie(PieData, options);
+            document.getElementById('js-legend_<?php echo $j;?>').innerHTML = myChartr.generateLegend();
+            <?php   $j++;  }  ?>
+
+        });
+
+
+
+    });
+</script>	
+		<script>
+	$(document).ready(function() {
+    $('#datatable').DataTable( {		
+		searching: false,
+		paging: false,	
+		"bInfo": false,
+		/* order: [],
+                columnDefs: [ { orderable: false, targets: [0] } ]*/
+    } );
+} );
+</script>

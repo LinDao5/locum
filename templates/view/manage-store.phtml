@@ -1,0 +1,298 @@
+<?php
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 3){
+	$uid=$_SESSION['user_id'];
+}else{ echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/user-profile'</script>";}
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="/manage-store">Manage Store</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="fa fa-user-plus" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Manage Store</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+
+<div id="primary-content" class="main-content register manage-store-wrapper">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+            <section>
+            <div class="col-md-12"><?php echo $this->partial('flash-messages'); ?></div>
+            
+            <?php
+                $return = $this->script('manage-store-process');
+            ?>
+			<?php
+			use GcFrontend\Controller\DbController as DbController;			
+			use Zend\Serializer\Serializer;
+			use Zend\Db\Sql\Sql;
+			use Zend\Db\TableGateway\TableGateway;
+			use Gc\User\Packageresource\Model;
+			$dbConfig = new DbController();
+            $adapter = $dbConfig->locumkitDbConfig();
+
+            /*<!-- Town list  -->*/
+            
+                $sqlstorelist = "SELECT * FROM site_town_table WHERE Lat != '' AND Lon != '' ";    
+                $storeDetails = $adapter->query($sqlstorelist, $adapter::QUERY_MODE_EXECUTE); //print_r($storeDetails);
+                $storeResultset = $storeDetails->toArray();
+                $townListString = '';
+                foreach ($storeResultset as $key => $town) {        
+                    $townListString .= '"'.$town['Town'].'",';
+                }
+               
+            
+
+			$sqlString_data="select * from employer_store_list where emp_id='$uid' AND status = 0";	
+            $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+	        $resultset = $results_get->toArray();  //print_r($resultset);
+			$resultset_count = $results_get->count();
+			$arr="";
+			if($resultset_count >0){
+				foreach($resultset as $result){ 
+					$arr.='<div class="user-store-list"><div class="col-xs-3 col-sm-3 col-md-3 no-padding-right"><input type="text" class="width-100 input-text margin-bottom" name="emp_store_name_'.$result['emp_st_id'].'" value="'.$result['emp_store_name'].'" required></div><div class="col-xs-3 col-sm-3 col-md-4 no-padding-right"><input type="text" class="width-100 input-text margin-bottom " name="emp_store_address_'.$result['emp_st_id'].'" value="'.$result['emp_store_address'].'" required ></div><div class="col-xs-3 col-sm-3 col-md-2 no-padding-right"><input type="text" class="width-100 input-text margin-bottom city" name="emp_store_region_'.$result['emp_st_id'].'" value="'.$result['emp_store_region'].'" required></div><div class="col-xs-2 col-sm-2 col-md-2 no-padding-right"><input type="text" class="width-100 input-text margin-bottom" name="emp_store_zip_'.$result['emp_st_id'].'" value="'.$result['emp_store_zip'].'" required></div><div class="col-xs-1 col-sm-1 col-md-1"><span class="deleteclass small2 " id="'.$result['emp_st_id'].'"><i class="fa fa-times" title="Remove" aria-hidden="true"></i></span></div><input type="hidden" name="store_id[]" value="'.$result['emp_st_id'].'"><div class="opening-div-wrapp" id="store_time_'.$result['emp_st_id'].'"></div></div>';
+					?>
+						<script type="text/javascript">
+							$( document ).ready(function() {
+								getStoreTimingDetails(<?php echo $result['emp_st_id'] ?>);
+							});
+						</script> 
+					<?php 
+				}
+			}else{
+				$arr.='<div class="user-store-list" align="center">No records found.</div>';
+			}
+			?>
+            
+            <!-- Content Area Start -->
+            <div class="col-md-12 manage-store">  
+            <form id="mamagestore" action="<?php echo $this->escapeHtml($this->document('manage-store')->getUrl()); ?>" method="post">
+            <div class="user-store-list heading-list">
+            	<div class="col-xs-3 col-sm-3 col-md-3"><p>Store name</p></div><div class="col-xs-3 col-sm-3 col-md-4"><p>Store address</p></div><div class="col-xs-2 col-sm-2 col-md-2"><p>Store location</p></div><div class="col-xs-3 col-sm-3 col-md-2"><p>Post code</p></div><div class="col-xs-1 col-sm-1 col-md-1"><p style="text-align:center">Action</p></div>
+            </div>
+			<?php echo $arr;?>
+           
+            <div class="user-store-list user-store-btn-list"> <?php if($resultset_count >0){ ?><div class="col-sm-6 col-md-2 no-padding-right"><button class="save-store-btn">Update</button></div><?php }?><div class="col-sm-6 col-md-2 "><a href="javascript:void(0);" class="save-store-btn" id="add_store_edit">Add another store</a></div></div>
+            
+            </form>
+            <form id="addstore" action="<?php echo $this->escapeHtml($this->document('manage-store')->getUrl()); ?>" method="post" class="margin-top" style="display:none;">
+            	<input type="hidden" name="add_st" value="1">
+                <div class="col-md-12 margin-top"><h2>Add store details</h2></div>
+                <div class="col-md-12">
+                <div class="store_block add-new-store-form-wrapp">
+					<div class="store-details add-new-store-inner-scroll">
+						<div class="width-full" id="show_add_button"><a href="javascript:void(0);" class="color-blue " id="add_emp_store"><i class="fa fa-plus" aria-hidden="true" title="Add Employer store"></i></a></div>
+						<div class="col-xs-3 col-sm-3 col-md-3 no-padding-left"><input type="text" name="emp_store_name[]" required placeholder="Enter Store name" class="input-text width-100 required-field_0"> </div><div class="col-xs-4 col-sm-4 col-md-4 no-padding-left"><input type="text" name="emp_store_address[]" required placeholder="Enter Store address" class="input-text width-100 required-field_0"></div><div class="col-xs-2 col-sm-2 col-md-2 no-padding-left"><input type="text" name="emp_store_region[]" required placeholder="Enter Store Region" class="input-text width-100 required-field_0 city"></div>
+						<div class="col-xs-2 col-sm-2 col-md-2 no-padding-left"><input type="text" name="emp_store_zip[]" required placeholder="Enter Store post code" class="input-text width-100 required-field_0"></div>                
+					  	<div class="css_error2 required-field-no_0" style="clear:both;"></div>
+
+						<div class="col-md-12 store-timing-div store-opening-tdive-wrapp"> 
+							<div class="add-store-scroll-wrapp">
+								<div class="col-md-4 "><p>What are your store Opening time(s)?</p></div>
+								<div class="col-md-8">
+								  <div class="col-md-12">
+									  <div class="col-xs-3 col-sm-3 col-md-3"></div>
+									  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><p>Opening time</p></div>
+									  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><p>Closing time</p></div>
+									  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><p>Lunch break (mins)</p></div>
+								  </div>
+								  <?php $arr_week=array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
+										$arr_hours="";
+										$arr_lunch="";
+										$arr_start="";
+										$arr_end="";
+										for($th=0;$th<96;$th++){ 
+											//if($th<=9){$th='0'.$th;}
+											$hrs = date ('H:i',strtotime($timeToSelect));
+											$endTime = strtotime("+15 minutes", strtotime($hrs));
+											$timeToSelect = date('H:i', $endTime);
+											$arr_hours.='<option value="'.$timeToSelect.'">'.$timeToSelect.'</option>';
+											if($timeToSelect == '09:00'){
+												$arr_start.='<option value="'.$timeToSelect.'" selected>'.$timeToSelect.'</option>';
+											}else{
+												$arr_start.='<option value="'.$timeToSelect.'">'.$timeToSelect.'</option>';
+											}
+											if($timeToSelect == '17:30'){
+												$arr_end.='<option value="'.$timeToSelect.'" selected selected>'.$timeToSelect.'</option>';
+											}else{
+												$arr_end.='<option value="'.$timeToSelect.'">'.$timeToSelect.'</option>';
+											}
+										}
+										for($tl=0;$tl<=12;$tl++){
+											if($tl==0){$lunch='00';}else{$lunch=$tl*5;}
+											if($lunch== 30){
+											    $arr_lunch.='<option value="'.$lunch.'" selected>'.$lunch.'</option>';
+											}else{
+											   $arr_lunch.='<option value="'.$lunch.'">'.$lunch.'</option>';
+											}
+										}
+										$st_cnt=1;
+										foreach($arr_week as $weekdays){
+								  ?> 
+								  <div class="col-md-12">
+									  <div class="col-xs-3 col-sm-3 col-md-3"><p><?php echo $weekdays;?></p><input type="hidden" name="job_week_days[]" value="<?php echo $weekdays;?>" ></div>
+
+									  <div class="col-xs-3 col-sm-3 col-md-3"><select name="job_start_time[<?php echo $weekdays;?>][]" class="input-text width-100 " id="start_time_day_<?php echo $st_cnt ?>"><?php echo $arr_start;?></select></div>
+
+									  <div class="col-xs-3 col-sm-3 col-md-3" align="center"><select name="job_end_time[<?php echo $weekdays;?>][]" class="input-text width-100 " id="end_time_day_<?php echo $st_cnt ?>"><?php echo $arr_end;?></select></div>
+
+									  <div class="col-xs-3 col-sm-3 col-md-3"><select name="job_lunch_time[<?php echo $weekdays;?>][]" class="input-text width-100 " id="lunch_time_day_<?php echo $st_cnt ?>"><?php echo $arr_lunch;?></select></div>
+
+								  </div> 
+								  <?php $st_cnt++;}?>
+								</div>
+								<div class="col-md-offset-4 col-md-2 no-padding-left"><button class="save-store-btn" name="add_store">Save Store</button></div>
+							</div>
+						</div>
+					</div>
+				</div>
+                
+                </div>
+            </form>
+            </div>
+            <!-- Content Area End -->
+		</div>
+	</div>
+</div>
+
+
+<!-- Alert Message Modal -->
+<div id="alert-confirm-modal" class=" alert-modal modal fade" >
+    <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+        <div class="modal-header">
+            <!-- <button type="button" class="close close-alert" data-dismiss="modal" onClick="window.location.reload()">&times;</button> -->
+            <h4 class="modal-title">LocumKit</h4>
+        </div>
+        <div class="modal-body" >
+            <h3 id="alert-message"></h3>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="confirm">Yes</button>
+            <button type="button" class="close-alert btn btn-default" >No</button>
+        </div>
+    </div>
+
+    </div>
+</div> 
+
+<?php
+//delete store
+if(isset($_POST['delete_st']) && $_POST['delete_st']==1){
+	$idst=$_POST['id'];
+	$sqlString_del="update employer_store_list set status = 1 where emp_st_id='".$idst."'";	
+    $results_del = $adapter->query($sqlString_del, $adapter::QUERY_MODE_EXECUTE);
+	
+	echo $sqlString_del;
+	//print_r($results_del);
+	//exit;
+}
+?>
+<script type="text/javascript">
+	$("#add_store_edit").click(function(){
+		if($('#addstore').css('display') == 'none'){ 
+			$("#addstore").show(1000);
+		}else{
+			$("#addstore").hide(1000);
+		}
+	});
+
+	var i = $(".store-details").size() + 1;
+	var m = 0;
+	$("#add_emp_store").click(function () {			
+		if(i > 1)
+		{    
+			$.ajax({
+				'url'   :'/ajax-request',
+				'type'  :'POST',
+				'data'  :{'multi_store_time':'1'},
+				'success':function(result){
+					$('.store_block').append('<div class="store-details add-new-store-inner-scroll"><div class="col-xs-3 col-sm-3 col-md-3 no-padding-left"><input type="text" name="emp_store_name[]" required placeholder="Enter Store name" class="input-text width-100 required-field_'+m+'"> </div><div class="col-xs-4 col-sm-4 col-md-4 no-padding-left"><input type="text" name="emp_store_address[]" required placeholder="Enter Store address" class="input-text width-100 required-field_'+m+' "></div><div class="col-xs-2 col-sm-2 col-md-2 no-padding-left"><input type="text" name="emp_store_region[]" required placeholder="Enter Store Region" class="input-text width-100 required-field_'+m+' city"></div><div class="col-xs-2 col-sm-2 col-md-2 no-padding-left"><input type="text" name="emp_store_zip[]" required placeholder="Enter Store post code" class="input-text width-100 required-field_'+m+'"></div><span class="removeclass small2 "><i class="fa fa-times" title="Remove" aria-hidden="true"></i></span><div class="css_error2 required-field-no_'+m+'" style="clear:both;"></div>'+result+'</div>');
+				}
+			});
+			i++;
+			m++;
+		}
+		return false;
+	});
+
+	$("body").on("click",".removeclass", function(e){
+		//event.returnValue = false;  // mozilla giving error rest working in safari ,crome and IE
+		if( i > 1 ) { 
+				$(this).parent('.store-details').remove();i--;
+		}
+	});
+
+	$(".deleteclass").click(function () {
+		var id = $(this).attr('id');
+        $('div#alert-confirm-modal #alert-message').html('Do you really want to delete store?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#loader-div").show();
+		    var del_status = 1;
+		    $.ajax({
+				'url'   :'/manage-store',
+				'type'  :'POST',
+				'data'  : {id:id, delete_st:del_status},
+				'success':function(result){ 
+					$("#loader-div").hide();
+					$('div#alert-confirm-modal').removeClass('in');
+					$('div#alert-confirm-modal').css('display','none');
+					messageBoxOpen("Store deleted.");
+					//document.location.reload(true);
+				}
+			}); 	
+        });
+	});
+
+
+	/* Get Store Timing Info */
+	function getStoreTimingDetails(storeId) {
+		var loader = "<?php echo $this->cdn('/frontend/images/');?>loader.gif";
+		$('#store_time_'+storeId).append('<img class="store-loader" src="'+loader+'">');
+		$.ajax({
+			'url'   :'/ajax-request',
+			'type'  :'POST',
+			'data'  :{'emp_multi_store_time':'1','emp_store_id':storeId},
+			'success':function(result){
+				$('#store_time_'+storeId).append(result);
+				console.log(result);
+				$('#store_time_'+storeId+' img.store-loader').remove();
+			}
+		});
+		
+		console.log(storeId);
+	}
+
+</script>
+<script type="text/javascript">
+    $(function() {
+        var availableTags = [<?php echo $townListString; ?>];
+        $( ".city" ).autocomplete({
+            source: availableTags
+        });
+    });
+</script>
+<style type="text/css">
+	ul.ui-autocomplete.ui-front.ui-menu.ui-widget.ui-widget-content{
+		max-width: 300px !important; 
+	}
+</style>

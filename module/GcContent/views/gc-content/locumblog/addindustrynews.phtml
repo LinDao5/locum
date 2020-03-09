@@ -1,0 +1,124 @@
+<script type="text/javascript" src="/backend/assets/datatypes/textrich/ckeditor.js"></script>
+<script type="text/javascript" src="/backend/assets/datatypes/textrich/ckeditor-adapters-jquery.js"></script>
+<script type="text/javascript">
+    jQuery( function() {
+        jQuery( "#tabs" ).tabs();
+    } );
+</script>
+<style type="text/css">
+    .blog-save-action {
+        text-align: right;
+    }
+</style>
+
+<div class="col-lg-12">
+    <form class="relative form-horizontal" action="" method="post" enctype="multipart/form-data">
+        <div class="blog-save-action">
+            <a style="float: left;padding: 8px;" class="btn-btn-warning" href="<?php echo $this->serverUrl() ?>/admin/content/industrynews"><span class="glyphicon glyphicon-chevron-left"></span> Back to blog</a>
+            <input type="submit" class="btn btn-warning" value="Save" name="submit">
+        </div>  
+        
+        <div id="tabs">
+            <ul>
+                <li><a href="#tabs-1">Content</a></li>
+                <li><a href="#tabs-2">SEO Data</a></li>                
+            </ul>
+            <div id="tabs-1">
+                <input type="hidden" name="new_id" value="<?php echo $listnews['id'] ? $listnews['id'] : '' ?>">
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Title</label>
+                    <div class="col-lg-10">
+                        <input type="text" name="title" class="form-control" id="title" value="<?php echo $listnews['title'] ? $listnews['title'] : '' ?>" required="">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Slug</label>
+                    <div class="col-lg-10">
+                        <input type="text" name="slug" class="form-control" id="slug" value="<?php echo $listnews['slug'] ? $listnews['slug'] : '' ?>" required="">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Description</label>
+                    <div class="col-lg-10">
+                        <textarea name="description" class="form-control" id="description" required=""><?php echo $listnews['description'] ? $listnews['description'] : '' ?></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">User Type</label>
+                    <div class="col-lg-10">
+                        <?php $ut = explode(',',$listnews['user_type']) ;  ?>
+                        <div class="col-md-3">
+                            <input type="checkbox" name="user_type[]" id="user_type" value="2"  <?php if(in_array('2',$ut)){ echo "checked" ;} ?>>
+                            <label class="optional" for="Locums"> Locums</label>                            
+                            <!---<span class="input-checkbox"><input type="checkbox" name="user_type" id="user_type" value="2"><label for="site-offiline"></label></span> - -->
+                        </div>
+                        <div class="col-md-3">
+                            <input type="checkbox" name="user_type[]" id="user_type" value="3" <?php if(in_array('3',$ut)){ echo "checked" ;} ?>>
+                            <label class="optional" for="Employers"> Employers </label>                            
+                            <!---<span class="input-checkbox"><input type="checkbox" name="user_type" id="user_type" value="3"><label for="Employers"></label></span>- -->     
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Profession</label>
+                    <div class="col-lg-10">
+                        <?php $pro = explode(',',$listnews['category_id']) ;  ?>                   
+                        <?php foreach ($this->professions as $profession) { ?>
+                            <div class="col-md-3">
+                                <input type="checkbox" name="profession_type[]" id="profession_type" value="<?php echo $profession->getId()  ?>" <?php if(in_array($profession->getId(),$pro)){ echo "checked" ;} ?> >
+                                <label class="optional" for="Employers"> <?php echo $profession->getName() ?> </label>                                
+                                <!--<span class="input-checkbox"><input type="checkbox" name="profession_type" id="profession_type" value="<?php echo $profession->getId()  ?>"><label for="Employers"></label></span>- -->       
+                            </div>
+                       <?php } ?> 
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Image Upload</label>
+                    <div class="col-lg-10">
+                        <input type="file" name="image" id="image" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Status</label>
+                    <div class="col-lg-10">
+                        <select name="status" class="form-control" id="status" required="">
+                            <option value="1" <?php echo $listnews['status'] == 1 ? 'selected' : '' ?>>Active</option>
+                            <option value="0" <?php echo $listnews['status'] == 0 ? 'selected' : '' ?>>In Active</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="tabs-2">
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Meta Title</label>
+                    <div class="col-lg-10">
+                        <input type="text" name="metatitle" class="form-control" id="metatitle" value="<?php echo $listnews['metatitle'] ? $listnews['metatitle'] : '' ?>">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Meta Description</label>
+                    <div class="col-lg-10">
+                        <input type="text" name="metadescription" class="form-control" id="metadescription" value="<?php echo $listnews['metadescription'] ? $listnews['metadescription'] : '' ?>">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required control-label col-lg-2" for="email">Meta Keywords</label>
+                    <div class="col-lg-10">
+                        <input type="text" name="metakeywords" class="form-control" id="metakeywords" value="<?php echo $listnews['metakeywords'] ? $listnews['metakeywords'] : '' ?>">
+                    </div>
+                </div>
+            </div>    
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    CKEDITOR.replace( description );
+CKEDITOR.editorConfig = function( config ) {
+config.colorButton_enableAutomatic = true;
+}
+</script>

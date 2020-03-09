@@ -1,0 +1,201 @@
+ <?php
+    date_default_timezone_set('Europe/London');
+ $return = $this->script('add-supplier-process'); 
+
+?>
+ 
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/user-profile">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                     <li><a href="<?php echo $this->serverUrl();?>/supplier-list">Supplier List</a></li>
+                     <li><a href="#"><?php if(isset($return['supplier_id']) && $return['supplier_id'] != ''){ echo 'Edit'; }else{ echo 'Add'; }; ?> Supplier</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">                    
+                        <i class="glyphicon glyphicon-user" aria-hidden="true"></i>                     
+                </div>
+                <div class="set-title">
+                    <h3><?php if(isset($return['supplier_id']) && $return['supplier_id'] != ''){ echo 'Edit'; }else{ echo 'Add'; }; ?> Supplier </h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+               <section class="add_item text-left">
+               
+               <div class="col-md-12 pad0">
+                    <div class="text-center finance-page-head marb20"><?php if(isset($return['supplier_id']) && $return['supplier_id'] != ''){ echo 'Edit'; }else{ echo 'Add'; }; ?> supplier </div>
+                </div>
+                        
+                    
+                      <div class="col-md-12 pad0"><?php echo $this->partial('flash-messages'); ?></div>
+                        <!-- form start -->
+                        <form class="add_item_form form-inline" action="<?php echo $this->escapeHtml($this->document('manage-supplier')->getUrl()); ?>" method="post" id="supplier-form">
+                        
+              <div class="col-md-12">
+              <div class="form-group">
+                 <div class="col-md-3"> </div><div class="col-md-7"> 
+                 <h1 class="mar0 text-left" id="register_head_blue">
+                 <?php if(isset($return['supplier_id']) && $return['supplier_id'] != ''){ echo 'Contact Name : '.$return['name']; }?>
+                 </h1></div>
+               </div>
+        <input type='hidden' value="<?php echo @$return['supplier_id'] ? $return['supplier_id'] : '' ; ?>" name='sid'>
+               </div>
+               
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Contact Name </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                   <div class="col-md-7"> <input id="cname" name="cname" type="text" value="<?php echo @$return['name'] ? $return['name'] : '' ; ?>" placeholder="Contact Name" class="form-control" required></div>
+                </div>
+                </div>
+                
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Store Name </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                   <div class="col-md-7">
+                     <input id="sname" name="sname" type="text" value="<?php echo @$return['store_name'] ? $return['store_name'] : '' ; ?>" placeholder="Store Name" class="form-control" required>
+                   </div>
+                </div>
+                </div>
+                
+                
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Address 1</label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                   <div class="col-md-7">
+                   <textarea class="form-control" id="address" name="address" rows="1" placeholder="Address" required><?php echo @$return['address'] ? $return['address'] : '' ; ?></textarea>
+                   </div>
+                </div>
+                </div>
+                
+                  <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Address 2</label></div>
+                   <div class="col-md-7">
+                   <textarea class="form-control" id="addresssec" name="addresssec" rows="1" placeholder="Address"><?php echo @$return['addresssec'] ? $return['addresssec'] : '' ; ?></textarea>
+                   </div>
+                </div>
+                </div>
+                
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Town </label></div>
+                   <div class="col-md-7">
+                   <input type="text" class="form-control" id="town" name="town" placeholder="Town" value="<?php echo @$return['town'] ? $return['town'] : '' ; ?>">
+                   </div>
+                </div>
+                </div>
+                
+                  
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">County </label></div>
+                   <div class="col-md-7">
+                   <input type="text" class="form-control" id="country" name="country" placeholder="County" value="<?php echo @$return['county'] ? $return['country'] : '' ; ?>">
+                   </div>
+                </div>
+                </div>
+                
+                
+                  
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Postcode </div>
+                   <div class="col-md-7">
+                   <input type="text" class="form-control" id="postcode" name="postcode" placeholder="Postcode" value="<?php echo @$return['postcode'] ? $return['postcode'] : '' ; ?>">
+                   </div>
+                </div>
+                </div>
+                
+                
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">Contact No </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                   <div class="col-md-7">
+                   <input id="cnumber" name="cnumber" id="cnumber" type="text" value="<?php echo @$return['contact_no'] ? $return['contact_no'] : '' ; ?>" placeholder="Contact Number" class="form-control" required>
+                   <div id="cnumber_error"></div>
+                   </div>
+                </div>
+                </div>
+                
+                
+                <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-md-3"><label for="exampleInputPassword1">E-mail Address </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                   <div class="col-md-7">
+                   <input id="email" name="email" type="email" value="<?php echo @$return['email'] ? $return['email'] : '' ; ?>" placeholder="E-mail Address" class="form-control" required>
+                   </div>
+                </div>
+                </div>
+                
+               <!-- <div class="col-md-12">
+                <div class="form-group">
+                  <div class="col-xs-5 col-sm-3 col-md-3"><label for="exampleInputPassword1">AutomaticInvoice</label></div>
+                   <div class="col-xs-5 col-sm-6 col-md-7">
+                   <label><input name="invoice" id="invoice" value='1' <?php echo $return['automaticinvoice'] == '1' ? 'checked' : '' ;?> class='pull-left' type="checkbox"></label>
+                
+                   </div>
+                </div>
+                </div>-->
+                        
+                <div class="col-md-12">
+                    <div class="form-group text-center">
+                        <?php if(isset($return['supplier_id']) && $return['supplier_id'] != '') { ?>
+                            <button type="submit" value='update-supplier' id="supplier-btn" name="supplier-btn" class="read-common-btn grad_btn hide-btn">Update</button>
+                        <?php }else{ ?>
+                            <button type="submit" value='add-supplier' id="supplier-btn" name="supplier-btn" class="read-common-btn grad_btn hide-btn">Submit</button>
+                        <?php } ?>
+                        <!--<button type="button" class="read-common-btn grad_btn">Review</button>-->
+                        <button type="button"  id="supplier_submit_loding"  class="read-common-btn grad_btn" style="display: none" disabled>Loading...</button>
+                    </div>
+                </div>
+              </form>
+             </section>
+                
+            </div>
+            
+            
+        </div>
+    </div>
+</div>
+<script>
+    $("#supplier-form").submit(function(){        
+        $('.hide-btn').hide();
+        $('#supplier_submit_loding').show();        
+    });
+    $("#cnumber").keyup(function() {
+        var cnumber= $("#cnumber").val();
+        if (isNaN(cnumber)){ $("#cnumber").val('');  }
+
+    });
+    
+    $("#cnumber").keyup(function() {
+        var cnumber= $("#cnumber").val();
+        if(cnumber.length < 10 || cnumber.length > 11 ){
+            $('#cnumber_error').html('<div id="user_error" class="css_error">Please Enter Valid Contact No .</div>') ;
+            $('#supplier-btn').prop('disabled', true);       
+        }else{
+            $('#cnumber_error').html('') ;
+            $('#supplier-btn').prop('disabled', false);   
+        }
+        if (cnumber.length === 11) {
+            return false;
+        }  
+
+    });      
+    
+</script>

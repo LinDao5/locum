@@ -1,0 +1,115 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->questions));
+$paginator->setItemCountPerPage(10);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+?>
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <!-- <col width="10%">
+        <col width="10%"> -->
+        <col width="56%">
+        <col width="10%">
+        <col width="10%">
+        <col width="1%">
+        <col width="1%">
+    </colgroup>
+    <thead>
+        <tr>
+            <!-- <th><?php echo $this->escapeHtml($this->translate('Role')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th> -->
+            <th><?php echo $this->escapeHtml($this->translate('Question')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Type')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Option Value')); ?></th>
+            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Edit')); ?></th>
+            <th class="text-center"><?php echo $this->escapeHtml($this->translate('Delete')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+       <?php
+        foreach ($paginator as $question): ?>
+            <tr>
+                <!-- <td><?php echo $this->escapeHtml($question->getRoleId()); ?></td>
+                <td><?php echo $this->escapeHtml($question->getCatId()); ?></td> -->
+                <td><?php echo $this->escapeHtml($question->getQuestion()); ?></td>
+                <td><?php 
+                        switch ($question->getTypeKey()) {
+                            case '1':
+                                    echo "Text Field";
+                                break;
+                            case '2':
+                                    echo "Select Option";
+                                break;
+                            default:
+                                    echo "-";
+                                break;
+                        }
+                    ?>
+                </td>
+                <?php 
+                    $allOption = unserialize($question->getTypeValue());
+                ?>
+                <td>
+                    <?php
+                        if(!empty($allOption)){
+                            $i = 1;
+                            foreach ($allOption as $key => $value) {
+                                if (!empty($value)) {
+                                    echo '<p>'.$i++.'. '.$value.'</p>';
+                                }else{
+                                    echo "<em>Null</em>";
+                                }
+                                
+                            }   
+                        }else{
+                            echo "Null";
+                        }
+                        
+                    ?>
+                </td>
+                
+                <td class="text-center">
+                    <a href="<?php echo $this->url('config/user/question/edit', array('id' => $question->getId())); ?>" class="edit-line">
+                        <img src="<?php echo $this->cdnBackend('backend/images/icones/edit.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Edit')); ?>">
+                    </a>
+                </td>
+                <td class="text-center">
+                    <a href="<?php echo $this->url('config/user/question/delete', array('id' => $question->getId())); ?>" class="delete-line">
+                        <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/question'));?>
+</div>
+<script type="text/javascript">
+    Gc.initTableList();
+</script>

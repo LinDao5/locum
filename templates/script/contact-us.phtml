@@ -1,0 +1,93 @@
+<?php
+date_default_timezone_set('Europe/London');
+
+use GcFrontend\Controller\JobmailController as MailController;
+
+$mailController = new MailController();
+
+$request = $this->getRequest();
+if ($request->isPost()) {
+    $post = $request->getPost();
+    $name = $post->get('name');
+    $email = $post->get('email');
+    $message = $post->get('message');
+
+    $host = $this->getRequest()->getUri()->getHost();
+
+
+//  google captcha part
+    if(isset($_POST['g-recaptcha-response']) && !empty($_POST['g-recaptcha-response']))
+    {
+        $secret = '6LdyD90UAAAAAFaKd7SBr3rQ-n51Ca5Mfj3DnT2l';
+        $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$secret.'&response='.$_POST['g-recaptcha-response']);
+        $responseData = json_decode($verifyResponse);
+        if($responseData->success)
+        {
+            $succMsg = 'Your contact request have submitted successfully.';
+        }
+        else
+        {
+            return array( 'error_message' => 'Please check the captcha');
+        }
+    }
+
+    if(empty($name) or empty($email) or empty($message)) {
+        return array('name' => $name, 'email' => $email, 'message' => $message, 'error_message' => 'Please fill all fields correctly');
+    } else {
+        $header = $mailController->mailHeader();
+        $footer = $mailController->mailFooter();
+        $message_new = $header . '
+					<div style="padding: 25px 50px 5px; text-align: left;">
+					<p>Hello Admin,</p>
+					<h3>Contact Information</h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Email</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">' . $email . '</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Name</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">' . $name . '</td>
+					  </tr>
+					  <tr>
+						<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Message</th>
+						<td style=" border: 1px solid black;  text-align:left;  padding:5px;">' . $message . '</td>
+					  </tr>
+					 </table>
+					</div>' . $footer;
+        $message_success = $header . "
+					<div style='padding: 25px 50px 5px; text-align: left;'>
+					<p>Hello $name,</p>
+					<p style='margin:5px 0px'>Thanks for getting in touch.</p>
+					<p style='margin:5px 0px'>We're working on your query and will aim to get back to you within the next two days. </p>
+					</div>" . $footer;
+        try {
+            $mail = new \Gc\Mail('utf-8', $message_new);
+            $mail->getHeaders()->addHeaderLine('Content-type', 'text/html');
+            $mail->setSubject('Contact Details');
+            $mail->setFrom($email, $name);
+            $mail->addTo($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'));
+            //$mail->addTo($email);
+            $mail->setSubject('Contact Form Locumkit');
+            $mail->send();
+            $this->flashMessenger()->addSuccessMessage('Thank you for your query, We aim to reply within 48 hours');
+        } catch (Exception $e) {
+            $this->flashMessenger()->addErrorMessage('Message not sent, please check your email address');
+        }
+
+        try {
+            $mail = new \Gc\Mail('utf-8', $message_success);
+            $mail->getHeaders()->addHeaderLine('Content-type', 'text/html');
+            $mail->setFrom($this->getServiceLocator()->get('CoreConfig')->getValue('mail_from'), 'Locumkit');
+            $mail->addTo($email);
+            //$mail->addTo($email);
+            $mail->setSubject('Locumkit Contact Confirmation');
+            $mail->send();
+            //$this->flashMessenger()->addSuccessMessage('Message sent');
+        } catch (Exception $e) {
+            //$this->flashMessenger()->addErrorMessage('Message not sent, please check your email address');
+        }
+        $this->redirect()->toUrl('/contact');
+        return true;
+    }
+}

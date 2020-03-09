@@ -1,0 +1,153 @@
+<style>
+.supplier-btn {
+    padding: 5px 15px !important;
+    font-size: 12px !important;
+    margin: 5px;
+}
+}
+</style>
+
+<?php 
+ use Gc\User\Finance\AddSupplier\Collection as SupplierCollection;
+ use GcFrontend\Controller\FunctionsController;
+ $functionsController 	= new FunctionsController();
+ $suppliercollection = new SupplierCollection(); 
+ $return = $this->script('add-supplier-process');  
+
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2){
+        $uid = $_SESSION['user_id'];
+        $userRoleId = $_SESSION['user_role_id'];
+    }else{  
+        $url= $this->serverUrl().'/login-form';
+        echo "<script type='text/javascript'>window.location='".$url."'</script>";
+    }
+
+    $is_delete = '';
+    if(isset($_POST['sp_id']) &&  isset($_POST['sp_delete']) && $_POST['sp_delete'] == 'haha'){
+    	$is_delete = 'Supplier deleted';
+    	$functionsController->delete_supplier($_POST['sp_id'],$_SESSION['user_id']);
+    }
+ 
+ ?>
+
+
+<section id="breadcrum" class="breadcrum">
+	<div class="breadcrum-sitemap">
+		<div class="container">
+			<div class="row">
+				<ul>         
+					<li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+						<li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                        <li><a href="<?php echo $this->serverUrl();?>/manage-supplier">Add Supplier</a></li>
+						<li><a href="#">Supplier list</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="breadcrum-title">
+				<div class="container">
+					<div class="row">
+						<div class="set-icon registration-icon">
+							<i class="glyphicon glyphicon-list-alt" aria-hidden="true"></i>
+						</div>
+						<div class="set-title">
+							<h3><?php // echo $title ; ?> Supplier list</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+<div id="primary-content" class="main-content about">
+	<div class="container">
+    	<div class="row">
+        	<div class="contents white-bg">
+            <section class="text-left">
+<div class="col-md-12 pad0">
+                    <div class="text-capitalize text-center finance-page-head">supplier list</div>
+                </div>
+<div class="col-md-12 cash_table" style="margin-top: -25px;">
+<a class="read-common-btn grad_btn btn-sm pull-right supplier-btn" href="/manage-supplier">ADD SUPPLIER</a>
+<a class="read-common-btn grad_btn btn-sm pull-right supplier-btn" href="/income-by-supplier">SUPPLIER REPORT</a>
+
+</div>
+<div class="col-md-12 cash_table">
+<?php if(isset($_POST['sp_id']) && $is_delete != ''){ ?>
+	<div class="alert alert-success"><?php echo $is_delete; ?></div>
+<?php } ?>
+<?php echo $this->partial('flash-messages'); ?>
+	
+  <div class="table-responsive">                 
+ <table class="table table-striped income_sum_table">
+  <thead>
+    <tr>
+     <th class="col-md-1">Contact name</th>
+     <th class="col-md-1">Store name</th>
+     <th class="col-md-3">Address</th>
+     <th class="col-md-1">Contact No</th>
+     <th class="col-md-1">Email address</th>
+     <!--<th class="col-md-1">Automatic invoice</th>-->
+     <!--<th class="col-md-1">Send Invoice</th>-->
+     <th class="col-md-1">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  <?php
+ $dataSupplier = $suppliercollection->getSupplier();
+ foreach($dataSupplier as $data) {
+ if($data['created_by'] ==  $uid) { 
+  ?>
+    <tr>
+      <td class="col-md-1"><?php echo ucfirst($data['name']) ; ?> </td>
+      <td class="col-md-1"><?php echo ucfirst($data['store_name']); ?> </td>
+      <td class="col-md-2">
+      			<?php echo $data['address'] ; ?> .<br/>
+      			<?php if($data['addresssec'] != ''){ echo @$data['addresssec'].'<br/> '; } ; ?>
+      			<?php echo @$data['town'] ? $data['town'].',' : '' ; ?> 
+      			<?php echo @$data['country'] ? $data['country'].',' : '' ; ?> 
+      			<?php echo $data['postcode'] ; ?>
+      </td>
+      <td class="col-md-1"><?php echo $data['contact_no'] ; ?> </td>
+      <td class="col-md-1"><?php echo $data['email'] ; ?> </td>
+      
+      <!--<td class="col-md-1"><?php // echo @$data['automaticinvoice'] == 1 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<i class="fa fa-close" aria-hidden="true"></i>' ; ?> </td>-->
+      <!--<td class="col-md-1">--</td>- -->
+      <td class="col-md-1">
+	  <form action="/manage-supplier" method="post" style="display: inline-block;">	  
+	  <button class="btn btn-xs btn-info" value="<?php echo $data['supplier_id'] ; ?>" name="updateID" type="submit"><i class="fa fa-fw fa-edit"></i></button>
+	  </form>
+	  <form action="/supplier-list" method="post" id="supplier-form-<?php echo $data['supplier_id']; ?>" style="display: inline-block;">
+	  		<input type="hidden" name="sp_id" value="<?php echo $data['supplier_id']; ?>">
+	  		<input type="hidden" name="sp_delete" value="haha">
+           <button type="button" class="btn btn-xs btn-danger" name="in_data_delete" value="in_data_delete" onclick="confirm_delete_in('<?php echo $data['supplier_id']; ?>')"><i class="fa fa-fw fa-close"></i></button>
+	  </form>
+	  </td>
+    </tr>
+ <?php }} ?>
+  </tbody>
+</table>
+</div>
+
+
+                </div>
+              
+            </section>
+                
+            </div>
+        </div>
+   	</div>
+</div>
+
+<script>
+	function confirm_delete_in(sup_id){
+    	//event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Do you really want to delete this supplier?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+        	$('#supplier-form-'+sup_id).submit();
+            messageBoxClose();
+        });
+    };
+</script>

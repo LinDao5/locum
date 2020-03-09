@@ -1,0 +1,135 @@
+<?php
+	/**
+	* Develop by SURAJ WASNIK (suraj.wasnik0126@gmail.com)
+	*/
+	namespace FudugoApp\Controller\User\Finance;
+	use GcFrontend\Controller\DbController as DbController;
+	use FudugoApp\Controller\Helper\HelperController as HelperController;
+	use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+	use GcConfig\Controller\FinanceController as WebFinanceController  ;
+	Class FinanceController
+	{
+		public function get_finance_summary($user_data){			
+			$financialYear = date('Y');
+			$uid = $user_data['user_id'];
+			$user_role = $user_data['user_role'];
+			$finance_summary = '';
+			if ($user_role == 2) {
+				$finance_summary = $this->getLocumFinanceSummary($uid,$financialYear);
+			}
+			return json_encode($finance_summary);
+		}
+
+		public function getLocumFinanceSummary($uid,$financialYear)
+		{
+			$financeHelper = new FinanceHelper();
+			$helper = new HelperController();
+			$financeController = new WebFinanceController();
+			$overallincome = $financeHelper->getIncomeByuser($uid,$financialYear);
+        	$overallexpence = $financeHelper->getExpenceByuser($uid,$financialYear);
+        	$profit = $overallincome['job_rate'] - $overallexpence['cost'];
+        	$finance_summary = array(
+        			'total_earn' => $helper->formate_price($overallincome['job_rate']),
+        			'total_spent' => $helper->formate_price($overallexpence['cost']),
+        			'total_net' => $helper->formate_price($profit),        			
+        			'total_tax' => $helper->formate_price($financeController->taxclaculation($overallincome['job_rate'] , 2)),
+        			'financial_year' => $financeHelper->getMonthFinancialYear($uid,$financialYear)
+        		);
+        	return $finance_summary;
+		}
+
+		/* Get finance chart informations */
+		public function get_finance_summary_chart($user_data)
+		{
+			$financeHelper = new FinanceHelper();
+			$financialYear = date('Y');
+			$filter = 'month';
+			$uid = $user_data['user_id'];
+			$user_role = $user_data['user_role'];
+			$finance_chart = '';
+			if ($user_role == 2) {
+				$finance_chart['income'] = '';
+				$finance_chart_income = $financeHelper->chart_getAllIncome($uid, $financialYear, $filter);
+				$label = '';
+				$color = '';
+				$border = '';
+				foreach ($finance_chart_income[0] as $key => $income) {	
+					if (is_array($income)) {	
+						$label[] = $income[0];								
+					}else{
+						$label_data = explode(',', $income);
+						$label[] = $label_data[0];
+					}
+					$color[] = "rgba(133, 160, 76, 0.5)";
+					$border[] = "rgba(133, 160, 76, 1)";
+				}
+				$finance_chart['income'] = $finance_chart_income;
+				$finance_chart['income'][0] = $label;
+				$finance_chart['income'][4] = $color;
+				$finance_chart['income'][5] = $border;
+
+				/* Expense */
+				$finance_chart['expense'] = '';
+				$finance_chart_expense = $financeHelper->chart_getAllExpense($uid, $financialYear, $filter);
+				$label = '';
+				$color = '';
+				$border = '';
+				foreach ($finance_chart_expense[0] as $key => $expense) {	
+					if (is_array($expense)) {	
+						$label[] = $expense[0];								
+					}else{
+						$label_data = explode(',', $expense);
+						$label[] = $label_data[0];
+					}
+					$color[] = "rgba(164, 68, 66, 0.5)";
+					$border[] = "rgba(164, 68, 66, 1)";
+				}
+				$finance_chart['expense'] = $finance_chart_expense;
+				$finance_chart['expense'][0] = $label;
+				$finance_chart['expense'][4] = $color;
+				$finance_chart['expense'][5] = $border;
+			}elseif($user_role == 3){
+				$getEmpFinanceCost = $financeHelper->getEmpFinanceCost($uid,$financialYear);
+    			$getEmpFinanceJob = $financeHelper->getEmpFinanceJob($uid,$financialYear);
+    			$label = '';
+				$color = '';
+				$border = '';
+    			foreach ($getEmpFinanceCost[0] as $key => $empCost) {
+    				if (is_array($empCost)) {	    					
+						$label[] = $empCost[0];								
+					}else{
+						$label_data = explode(',', $empCost);
+						$label[] = $label_data[0];
+					}					
+					$color[] = "rgba(164, 68, 66, 0.5)";
+					$border[] = "rgba(164, 68, 66, 1)";
+    			}
+
+    			$finance_chart['cost'] = $getEmpFinanceCost;
+    			$finance_chart['cost'][0] = $label;
+    			$finance_chart['cost'][2] = $color;
+    			$finance_chart['cost'][3] = $border;
+
+    			$label = '';
+				$color = '';
+				$border = '';
+
+    			foreach ($getEmpFinanceJob[0] as $key => $empJob) {
+    				if (is_array($empJob)) {	    					
+						$label[] = $empJob[0];								
+					}else{
+						$label_data = explode(',', $empJob);
+						$label[] = $label_data[0];
+					}					
+					$color[] = "rgba(133, 160, 76, 0.5)";
+					$border[] = "rgba(133, 160, 76, 1)";
+    			}
+
+    			$finance_chart['job'] = $getEmpFinanceJob;
+    			$finance_chart['job'][0] = $label;
+    			$finance_chart['job'][2] = $color;
+    			$finance_chart['job'][3] = $border; 
+			}
+			return json_encode($finance_chart);
+		}
+	}

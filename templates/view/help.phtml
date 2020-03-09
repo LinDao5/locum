@@ -1,0 +1,193 @@
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="javascript:void(0);"><?php echo $this->translate($this->mainTitle); ?></a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content about <?php echo strtolower("Hello WORLD."); ?>">
+   <div class="container">
+    	<div class="row">
+            <div class="contents white-bg">
+                <section>
+                <div class="welcome-heading">
+                    <h1><span><?php echo str_replace('&nbsp;', '', $this->translate($this->mainTitle)); ?></span></h1>
+                    <hr class="shadow-line">
+                </div>
+
+                  <?php if($this->title_section_one): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_one)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_one; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                      	  <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_one)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_one): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_one));  ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_two): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase">
+                        <?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_two)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_two; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_two)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_two): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_two)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_three): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_three)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_three; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_three)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_three): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_three)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_four): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_four)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_four; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_four)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_four): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_four)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_five): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_five)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_five; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_five)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_five): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_five)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_six): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_six)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_six; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_six)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_six): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_six)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_seven): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_seven)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_seven; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_seven)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_seven): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_seven)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_eight): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_eight)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_eight; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_eight)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_eight): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_eight)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_nine): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_nine)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_nine; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_nine)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_nine): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_nine)); ?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                  <?php if($this->title_section_ten): ?>
+                    <div class="col-md-12 marb20">
+                      <div class="help-head"><h2 class="text-uppercase"><?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_ten)); ?></h2></div>
+                        <?php $bUrl = $this->image_section_ten; ?>
+                        <?php if(!empty($bUrl)): ?>                        
+                          <div class="col-md-2 padl0">
+                            <figure class="bd"><img src="<?php echo $this->cdn($bUrl['value'])?>" alt="<?php echo str_replace('&nbsp;', '', $this->translate($this->title_section_ten)); ?>" width="100%"></figure>
+                          </div>
+                        <?php endif; ?>
+                        <?php if($this->content_section_ten): ?>
+                          <div class="col-md-10 padr0">
+                            <?php echo str_replace('&nbsp;', '', $this->translate($this->content_section_ten));?>
+                          </div>
+                        <?php endif; ?>
+                    </div> 
+                  <?php endif; ?>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.contents.white-bg {text-align:inherit !important;}
+.bd {border: 1px solid #ccc;height: 148px;width: 100%;}
+h2 { color:#00a9e0;}
+</style>

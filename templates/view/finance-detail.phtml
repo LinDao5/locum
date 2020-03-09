@@ -1,0 +1,507 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\Expense\CategoryCollection as CategoryCollection;
+    use Gc\User\Finance\Model as FinanceModel; 
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper; 
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	use GcFrontend\Controller\PackagePrivilegesController;
+	use GcConfig\Controller\FinanceController as FinanceController  ;
+	$financeController = new FinanceController();
+	$packagePrivilegesController    = new PackagePrivilegesController();
+	$encypt = new Ecryption();
+	$categoryCollection = new CategoryCollection();
+    $financeHelper = new FinanceHelper();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+        $uid = $_SESSION['user_id'];
+        $userRoleId = $_SESSION['user_role_id'];
+    }else{  
+        $url= $this->serverUrl().'/login-form';
+        echo "<script type='text/javascript'>window.location='".$url."'</script>";
+    }
+    $currency = $this->config()->get('site_currency');
+       $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+	$overallincome = $financeHelper->getIncomeByuser($uid, $financialYear);
+	$overallexpence = $financeHelper->getExpenceByuser($uid ,  $financialYear);
+	$finyeardata =  $financeHelper->getUserFinanceyearStartMonth($uid,true);
+	$m =  $finyeardata['month_start'];
+	$finyearusrtype = $finyeardata['user_type'] ;
+	$return = $this->script('finance_detail_process'); 
+?>
+	<section id="breadcrum" class="breadcrum">
+		<div class="breadcrum-sitemap">
+			<div class="container">
+				<div class="row">
+					<ul>         
+						<li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+						<li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+						<li><a href="#">Finance</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<div class="breadcrum-title">
+			<div class="container">
+				<div class="row">
+					<div class="set-icon registration-icon">
+						<i class="glyphicon glyphicon-list-alt" aria-hidden="true"></i>
+					</div>
+					<div class="set-title">
+						<h3>Finance</h3>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+		
+
+		<div id="primary-content" class="main-content about">
+			<div class="container">
+				<div class="row">
+					<div class="contents white-bg">
+						
+                        <section class="text-left">
+                        
+                        <div class="col-md-12 pad0">
+                            <div class="marb0 text-center finance-page-head">Finance details</div>
+                        </div>
+                        
+                            <div class="col-md-12 in_ex_pr_box emply-finance">
+                                <div class=""> <!--in_ex_pr_inbox-->
+                                  <div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Income</h1>
+                                  <h2 class="mar0"><?php echo $currency.$financeHelper->setPriceFormate($overallincome['job_rate']); ?></h2>
+                                  </div>
+                                  <div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Expenses</h1>
+                                  <h2 class="mar0"><?php echo $currency.$financeHelper->setPriceFormate($overallexpence['cost']); ?></h2>
+                                  </div>
+                                  <div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Profit</h1>
+                                  <h2 class="mar0"><?php $profit = $overallincome['job_rate'] - $overallexpence['cost'];
+                    echo $currency.$financeHelper->setPriceFormate($profit); ?></h2>
+                                  </div>
+<div class="col-sm-3 col-md-3 text-center">
+                                  <h1 class="mar0" id="register_head_blue">Income tax</h1>
+                             <h2 class="mar0"><?php  echo $currency.$financeHelper->setPriceFormate($financeController->taxclaculation($overallincome['job_rate'],$finyearusrtype,$financialYear,$uid)); ?></h2>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                                                   
+                          <div class="col-md-12 pad0 finacedetable">
+<?php echo $this->partial('flash-messages'); ?> 
+                          <form class="wholeborder" action="<?php echo $this->escapeHtml($this->document('finance-detail')->getUrl()); ?>" method="GET" >
+						<section id="Income-tansc" class="Income-tansc">
+                        
+                        <?php include 'select-financial-year.phtml'; ?> 
+							<div class="col-md-12">
+							
+                            </div>
+                                <div class="col-md-12 pad0 income_tra_sc">
+									
+									<div class="col-md-8 col-sm-12 income">
+                                    <div class="col-md-12 pad0 head_box">
+                                    <h1 class="mar0 text-capitalize" id="register_head_blue">Latest income transactions</h1>
+                                    </div>
+                                    <div class="col-md-12 pad0">
+										<div class="table-responsive table-responsive-scroll finance-scroller">
+											<table class="table" id="incometable">
+												<thead>
+													<tr>
+														<th>Tran&nbsp;No</th> 
+														<th>Job&nbsp;No</th>
+														<th>Date</th>
+														<!-- <th>Net</th> -->
+														<!--<th>Vat</th>-->
+														<th>Amount</th>
+														<th>Store</th>
+														<th>Location</th>
+														<th>Category</th>
+														<th>Supplier</th>
+														<th>Bank</th>
+														<th>Bank&nbsp;Date &nbsp;</th>
+														<th>Action</th>
+													</tr>
+												</thead>
+												<tbody>
+													<?php												
+												$financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+												$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+												$incomeRecord = $financeHelper->getAllIncome($uid,$financialYear,$filter); 	
+					  $i = 1 ;
+							$incomechart = $financeHelper->chart_getAllIncome($uid,$financialYear,$filter);
+												if (!empty($incomeRecord)) :
+															foreach($incomeRecord as $incomedata){ 
+															$grossCost = $incomedata['job_rate'];	
+															$isBank = $incomedata['bank']; ?>
+													<tr>
+														<td data-order="<?php echo $incomedata['trans_id']; ?>">#<?php echo $incomedata['trans_id']; ?></td>
+														<td><?php echo @$incomedata['job_id'] ? $incomedata['job_id'] : 'N/A'; ?></td>
+														<td data-order=<?php echo $incomedata['job_date']; ?>><?php echo date_format(date_create($incomedata['job_date']), 'd/m/Y'); ?></td>
+														<!-- <td><?php echo $currency.$financeHelper->getNetRate($grossCost); ?></td> -->
+														<!---<td><?php // echo $currency.$financeHelper->getVatRate($grossCost);?></td>-->
+														<td><?php echo $currency.$financeHelper->setPriceFormate($grossCost); ?></td> 
+														<td><?php echo @$incomedata['store'] ? $incomedata['store'] : 'N/A' ; ?></td>
+														<td><?php echo @$incomedata['location'] ? $incomedata['location'] : 'N/A'; ?></td>
+														<td><?php echo $financeHelper->getIncometype($incomedata['income_type']) ?></td>
+														<td><?php echo @$incomedata['supplier'] ? $incomedata['supplier'] : 'N/A'; ?></td>
+														<td><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankincome('.$incomedata['id'].')"><i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+														<td><?php echo $incomedata['bank_date'] != '' && $incomedata['bank_date'] != '0000-00-00' ? date('d/m/Y',strtotime($incomedata['bank_date'])) : 'N/A' ?></td>
+														<td>
+           <a href="<?php echo $this->serverUrl().'/add-income?e='.$encypt->encryptIt($incomedata['id']) ;?>" class="btn btn-xs btn-info"><i class="fa fa-fw fa-edit"></i></a>
+                                      
+                                          <form></form>                                 
+                                        
+                          <form role="form" action="<?php echo $this->escapeHtml($this->document('finance-detail')->getUrl()); ?>" method="post" id="delete-in<?php echo $incomedata['id'] ?>" >       
+                                            <input type="hidden" value="<?php echo $encypt->encryptIt($incomedata['id']) ; ?>" name="delincomeId"/>
+											<input type="hidden" value="in_data_delete" name="in_data_delete"/>
+                                            <button type="button" class="btn btn-xs btn-danger" name="in_data_delete" value="in_data_delete" onclick="confirm_delete_in(<?php echo $incomedata['id'] ?>)"><i class="fa fa-fw fa-close"></i></button>
+                                            
+                                        </form>
+                                    					</td>
+													</tr>
+													<?php if($i == 50){   break;  }  $i++;  }  
+												endif; ?>  
+												</tbody>
+											</table>							   
+											<?php  if (empty($incomeRecord)) {
+															echo '<h4 class="no-finance-record">No financial Income record found, <a href="/add-income">click here</a> to add new.</h4>';
+												}	?>
+										</div>
+                                        <div class="col-md-12 pad0"> 
+												<a class="read-common-btn grad_btn pull-left" href="<?php echo $this->serverUrl().'/open-invoices';?>">Open Invoice</a>
+												<a href="<?php echo $this->serverUrl().'/add-income';?>" class="read-common-btn grad_btn pull-right">ADD NEW</a>
+<a href="<?php echo $this->serverUrl().'/show-transactions?show=in&year='.$financialYear;?>" class="read-common-btn grad_btn pull-right">Show All</a>
+											</div>
+										</div>
+                                        </div>
+									<div class="col-md-4 col-sm-12 income-chart-div pr0">
+										 
+										
+                                        <div class="col-md-12 pad0 head_box">
+                                        <div class="col-xs-6 col-sm-4 col-md-8 pad0">
+                                        <div class="transaction-section-title">
+											<h1 class="mar0 text-capitalize" id="register_head_blue">Income Summary</h1>
+										</div>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-4 col-md-4 padl0">
+                                        <div class="filter">
+											<select name="filter" id="finance-filter" class="filter-selection" onchange="this.form.submit()">
+                                            <option value="month">Monthly</option>
+                                            <option value="year">Yearly</option> 
+											</select> 
+										</div>
+                                        </div>
+                                        </div>
+                                        <div class="col-md-12 pad0">
+										<div class="income-graph graph-chart">
+											<canvas id="myChart" width="400" height="200" class="well"></canvas>
+											<div id="myChart-legend" class="chart-legend"></div>
+										</div>
+                                        </div>
+									</div>
+										</div>
+						</section>
+									
+                                    
+                                    
+                                    
+                                    <section id="Income-tansc" class="Income-tansc">
+                        
+                                <div class="col-md-12 pad0 income_tra_sc">
+									<div class="col-md-8 col-sm-12 income">
+                                    <div class="col-md-12 pad0 head_box">
+                                    <h1 class="mar0 text-capitalize" id="register_head_blue">Latest Expenses Transactions</h1>
+                                    </div>
+                                    <div class="col-md-12 pad0">
+										<div class="table-responsive table-responsive-scroll finance-scroller">
+											<table class="table" id="expensetable">
+														<thead>
+															<tr>
+																<th>Tran&nbsp;No</th>
+																<th>Job&nbsp;No</th>
+																<th>Date</th>
+																<!-- <th>Net</th> -->
+																<!--<th>Vat</th>-->
+																<th>Amount</th>
+																<th>Desciption &nbsp;</th>
+																<th>Category</th>
+																<th>Bank</th>
+																<th>Bank Date &nbsp;</th>
+																<th>Action</th>
+															</tr>
+														</thead>
+														<tbody>
+															<?php 
+                                                    $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+                                                    $filter = isset($_GET['ex-filter']) ? $_GET['ex-filter'] : 'month';
+                                                    $expenseRecord = $financeHelper->getAllExpense($uid,$financialYear,$filter);
+										  			//$expenseChart = $financeHelper->getChartAllExpense($uid,$financialYear,$filter); 
+													$expenseChart = $financeHelper->chart_getAllExpense($uid,$financialYear,$filter); 
+                                                    if (!empty($expenseRecord)) :
+														$i = 1 ;
+                                                        foreach ($expenseRecord as $key => $expenseRecord) : 
+                                                            $grossCost = $expenseRecord['cost'];
+                                                            $expCatId = $expenseRecord['expense_type_id'];
+                                                            $isBank = $expenseRecord['bank'];
+															?>
+															<tr>
+																<td data-order="<?php echo $expenseRecord['trans_id']; ?>">#<?php echo $expenseRecord['trans_id'] ?></td>
+																<td><?php echo @$expenseRecord['job_id'] ? $expenseRecord['job_id'] : 'N/A' ?></td>
+																<td data-order=<?php echo $expenseRecord['job_date']; ?>><?php echo date('d/m/Y', strtotime($expenseRecord['job_date'])); ?></td>
+																<!-- <td><?php echo $currency.$financeHelper->getNetRate($grossCost); ?></td> -->
+																<!--<td><?php // echo $currency.$financeHelper->getVatRate($grossCost);?></td>-->
+																<td><?php echo $currency.$financeHelper->setPriceFormate($grossCost); ?></td>
+																<td>
+																<?php if($expenseRecord['description'] != ''){ ?> <a href="javascript:void(0);" onclick="detailDescription('<?php echo $expenseRecord['description']; ?>')"><?php echo substr($expenseRecord['description'], 0,8).'...' ?></a>
+																<?php }else{ echo '<a>N/A</a>';  } ?>
+																
+																
+																</td>
+																<td><?php echo $categoryCollection->getExpenseCatInfoById($expCatId) ?></td>
+																<td><?php echo $isBank == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankexpanse('.$expenseRecord['id'].')"><i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+																<td><?php echo $expenseRecord['bank_date'] != '' && $expenseRecord['bank_date'] != '0000-00-00' ? date('d/m/Y',strtotime($expenseRecord['bank_date'])) : 'N/A' ?></td>
+																<td><a href="<?php echo $this->serverUrl().'/add-expense?e='.$encypt->encryptIt($expenseRecord['id']) ;?>" class="btn btn-xs btn-info"><i class="fa fa-fw fa-edit"></i></a>
+													<form></form>			
+										<form role="form" action="<?php echo $this->escapeHtml($this->document('finance-detail')->getUrl()); ?>" method="post" id="delete-ex<?php echo $expenseRecord['id'] ?>">  
+                                            <input type="hidden" value="<?php echo $encypt->encryptIt($expenseRecord['id']) ; ?>" name="delexpenseId"/>
+											<input type="hidden" value="ex_data_delete" name="ex_data_delete"/>
+                                            <button type="button" class="btn btn-xs btn-danger" name="ex_data_delete" value="ex_data_delete" onclick="confirm_delete_ex(<?php echo $expenseRecord['id'] ?>)"><i class="fa fa-fw fa-close"></i></button>
+                                        </form>
+                                    							</td>	
+															</tr>
+																<?php if($i == 50){   break;  }  $i++; endforeach; ?>                         
+																<?php endif; ?>                       
+															</tbody>
+														</table>							   
+											<?php 
+														if (empty($expenseRecord)) {
+														echo '<h4 class="no-finance-record">No financial expenses record found, <a href="'.$this->serverUrl().'/add-expense">click here</a> to add new.</h4>';
+														}
+														?>
+										</div>
+                                        <div class="col-md-12 pad0"> 
+												<a class="read-common-btn grad_btn pull-right" href="<?php echo $this->serverUrl().'/add-expense';?>">ADD NEW</a>
+												<a href="<?php echo $this->serverUrl().'/show-transactions?show=ex&year='.$financialYear;?>" class="read-common-btn grad_btn pull-right">Show All</a>
+											</div>
+										</div>
+                                        </div>
+									<div class="col-md-4 col-sm-12 income-chart-div pr0">	
+                                        <div class="col-md-12 pad0 head_box">
+                                        <div class="col-xs-6 col-sm-4 col-md-8 pad0">
+											<h1 class="mar0 text-capitalize" id="register_head_blue">Expenses Summary</h1>
+                                        </div>
+                                        <div class="col-xs-6 col-sm-4 col-md-4 padl0">
+                                        <div class="filter">
+											<select name="ex-filter" id="ex-finance-filter" class="filter-selection" onchange="this.form.submit()">
+                                            <option value="month">Monthly</option>
+                                            <option value="year">Yearly</option>
+                                        </select> 
+										</div>
+                                        </div>
+                                        </div>
+                                        <div class="col-md-12 pad0">
+										<div class="income-graph graph-chart">
+											<canvas id="myChart2" width="400" height="200" class="well"></canvas>
+											<div id="myChart2-legend" class="chart-legend"></div>
+													</div>
+                                        </div>
+									</div>
+										</div>
+						</section>
+                                    
+                                    
+                                    
+                                    
+                                    
+										</form>
+                          </div>
+                          
+                        </section>
+			            <section id="transaction-see" class="transaction-see">           
+				            <div class="col-md-12 padl0">   
+				            	<ul>
+				            		<li><a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/all-transaction';?>">All Transactions</a></li>
+				            		<li><a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/open-invoices';?>">Open Invoice</a></li>
+				            		<li><a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/freelancer-reports';?>">Reports</a></li>
+				            		<li><a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/manage-supplier';?>">Add Supplier</a></li>
+				            		<li><a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/bank-details';?>">Bank Details</a></li>
+				            	</ul>		
+					            <!-- <div class="col-md-3 col-sm-3 padr0">
+					            	<a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/all-transaction';?>">All Transactions</a>
+					            </div>
+								<div class="col-md-3 col-sm-3 padr0">
+					            	<a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/open-invoices';?>">Open Invoice</a>
+					            </div>
+					            <div class="col-md-3 col-sm-3 padr0">
+					            	<a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/freelancer-reports';?>">Reports</a>
+					            </div> 
+								
+								<div class="col-md-3 col-sm-3 padr0">
+					            	<a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/manage-supplier';?>">Add Supplier</a>
+					            </div> 
+					            <div class="col-md-3 col-sm-3 padr0">
+					            	<a class="read-common-btn grad_btn" href="<?php echo $this->serverUrl().'/bank-details';?>">Bank Details</a>
+					            </div> -->           
+				            </div>             
+			            </section>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+						
+						<!-- Modal content-->
+<div id="detail-description" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Expenses Description</h4>
+            </div>
+            <div class="modal-body">
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+	$('select#finance-year').val('<?php echo isset($_GET["year"]) ? $_GET["year"] : date("Y") ?>');
+    $('select#finance-filter').val('<?php echo isset($_GET["filter"]) ? $_GET["filter"] : "month" ?>');
+    $('select#ex-finance-filter').val('<?php echo isset($_GET["ex-filter"]) ? $_GET["ex-filter"] : "month" ?>');
+	
+	function detailDescription(description) {
+        $('#detail-description .modal-body').html('<p>'+description+'</p>');
+        $('#detail-description').modal('show');
+    }
+	
+
+	$(document).ready(function() {
+	$.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){		
+	var data_x = <?php echo json_encode($incomechart[0]) ?>;	 
+	/*var data1 = <?php //echo json_encode($incomechart[1]) ?>;
+	var data2 = <?php //echo json_encode($incomechart[2]) ?>;*/
+	var data3 = <?php echo json_encode($incomechart[3]) ?>;
+	var data = {
+	labels : data_x,
+	datasets : [
+	/*{
+			label: "Income Paid",
+			fillColor : "#85A04C",
+			strokeColor : "#85A04C",
+			pointColor : "rgba(220,220,220,1)",
+			pointStrokeColor : "#fff",
+			data : data1
+	},
+	{
+			label: "Income Pending",
+			fillColor : "rgba(147, 176, 87, 0.5)",
+			strokeColor : "rgba(147, 176, 87, 0.5)",
+			pointColor : "rgba(151,187,205,1)",
+			pointStrokeColor : "#fff",
+			data : data2
+	},*/
+	{
+			label: "Income",
+			fillColor : "#85A04C",
+			strokeColor : "#85A04C",
+			pointColor : "rgba(220,220,220,1)",
+			pointStrokeColor : "#fff",
+			data : data3
+	}
+	]
+	};
+	var yearlyExpense = <?php echo json_encode($expenseChart[0]) ?>;     
+	/*var paidExpense = <?php //echo json_encode($expenseChart[1]) ?>;
+	var pendingExpense = <?php //echo json_encode($expenseChart[2]) ?>;*/
+	var Expense = <?php echo json_encode($expenseChart[3]) ?>;
+	var dataExpense = {
+	labels : yearlyExpense,
+	datasets : [
+	/*{
+			label: "Expenses",
+			fillColor : "#A44442",
+			strokeColor : "#A44442",
+			pointColor : "rgba(220,220,220,1)",
+			pointStrokeColor : "#fff",
+			data : paidExpense
+	},
+	{
+			label: "Expenses Pending",
+			fillColor : "rgba(164, 68, 66, 0.53)",
+			strokeColor : "rgba(164, 68, 66, 0.53)",
+			pointColor : "rgba(151,187,205,1)",
+			pointStrokeColor : "#fff",
+			data : pendingExpense
+	},*/
+	{
+			label: "Expenses",
+			fillColor : "#A44442",
+			strokeColor : "#A44442",
+			pointColor : "rgba(220,220,220,1)",
+			pointStrokeColor : "#fff",
+			data : Expense
+	}
+	]
+	}
+	var options = {
+	 animation: true,
+	 multiTooltipTemplate: "<?php echo $this->config()->get('site_currency') ?> <%= value %>.00",
+	};
+
+	//Get the context of the canvas element we want to select
+	var c = $('#myChart');
+	var ct = c.get(0).getContext('2d');
+	var ctx = document.getElementById("myChart").getContext("2d");
+	/*********************/
+	var myChart = new Chart(ctx).Bar(data,options);
+	document.getElementById('myChart-legend').innerHTML = myChart.generateLegend();
+	//Get the context of the canvas element we want to select
+	var c = $('#myChart2');
+	var ct = c.get(0).getContext('2d');
+	var ctx = document.getElementById("myChart2").getContext("2d");
+	/*********************/
+	var myChart2 = new Chart(ctx).Bar(dataExpense,options);
+	document.getElementById('myChart2-legend').innerHTML = myChart2.generateLegend();
+
+	});
+	});
+	
+	function confirm_delete_in(id){
+    //    event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Do you really want to delete this transaction?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#delete-in"+id).submit();
+            messageBoxClose();
+        });
+    };
+    function confirm_delete_ex(id){
+    //    event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Do you really want to delete this transaction?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#delete-ex"+id).submit();
+            messageBoxClose();
+        });
+    }
+
+    $(document).ready(function() {
+        $('#incometable , #expensetable').DataTable( {
+            searching: false,
+            paging: false,
+            "bInfo": false,
+            "order": [[ 0, "desc" ]]
+        } );
+    } );
+
+
+</script>
+<script type="text/javascript" src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>" charset="UTF-8"></script>

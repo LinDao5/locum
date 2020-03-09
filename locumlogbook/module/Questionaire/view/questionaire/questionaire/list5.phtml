@@ -1,0 +1,291 @@
+    
+<style type="text/css">
+    tr th{
+        white-space: nowrap;
+        max-width: 80px;
+        height: 37px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+    .header tr th{
+        text-align: left !important;
+    }
+</style>
+    <div class="col-md-9 pad0 finacedetable" style="padding-right: 0px !important;">
+            <section id="Income-tansc" class="Income-tansc"  style="width:113%">
+                    <div class="col-md-12 col-sm-12 income">
+                        <div class="col-md-12 pad0 head_box">
+                            <span>
+                                <h1 class="mar0 text-capitalize" id="register_head_blue" style="display: inline-block;padding-top: 15px;">PRACTICE CHECKLIST
+                                </h1>    
+                            </span>
+                            <div class="pad0" style="display: inline;">
+                                <a href="<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/add5" class="read-common-btn grad_btn pull-right" style="height:38px;width:142px;">
+                                    ADD NEW
+                                </a>
+                            </div>
+                            <!-- select name="" class="form-control margin-bottom" required="" style="width:130px; display: inline-block; float:right;margin-top: 13px;margin-right: 20px;">
+                                <option value="0" selected="">Latest</option>
+                                <option value="1">Oldest</option>
+                                <option value="2">Completed</option>
+                                <option value="3">In progress</option>
+                            </select> -->
+                            <div class="pad0" style="display: inline;">
+                                <a href="<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/<?php 
+                                    if($page_num == $all_page_num) echo $all_page_num; else echo $page_num+1;
+                                ?>" class="read-common-btn grad_btn pull-right" style="height:40px;width:45px;margin-right:55px;margin-left: 10px">
+                                    >|
+                                </a>
+                                <span style="float: right;padding-top: 19px;font-size: 18px;margin-left: 10px" id="all_page_num">/ <?php echo $all_page_num ?></span>
+                                <input class="form-control" id="page_num_input" placeholder="PageNum" style="
+                                    display: inline-block;
+                                    width: 61px;
+                                    float: right;
+                                    height: 40px;
+                                    margin-top: 10px;
+                                    margin-left: 10px;
+                                    font-size: 20px;
+                                " value="<?php echo $page_num ?>">
+                                <a href="<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/<?php 
+                                    if($page_num == 1) echo 1; else echo $page_num-1;
+                                ?>" class="read-common-btn grad_btn pull-right" style="height:40px;width:45px;">
+                                    |<
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-12 pad0" style="margin-bottom: 20px;">
+                            <table class="table-striped col-md-4 header" id="questionaire_list5">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left !important">Practice Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>No</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Parking</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Train</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Store location</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Pre-screening</th>
+                                    </tr>
+                                    <tr>
+                                        <th>OCT</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Visual field</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Fundus camera</th>
+                                    </tr>
+                                    <tr>
+                                        <th>No. of clinics</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Testing time</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Record keeping</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Stereopsis</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Colour vision</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Handover</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Children glasses</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Trial frame</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Opthal/Ret</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Patient leaflets</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Referral procedure</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Staff info</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Monitoring sales/CER</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Action</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <?php 
+                            $no = ($page_num - 1) * 4 + 1;
+                            foreach ($q_lists as $item){ ?>
+                            <table class="table-striped col-md-2" id="questionaire_list5">
+                                <thead>
+                                    <tr>
+                                        <th ><?php echo $item['practice_name']  ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th><?php  echo $no; $no++;?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['appointment_time_slots'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['record_keeping'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['trial_set'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['phoropter'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['test_chat_type'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['visualfield_machinetype'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['funds_camera'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['oct'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['slit_lamp_type'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['reading_chart'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['stereo_test_type'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['colour_vision_type'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['pre_screening_procdure'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['is_there_do'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['contact_lenses'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['handover_procdure'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['any_patient_leaflets'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['primary_care_services'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['shop_floor_staff_members'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th><?php echo $item['no_of_clinics_running'] ?></th>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            <a href="<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/edit5/<?php echo 
+                                                $item['id'] ?>" class="btn btn-xs btn-info">
+                                                    <i class="fa fa-fw fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-xs btn-danger" name="in_data_delete" value="in_data_delete" onclick="deletebyid(<?php echo $item['id']?>)">
+                                                    <i class="fa fa-fw fa-close"></i>
+                                                </button>
+                                        </th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <?php } ?>
+
+                        </div>
+                    </div>
+               </section>
+    </div>
+
+    <script type="text/javascript">
+
+        function deletebyid(id){
+            var question = confirm ( "Are you sure to delete this questionaire?") 
+            if (question != "0")
+            {
+                $.ajax({
+                    url : '<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/delete5post',
+                    type: 'POST',
+                    dataType: 'JSON',
+                    async: true,
+                    data: {'id' : id},
+                    beforeSend : function() {
+                        /* Logic before ajax request sent */
+                    },
+                    success: function(data){
+                        if (data.success && data.success == 1) window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/1');
+                        else confirm('error');
+                    },
+                    error : function(xhr, textStatus, errorThrown) {
+                        if (xhr.status === 0) {
+                            alert('Not connect.\n Verify Network.');
+                        } else if (xhr.status == 404) {
+                            alert('Requested page not found. [404]');
+                        } else if (xhr.status == 500) {
+                            alert('Server Error [500].');
+                        } else if (errorThrown === 'parsererror') {
+                            alert('Requested JSON parse failed.');
+                        } else if (errorThrown === 'timeout') {
+                            alert('Time out error.');
+                        } else if (errorThrown === 'abort') {
+                            alert('Ajax request aborted.');
+                        } else {
+                            alert('There was some error. Try again.');
+                        }
+                    }
+                });
+            }
+        }
+        $('#page_num_input').change(function(){
+            var page_input = $('#page_num_input').val().trim();
+            window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/' + page_input);
+        })
+
+        $(document).ready(function() {
+            $('#questionaire1_listbtn').click(function(){
+                window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list1');
+            });
+            $('#practice_matters').click(function(){
+                window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list2');
+            });
+            $('#daytoday_practice').click(function(){
+                window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list3');
+            });
+            $('#localarea_protocols').click(function(){
+                window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list4');
+            });
+            $('#practice_checklist').click(function(){
+                window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list5/1');
+            });
+            $('#follow_up').click(function(){
+                window.location.replace('<?php echo $this->basePath(); ?>/questionaire/<?php echo $user_id ?>/list6');
+            });
+        })
+
+    </script>

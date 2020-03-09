@@ -1,0 +1,358 @@
+<?php
+use GcFrontend\Controller\EndecryptController as Ecryption;
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$encypt = new Ecryption();
+
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 3){
+    $uid=$_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>";
+}
+$edit_id = null;
+if (isset($_GET['e']) && $_GET['e'] != '') {
+    $edit_id = $encypt->decryptIt($_GET['e']);
+    $financeedit1 =  $financeHelper->EmpFinanceGetAllIncome($uid, $edit_id,null,null,null);
+    $financeedit  = $financeedit1['0'];
+}
+$return = $this->script('manage-emp-finance-process');
+$regdate = date_format(date_create($financeHelper->getCreatedDate($uid)), 'd/m/Y') ;
+?>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/employer-finance">Finance</a></li>
+                    <li><a href="#"><?php echo $edit_id != null ? 'Edit' : 'Add'; ?> Transactions</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3><?php echo $edit_id != null ? 'Edit' : 'Add'; ?> Transactions</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content register">
+<div class="container">
+<div class="row">
+<div class="contents white-bg manage-emp-finance-wrapp"> 
+<section class="add_item text-left pb30">
+<div class="col-md-12 pad0">
+    <div class="text-capitalize text-center finance-page-head"><?php echo $edit_id != null ? 'Edit' : 'Add'; ?> Transactions</div>
+</div>
+
+<div class="col-md-12 pad0"><?php echo $this->partial('flash-messages'); ?></div>
+
+
+<?php if($edit_id != null && !empty($financeedit)){ ?>
+
+    <div class="col-md-12 pad0">
+        <form role="form" id='income_form' action="<?php echo $this->escapeHtml($this->document('manage-emp-finance')->getUrl()); ?>" method="post" class="add_item_form form-inline">
+
+            <div class="col-md-12">
+                 <input type="hidden" value="<?php echo $financeedit['id'] ? $financeedit['id'] : '' ;?>" name="edit_id" id="edit_id" />
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Locum Type <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7">
+                        <select name="fre_type" id="fre_type" class="form-control" required>
+                            <option value="">Select</option>
+                            <option value="1" <?php echo $financeedit['fre_type'] == 1 ? 'selected' : '' ;?>>Website</option>
+                            <option value="2" <?php echo $financeedit['fre_type'] == 2 ? 'selected' : '' ;?>>Private</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Job No. <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7"><input type="number" name="job_id" id="job_id" class="form-control" value="<?php echo $financeedit['job_id'] ? $financeedit['job_id'] : '' ;?>"  placeholder="Job No" required></div>
+                </div>
+                <div id="error_div" class="has-error"></div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1" id="locum-id-label">Locum ID <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7"><input type="number" name="fre_id" id="fre_id" class="form-control" value="<?php echo $financeedit['fre_id'] ? $financeedit['fre_id'] : '' ;?>"  placeholder="Locum ID" required></div>
+                </div>
+                <div id="error_div" class="has-error"></div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Date <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <!--<div class="col-md-7"><input type="text" class="form-control" name="in_date" id="in_date" placeholder="Transaction Date" required></div>-->
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control readonly" size="16" type="text" value="<?php echo $financeedit['job_date'] ? date('d/m/Y',strtotime($financeedit['job_date'])) : '' ;?>" name="in_date" id="in_date" placeholder="Transaction Date" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Rate <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-addon"><?php echo $this->config()->get('site_currency') ?></span>
+                            <input name="rate" id="rate" value="<?php echo $financeedit['job_rate'] ? $financeedit['job_rate'] : '' ;?>" type="text" class="form-control" placeholder="Rate" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Bonus</label></div>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-addon"><?php echo $this->config()->get('site_currency') ?></span>
+                            <input name="bonus" id="bonus" value="<?php echo $financeedit['bonus'] ? $financeedit['bonus'] : '' ;?>" type="text" class="form-control" placeholder="Bonus">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-7"><div class="checkbox">
+                            <label><input name="paid" id="paid" value='1' <?php echo $financeedit['paid'] == '1' ? 'checked' : '' ;?>  type="checkbox">Paid</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 new_bank_date no_field"  <?php echo $financeedit['paid'] == '1' ? 'style="display:block"' : 'style="display:none"' ;?>  id="paid_date_div" >
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Paid Date <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control" size="16" type="text" name="paid_date" id="paid_date" value="<?php echo $financeedit['paid_date'] ? date('d/m/Y',strtotime($financeedit['paid_date'])) : '' ;?>" placeholder="Paid Date" <?php echo $financeedit['paid'] == '1' ? 'required' : '' ;?>>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group text-center">
+                    <button type="submit" name="income_submit" value="income_update" class="read-common-btn grad_btn">Update</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+<?php }elseif($edit_id != null && empty($financeedit)){ ?> <?php }else { ?>
+
+    <div class="col-md-12 pad0">
+        <form role="form" id='income_form' action="<?php echo $this->escapeHtml($this->document('manage-emp-finance')->getUrl()); ?>" method="post" class="add_item_form form-inline">
+
+             <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Locum Type <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7">
+                        <select name="fre_type" id="fre_type" class="form-control" required>
+                            <option value="">Select</option>
+                            <option value="1">Website</option>
+                            <option value="2">Private</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Job No. <i class="fa fa-asterisk required-stars" aria-hidden="true"></i></label></div>
+                    <div class="col-md-7"><input type="number" class="form-control" name="job_id" id="job_id" placeholder="Job No" required></div>
+                </div>
+                <div id="error_div" class="has-error"></div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1" id="locum-id-label">Locum ID <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7"><input type="number" class="form-control" name="fre_id" id="fre_id" placeholder="Locum ID" required></div>
+                </div>
+                <div id="error_div" class="has-error"></div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Date <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <!--<div class="col-md-7"><input type="text" class="form-control" name="in_date" id="in_date" placeholder="Transaction Date" required></div>-->
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control readonly" size="16" type="text" value="" name="in_date" id="in_date" placeholder="dd/mm/yyyy" required autocomplete="off">
+                        </div>
+                        <input type="hidden" id="dtp_input2" value="" /><br/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Rate <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-addon"><?php echo $this->config()->get('site_currency') ?></span>
+                            <input name="rate" id="rate"  type="text" class="form-control" placeholder="Rate" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Bonus</label></div>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-addon"><?php echo $this->config()->get('site_currency') ?></span>
+                            <input name="bonus" id="bonus"  type="text" class="form-control"  placeholder="Bonus">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-7"><div class="checkbox">
+                            <label><input name="paid" id="paid" value='1' type="checkbox">Paid</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 new_bank_date no_field" style="display:none" id="paid_date_div">
+                <div class="form-group">
+                    <div class="col-md-3"><label for="exampleInputPassword1">Paid Date <i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></label></div>
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control" size="16" type="text" value="" name="paid_date" id="paid_date" placeholder="Paid Date">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group text-center">
+                    <button type="submit" name="income_submit" id="income_submit" value="income_submit" class="read-common-btn grad_btn">Submit</button>
+                    <button type="button"  id="income_submit_loding"  class="read-common-btn grad_btn" style="display: none" disabled>Loading...</button>
+                    <!--<button type="button" class="read-common-btn grad_btn">Review</button>-->
+                </div>
+            </div>
+
+        </form>
+    </div>
+<?php } ?>
+</section>
+</div>
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script>
+
+  $("#income_form").submit(function(){
+      $('#income_submit').hide();
+      $('#income_submit_loding').show();
+
+    });
+
+    $("#paid").click(function(){
+        var job_type = $('#paid:checked').val();
+        if(job_type == '1'){
+        $("input#paid_date").prop('required', true);
+            $('#paid_date_div').show(1000);
+        }else{
+            $('#paid_date_div').hide(1000);
+            $('#paid_date').val('');
+            $("input#paid_date").prop('required', false);
+        }
+    });
+
+    $("#job_id").keyup(function() {
+        var job_id= $("#job_id").val();
+        if (!isNaN(job_id) && job_id!= '' && job_id.toString().indexOf('.') == -1){ }else{
+            $("#job_id").val('');
+        }
+    });
+
+    $("#rate").keyup(function() {
+        var rate= $("#rate").val();
+        if (isNaN(rate)){ $("#rate").val('');  }
+
+    });
+
+
+</script>
+
+<!--default date picker-->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('input#paid_date').datepicker({
+            maxDate: '0',
+            dateFormat: 'dd/mm/yy'
+        });
+    });
+    $(document).ready(function() {
+        $('input#in_date').datepicker({
+            maxDate: '0',
+            dateFormat: 'dd/mm/yy',
+            minDate: '<?php echo $regdate ; ?>',
+        });
+
+        /* Locum Id required or not */
+        $('select#fre_type').change(function(){
+            if($(this).val() == '1'){
+                $('#locum-id-label i').show();
+                $('input#fre_id').attr('required','required');
+            }else{
+                $('#locum-id-label i').hide();
+                $('input#fre_id').removeAttr('required');
+            }
+        });
+
+            if($('select#fre_type').val() == '1'){
+                $('#locum-id-label i').show();
+                $('input#fre_id').attr('required','required');
+            }else{
+                $('#locum-id-label i').hide();
+                $('input#fre_id').removeAttr('required');
+            }
+       
+
+    });
+</script>
+

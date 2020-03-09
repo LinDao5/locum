@@ -1,0 +1,30 @@
+
+<link rel="stylesheet" type="text/css" href="dist/jquery-clockpicker.min.css">
+<body>
+
+	<div class="form-group">
+		<h4>Set default value, input without addon:</h4>
+		<div class="clearfix">
+			<div class="pull-center" style="width:80px;margin-bottom:10px;">
+				<input type="text" class="form-control" id="single-input" value="" placeholder="现在">
+			</div>
+		</div>
+
+	</div>
+
+
+	
+
+<script type="text/javascript" src="assets/js/jquery.min.js"></script>
+<script type="text/javascript" src="dist/jquery-clockpicker.min.js"></script>
+<script type="text/javascript">
+
+$('#single-input').clockpicker({
+	placement: 'bottom',
+	align: 'right',
+	autoclose: true,
+	'default': '20:48'
+});
+
+
+</script>

@@ -1,0 +1,1099 @@
+<?php
+	/**
+	* 
+	*/
+	namespace GcFrontend\Controller;
+	use Gc\Mvc\Controller\Action;
+	use Gc\view\Helper\Config as ConfigModule;
+	use Gc\Core\Config as CoreConfig;
+	use Gc\Registry;
+	class JobmailController extends Action
+	{		
+				
+		public function sendAcceptMailToUser($uid,$cjid,$adapter)
+        {
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$cjid'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress     = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+
+	        /* Get record of employer */
+	        $sqlEmpUser = "SELECT firstname,lastname,email from user WHERE id = '$jobEmpId'";	
+	        $empUserDetails = $adapter->query($sqlEmpUser, $adapter::QUERY_MODE_EXECUTE);
+	        $empUsers = $empUserDetails->toArray();
+	        foreach ($empUsers as $key => $value) {
+	        	$empName 	= $value['firstname']." ".$value['lastname'];
+	        	$empEmail 	= $value['email'];
+	        }
+
+	        /* Get record of freelancer */
+	        $sqlFreUser = "SELECT firstname,lastname,email from user WHERE id = '$uid'";	
+	        $freUserDetails = $adapter->query($sqlFreUser, $adapter::QUERY_MODE_EXECUTE);
+	        $freUsers = $freUserDetails->toArray();
+	        foreach ($freUsers as $key => $value) {
+	        	$freName 	= $value['firstname']." ".$value['lastname'];
+	        	$freEmail 	= $value['email'];
+	        }
+
+	        	        $header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+	        $mail_css 	= '
+	        	<style type="text/css">
+					table {
+					    border-collapse: collapse;
+					}
+
+					table, th, td {
+					    border: 1px solid black;
+					    text-align:left;
+					    padding:5px;
+					}
+					h3{
+						text-align:left;
+					}
+					tr:nth-child(odd){
+						background-color: #f2f2f2;
+					}
+					th{
+						width: 200px;
+					}
+					.mail-header{
+						background: #00A9E0;
+					    padding: 20px 50px;
+					    width: 100%;
+					    border-top: 2px solid #000;
+					    border-bottom: 2px solid #000;
+					    clear: both;
+					}
+					.mail-footer {
+					    background: #252525;
+					    color: #fff;
+					    padding: 15px 50px;
+					    margin-top: 30px;
+					}
+					.mail-job-info {
+					    padding: 25px 50px 30px;
+                                            border-right: 2px solid #000;
+                                            border-left: 2px solid #000;
+					}
+				</style>'.$header;
+			$job_info ='
+					<h3 style="text-align:left;"> Job Information </h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>
+				</div>'.$footer.'</body></html>';
+
+	        $massageFre = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>
+    				<br/>
+    				<p>You have accept job successfully, please wait next 24 hours for employer notification on the selected job.
+    				</p>
+    				<p>Following is your job information : </p>
+    				'.$job_info;
+    		//echo "<br/>";
+
+	        $massageEmp = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>
+    				<br/>
+    				<p> One of your job has been accepted by the freelancer.
+    				</p>
+    				<p>Following is your job information : </p>
+    				'.$job_info;
+    		//echo "<br/>";
+
+	        $massageAdm = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+        			<p>The job of employer <b>'.$empName.'</b> is accepted by the freelancer <b>'.$freName.'</b></p>
+        				<p>Following is job information : </p>
+        			'.$job_info;
+
+               /* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject('Job apply notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+
+        	/* Mail Send to employer */
+        	try {
+	            $mailEmp = new \Gc\Mail('utf-8', $massageEmp);
+	            $mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailEmp->setFrom($adminEmail, 'Locumkit');
+	            $mailEmp->addTo($empEmail);
+	            $mailEmp->setSubject('Job apply notification');
+	            $mailEmp->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }
+
+
+        	/* Mail Send to Admin */
+        	try {
+	            $mailAdm = new \Gc\Mail('utf-8', $massageAdm);
+	            $mailAdm->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailAdm->setFrom($adminEmail, 'Locumkit');
+	            $mailAdm->addTo($adminEmail);
+	            $mailAdm->setSubject('Job apply notification');
+	            $mailAdm->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }
+
+  
+        }        
+        public  function sendApplyMailToUser($uid,$cjid,$adapter)
+        {
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$cjid'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+
+	        /* Get record of employer */
+	        $sqlEmpUser = "SELECT firstname,lastname,email from user WHERE id = '$jobEmpId'";	
+	        $empUserDetails = $adapter->query($sqlEmpUser, $adapter::QUERY_MODE_EXECUTE);
+	        $empUsers = $empUserDetails->toArray();
+	        foreach ($empUsers as $key => $value) {
+	        	$empName 	= $value['firstname']." ".$value['lastname'];
+	        	$empEmail 	= $value['email'];
+	        }
+
+	        /* Get record of freelancer */
+	        $sqlFreUser = "SELECT firstname,lastname,email from user WHERE id = '$uid'";	
+	        $freUserDetails = $adapter->query($sqlFreUser, $adapter::QUERY_MODE_EXECUTE);
+	        $freUsers = $freUserDetails->toArray();
+	        foreach ($freUsers as $key => $value) {
+	        	$freName 	= $value['firstname']." ".$value['lastname'];
+	        	$freEmail 	= $value['email'];
+	        }
+	        $header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+	        $mail_css 	= '
+	        	<style type="text/css">
+					table {
+					    border-collapse: collapse;
+					}
+
+					table, th, td {
+					    border: 1px solid black;
+					    text-align:left;
+					    padding:5px;
+					}
+					h3{
+						text-align:left;
+					}
+					tr:nth-child(odd){
+						background-color: #f2f2f2;
+					}
+					th{
+						width: 200px;
+					}
+					.mail-header{
+						background: #00A9E0;
+					    padding: 20px 50px;
+					    width: 100%;
+					    border-top: 2px solid #000;
+					    border-bottom: 2px solid #000;
+					    clear: both;
+					}
+					.mail-footer {
+					    background: #252525;
+					    color: #fff;
+					    padding: 15px 50px;
+					    margin-top: 30px;
+					}
+					.mail-job-info {
+					    padding: 25px 50px 30px;
+                                            border-right: 2px solid #000;
+                                            border-left: 2px solid #000;
+					}
+				</style>'.$header;
+			$job_info ='
+					<h3 style="text-align:left;"> Job Information </h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>
+				</div>'.$footer.'</body></html>';
+
+	        $massageFre = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>
+    				<br/>
+    				<p>You have successfully apply for the job, please wait next 24 hours for employer notification on the selected job.
+    				</p>
+    				<p>Folowwing is your job information : </p>
+    				'.$job_info;
+    		//echo "<br/>";
+
+	        $massageEmp = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>
+    				<br/>
+    				<p> someone is apply for your job..
+    				</p>
+    				<p>Following is your job information : </p>
+    				'.$job_info;
+    		//echo "<br/>";
+    		
+	        /*echo $massageAdm = $mail_css.'
+	        	<div class="mail-job-info">
+        			<p>The job of employer <b>'.$empName.'</b> is accepted by the freelancer <b>'.$freName.'</b></p>
+        				<p>Folowwing is your job information : </p>
+        			'.$job_info;*/
+        	/* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject('Job apply notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+
+        	/* Mail Send to employer */
+        	try {
+	            $mailEmp = new \Gc\Mail('utf-8', $massageEmp);
+	            $mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailEmp->setFrom($adminEmail, 'Locumkit');
+	            $mailEmp->addTo($empEmail);
+	            $mailEmp->setSubject('Job apply notification');
+	            $mailEmp->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+
+	        
+        }
+
+        public function sendAprrovalMailToUser($uid,$cjid,$adapter)
+        {
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$cjid'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress     = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+
+	        /* Get record of employer */
+	        $sqlEmpUser = "SELECT firstname,lastname,email from user WHERE id = '$jobEmpId'";	
+	        $empUserDetails = $adapter->query($sqlEmpUser, $adapter::QUERY_MODE_EXECUTE);
+	        $empUsers = $empUserDetails->toArray();
+	        foreach ($empUsers as $key => $value) {
+	        	$empName 	= $value['firstname']." ".$value['lastname'];
+	        	$empEmail 	= $value['email'];
+	        }
+
+	        /* Get record of freelancer */
+	        $sqlFreUser = "SELECT firstname,lastname,email from user WHERE id = '$uid'";	
+	        $freUserDetails = $adapter->query($sqlFreUser, $adapter::QUERY_MODE_EXECUTE);
+	        $freUsers = $freUserDetails->toArray();
+	        foreach ($freUsers as $key => $value) {
+	        	$freName 	= $value['firstname']." ".$value['lastname'];
+	        	$freEmail 	= $value['email'];
+	        }
+
+	        	        $header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+	        $mail_css 	= '
+	        	<style type="text/css">
+					table {
+					    border-collapse: collapse;
+					}
+
+					table, th, td {
+					    border: 1px solid black;
+					    text-align:left;
+					    padding:5px;
+					}
+					h3{
+						text-align:left;
+					}
+					tr:nth-child(odd){
+						background-color: #f2f2f2;
+					}
+					th{
+						width: 200px;
+					}
+					.mail-header{
+						background: #00A9E0;
+					    padding: 20px 50px;
+					    width: 100%;
+					    border-top: 2px solid #000;
+					    border-bottom: 2px solid #000;
+					    clear: both;
+					}
+					.mail-footer {
+					    background: #252525;
+					    color: #fff;
+					    padding: 15px 50px;
+					    margin-top: 30px;
+					}
+					.mail-job-info {
+					    padding: 25px 50px 30px;
+                                            border-right: 2px solid #000;
+                                            border-left: 2px solid #000;
+					}
+				</style>'.$header;
+			$job_info ='
+					<h3 style="text-align:left;"> Job Information </h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>
+				</div>'.$footer.'</body></html>';
+
+	        $massageFre = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>
+    				<br/>
+    				<p>Congrats..! You have got the job.
+    				</p>
+    				<p>Following is your job information : </p>
+    				'.$job_info;
+    		//echo "<br/>";
+
+	        $massageEmp = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>
+    				<br/>
+    				<p> You have assign job to the freelancer.
+    				</p>
+    				<p>Following is your job information : </p>
+    				'.$job_info;
+    		//echo "<br/>";
+
+	        $massageAdm = $mail_css.'
+	        	<div class="mail-job-info" style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+        			<p>The job of employer <b>'.$empName.'</b> is accepted by the freelancer <b>'.$freName.'</b></p>
+        				<p>Following is job information : </p>
+        			'.$job_info;
+
+               /* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject('Job apply notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+
+        	/* Mail Send to employer */
+        	try {
+	            $mailEmp = new \Gc\Mail('utf-8', $massageEmp);
+	            $mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailEmp->setFrom($adminEmail, 'Locumkit');
+	            $mailEmp->addTo($empEmail);
+	            $mailEmp->setSubject('Job apply notification');
+	            $mailEmp->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }
+
+
+        	/* Mail Send to Admin */
+        	try {
+	            $mailAdm = new \Gc\Mail('utf-8', $massageAdm);
+	            $mailAdm->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailAdm->setFrom($adminEmail, 'Locumkit');
+	            $mailAdm->addTo($adminEmail);
+	            $mailAdm->setSubject('Job apply notification');
+	            $mailAdm->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }
+
+  
+        }   
+
+        /* Reminder Notification mail */
+        public function sendReminder($jobFid,$notifyDay,$jobId,$adapter)
+        {
+
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$jobId'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress     = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+
+        	/* Get freelancer e-mail id*/
+			$sqlFreEmail = "SELECT email,firstname,lastname from user WHERE id='$jobFid'";	
+		    $freEmailData = $adapter->query($sqlFreEmail, $adapter::QUERY_MODE_EXECUTE);
+		    $freEmails = $freEmailData->current();	
+		    $freEmail = $freEmails['email'];
+		    $freName = $freEmails['firstname'].' '.$freEmails['lastname'];
+
+		    $header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+	        $mail_css 	= $header;
+			$job_info ='
+					<h3 style="text-align:left;"> Job Information </h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>
+				</div>'.$footer.'</body></html>';
+	        $massageFre = $mail_css.'
+	        	<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>
+    				<h3>'.$notifyDay.' days left to join job.</h3>
+    				<p>Folowwing is your job information : </p>
+    				'.$job_info;
+    		/* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject($notifyDay.' Day left');
+	            $mailFre->send();
+	            $this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+        }
+
+        /* On Day Notification mail To freelancer */
+        public function sendOnDayNotificationToFreelancer($jobId,$jobFid,$jobEid,$yesBtnLink,$adapter)
+        {
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$jobId'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress     = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+
+        	/* Get freelancer e-mail id*/
+		    $sqlFreEmail = "SELECT email,firstname,lastname from user WHERE id='$jobFid'";	
+		    $freEmailData = $adapter->query($sqlFreEmail, $adapter::QUERY_MODE_EXECUTE);
+		    $freEmails = $freEmailData->current();	
+		    $freEmail = $freEmails['email'];
+		    $freName = $freEmails['firstname'].' '.$freEmails['lastname'];
+
+		    $header 	= $this->mailHeader();
+	            $footer 	= $this->mailFooter();
+	            $mail_css 	= $header;
+			$job_info ='
+					<h3 style="text-align:left;"> Job Information </h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>
+				</div>'.$footer.'</body></html>';
+	        $massageFre = $mail_css.'
+	        	<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>
+    				<h3 >Have you attend the job?</h3>
+    				<p>'.$yesBtnLink.'</p>
+    				<p>Folowwing is your job information : </p>
+    				'.$job_info;
+    		/* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject('Job On Day notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+        }
+
+        /* On Day Notification mail To freelancer */
+        public function sendOnDayNotificationToEmployer($jobId,$jobFid,$jobEid,$yesBtnLink,$adapter)
+        {
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$jobId'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress     = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+
+        	/* Get Employer e-mail id*/
+		    $sqlEmpEmail = "SELECT email,firstname,lastname from user WHERE id='$jobEid'";	
+		    $EmpEmailData = $adapter->query($sqlEmpEmail, $adapter::QUERY_MODE_EXECUTE);
+		    $EmpEmails = $EmpEmailData->current();	
+		    $EmpEmail = $EmpEmails['email'];
+		    $EmpName = $EmpEmails['firstname'].' '.$EmpEmails['lastname'];
+
+		    $header 	= $this->mailHeader();
+	            $footer 	= $this->mailFooter();
+	            $mail_css 	= $header;
+			$job_info ='
+					<h3 style="text-align:left;"> Job Information </h3>
+					<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>
+				</div>'.$footer.'</body></html>';
+	        $massageFre = $mail_css.'
+	        	<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$EmpName.'</b>,</p>
+    				<h3 >Have Freelancer attend the job? Please check and confirm with yes. </h3>
+    				<p>'.$yesBtnLink.'</p>
+    				<p>Folowwing is your job information : </p>
+    				'.$job_info;
+    		/* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($EmpEmail);
+	            $mailFre->setSubject('Job On Day notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+        }
+
+
+
+        /* Feedback Notification mail */
+        public function sendFeedbackNotification($job_id,$f_id,$e_id,$adapter,$feedback_link_fre,$feedback_link_emp){
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+        	$header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+	        $freData 	= $this->getFreelancerInfo($f_id,$adapter);
+	        if (!empty($freData)) {
+	        	$freEmail 	= $freData['email'];
+		    	$freName 	= $freData['firstname'].' '.$freData['lastname'];
+	        }
+	        $empData 	= $this->getEmployerInfo($e_id,$adapter);
+	        if (!empty($empData)) {
+	        	$empEmail 	= $empData['email'];
+		    	$empName 	= $empData['firstname'].' '.$empData['lastname'];
+	        }
+	        $jobData 	= $this->getJobInfo($job_id,$adapter);
+	        $massageFre = $header;
+	        $massageFre .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>';
+	        $massageFre .= '<p>Please give your important feedback. </p>';
+	        $massageFre .= '<p>'.$feedback_link_fre.'</p>';
+	        $massageFre .= '<p>Following is your job information.</p>';
+	        $massageFre .= $jobData;
+	        $massageFre .= '</div>';
+	        $massageFre .= $footer;
+	        //echo $massageFre;
+
+	        $massageEmp = $header;
+	        $massageEmp .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>';
+	        $massageEmp .= '<p>Please give your important feedback. </p>';
+	        $massageEmp .= '<p>'.$feedback_link_emp.'</p>';
+	        $massageEmp .= '<p>Following is your job information.</p>';
+	        $massageEmp .= $jobData;
+	        $massageEmp .= '</div>';
+	        $massageEmp .= $footer;
+	        //echo $massageEmp;
+	        /* Mail Send to freelancer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageFre);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject('Feedback notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        } 
+	
+		/*Mail Send to employer*/
+        	try {
+	            $mailEmp = new \Gc\Mail('utf-8', $massageEmp);
+	            $mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailEmp->setFrom($adminEmail, 'Locumkit');
+	            $mailEmp->addTo($empEmail);
+	            $mailEmp->setSubject('Feedback notification');
+	            $mailEmp->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        } 
+	        
+
+        }
+
+
+/* Send job apply email to Private user */
+        public function sendApplyMailToPrivateUser($puid,$cjid,$adapter)
+        {
+        	$header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+	        $privateUserData 	= $this->getPrivateUserInfo($puid,$adapter);
+	        if (!empty($privateUserData)) {
+	        	$privateUserEmail 	= $privateUserData['p_email'];
+		    	$privateUserName 	= $privateUserData['p_name'];
+	        }
+	        $sqlJob = "SELECT * from job_post WHERE job_id = '$cjid'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->current();
+	        $empData 	= $this->getEmployerInfo($job['e_id'],$adapter);
+	        if (!empty($empData)) {
+	        	$empEmail 	= $empData['email'];
+		    	$empName 	= $empData['firstname'].' '.$empData['lastname'];
+	        }
+	        $jobData 	= $this->getJobInfo($cjid,$adapter);
+	        $massagePrivateUser = $header;
+	        $massagePrivateUser .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$privateUserName.'</b>,</p>';
+	        $massagePrivateUser .= '<p>You have succesfully apply for the job. </p>';
+	        $massagePrivateUser .= '<p>Following is your job information.</p>';
+	        $massagePrivateUser .= $jobData;
+	        $massagePrivateUser .= '</div>';
+	        $massagePrivateUser .= $footer;
+	        
+
+	        $massageEmp = $header;
+	        $massageEmp .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>';
+	        $massageEmp .= '<p>One of private user apply for your job. </p>';
+	        $massageEmp .= '<p>Following is your job information.</p>';
+	        $massageEmp .= $jobData;
+	        $massageEmp .= '</div>';
+	        $massageEmp .= $footer;
+                $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+	        $adminEmail = $configGet->get('mail_from');
+	        /* Mail Send to Private user */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massagePrivateUser);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($privateUserEmail);
+	            $mailFre->setSubject('Job apply notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        } 
+	
+			/* Mail Send to employer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageEmp);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($empEmail);
+	            $mailFre->setSubject('Job apply notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        } 
+        }
+
+        /* Send job accept email to Private user */
+        public function sendAcceptMailToPrivateUser($puid,$cjid,$adapter)
+        {
+        	$header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+	        $privateUserData 	= $this->getPrivateUserInfo($puid,$adapter);
+
+	        if (!empty($privateUserData)) {
+	        	$privateUserEmail 	= $privateUserData['p_email'];
+		    	$privateUserName 	= $privateUserData['p_name'];
+	        }
+	        $sqlJob = "SELECT * from job_post WHERE job_id = '$cjid'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->current();
+	        $empData 	= $this->getEmployerInfo($job['e_id'],$adapter);
+	        if (!empty($empData)) {
+	        	$empEmail 	= $empData['email'];
+		    	$empName 	= $empData['firstname'].' '.$empData['lastname'];
+	        }
+	        $jobData = $this->getJobInfo($cjid,$adapter);
+	        $massagePrivateUser = $header;
+	        $massagePrivateUser .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$privateUserName.'</b>,</p>';
+	        $massagePrivateUser .= '<p>You have succesfully accept the job. </p>';
+	        $massagePrivateUser .= '<p>Following is your job information.</p>';
+	        $massagePrivateUser .= $jobData;
+	        $massagePrivateUser .= '</div>';
+	        $massagePrivateUser .= $footer;
+	        //echo $massagePrivateUser;
+
+	        $massageEmp = $header;
+	        $massageEmp .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>';
+	        $massageEmp .= '<p>Your job has been accepted by the freelancer. </p>';
+	        $massageEmp .= '<p>Following is your job information.</p>';
+	        $massageEmp .= $jobData;
+	        $massageEmp .= '</div>';
+	        $massageEmp .= $footer;
+                $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+		$adminEmail = $configGet->get('mail_from');
+	        
+	        /* Mail Send to Private user */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massagePrivateUser);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($privateUserEmail);
+	            $mailFre->setSubject('Job Accept notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        } 
+	
+			/* Mail Send to employer */
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $massageEmp);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($empEmail);
+	            $mailFre->setSubject('Job Accept notification');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }  
+        }
+
+        /* Email notification to Expired package user */
+        public function sendPackageExpiredMail($userId,$packageId,$packageExpiryDate,$btnLink,$adapter){
+        	$header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+	        $freData 	= $this->getFreelancerInfo($userId,$adapter);
+	        if (!empty($freData)) {
+	        	$freEmail 	= $freData['email'];
+		    	$freName 	= $freData['firstname'].' '.$freData['lastname'];
+	        }
+	        /* Get package name */
+			$sqlPkgInfo = "SELECT * from user_acl_package WHERE id='$packageId'";	
+		    $pkgInfoData = $adapter->query($sqlPkgInfo, $adapter::QUERY_MODE_EXECUTE);
+		    $pkgInfo = $pkgInfoData->current();
+	        $pkgMessage = $header;
+	        $pkgMessage .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left; font-family: sans-serif;">
+	        		<p>Hello <b>'.$freName.'</b>,</p>';
+	        $pkgMessage .= '<p>Your freelancer account is going to be expired in <b>7 days</b>, please upgrade it and enjoy the freelancing at Locumkit. </p>';
+	        $pkgMessage .= '<p>Your current package is : <b style="text-transform:uppercase">'.$pkgInfo['name'].' ( $'.$pkgInfo['price'].' ) </b>.</p>';
+	        $pkgMessage .= '<p>Click below button to upgrade your account.</p>';
+	        $pkgMessage .= $btnLink;
+	        $pkgMessage .= '</div>';
+	        $pkgMessage .= $footer;
+	        //echo $pkgMessage;
+	        $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+	        /* Mail Send to employer */ 
+        	try {
+	            $mailFre = new \Gc\Mail('utf-8', $pkgMessage);
+	            $mailFre->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailFre->setFrom($adminEmail, 'Locumkit');
+	            $mailFre->addTo($freEmail);
+	            $mailFre->setSubject('User Account Expired');
+	            $mailFre->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }
+        }
+
+        public function sendCloseJobNotification($jobId,$jobEid,$viewJobLink,$adapter)
+        {
+        	$header 	= $this->mailHeader();
+	        $footer 	= $this->mailFooter();
+	        $empData 	= $this->getEmployerInfo($jobEid,$adapter);
+	        if (!empty($empData)) {
+	        	$empEmail 	= $empData['email'];
+		    	$empName 	= $empData['firstname'].' '.$empData['lastname'];
+	        }
+	        $closeJobMsg = $header;
+	        $closeJobMsg .= '<div style="padding: 25px 50px 30px; border-right: 2px solid #000; border-left: 2px solid #000;text-align: left; font-family: sans-serif;">
+	        		<p>Hello <b>'.$empName.'</b>,</p>';
+	        $closeJobMsg .= '<p>One of your job is close because none of the freelancer apply and your job date is expired today.</p>';
+	      
+	        $closeJobMsg .= '<p>Click below button to view your job.</p>';
+	        $closeJobMsg .= $viewJobLink;
+	        $closeJobMsg .= '</div>';
+	        $closeJobMsg .= $footer;
+	        //echo $closeJobMsg;
+	        $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$adminEmail = $configGet->get('mail_from');
+	        /* Mail Send to employer */ 
+        	try {
+	            $mailEmp = new \Gc\Mail('utf-8', $closeJobMsg);
+	            $mailEmp->getHeaders()->addHeaderLine('Content-type','text/html');
+	            $mailEmp->setFrom($adminEmail, 'Locumkit');
+	            $mailEmp->addTo($empEmail);
+	            $mailEmp->setSubject('Job Post Expired');
+	            $mailEmp->send();
+	            //$this->flashMessenger()->addSuccessMessage('Message sent');
+	        } catch (Exception $e) {
+	            //$this->flashMessenger()->addErrorMessage($e->getMessage());
+	        }
+        }
+
+
+        public function getFreelancerInfo($jobFid,$adapter){
+        	/* Get freelancer e-mail id*/
+			$sqlFreEmail = "SELECT email,firstname,lastname from user WHERE id='$jobFid'";	
+		    $freEmailData = $adapter->query($sqlFreEmail, $adapter::QUERY_MODE_EXECUTE);
+		    return $freEmails = $freEmailData->current();
+        }
+        public function getEmployerInfo($jobEmpId,$adapter){
+        	/* Get record of employer */
+	        $sqlEmpUser = "SELECT firstname,lastname,email from user WHERE id = '$jobEmpId'";	
+	        $empUserDetails = $adapter->query($sqlEmpUser, $adapter::QUERY_MODE_EXECUTE);
+	        return $empUsers = $empUserDetails->current();
+        }
+        public function getPrivateUserInfo($puId,$adapter){
+        	/* Get record of employer */
+
+	        $sqlPriUser = "SELECT p_name,p_email from private_user
+ WHERE p_uid = '$puId'";	
+	        $privateUserDetails = $adapter->query($sqlPriUser, $adapter::QUERY_MODE_EXECUTE);
+	        return $priUsers = $privateUserDetails->current();
+        }
+        public function getJobInfo($jobId,$adapter){
+
+        	/* Fetch record of job */
+        	$sqlJob = "SELECT * from job_post WHERE job_id = '$jobId'";	
+	        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+	        $job = $jobView->toArray();
+	        foreach ($job as $key => $value) {	
+	        	$jobTitle 	= $value['job_title'];
+	        	$jobDate 	= $value['job_date'];
+	        	$jobRate 	= $value['job_rate'];
+	        	$jobAddress = $value['job_address'].", ".$value['job_region']."-".$value['job_zip'];
+	        	$jobDesc 	= $value['job_post_desc'];
+	        	$jobEmpId 	= $value['e_id'];
+	        }
+	        $job_info = '<table style="border-collapse: collapse;  border: 1px solid black;  text-align:left;  padding:5px;">
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Title</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobTitle.'</td>
+						</tr>
+						<tr> 
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Date</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDate.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Rate</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobRate.'</td>
+						</tr>
+						<tr>
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Address</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobAddress.'</td>
+						</tr>
+						<tr style="background-color: #f2f2f2;">
+							<th style=" border: 1px solid black;  text-align:left;  padding:5px; width: 200px;">Job Description</th>
+							<td style=" border: 1px solid black;  text-align:left;  padding:5px;">'.$jobDesc.'</td>
+						</tr>	
+					</table>';
+			return $job_info;
+        }
+
+
+        public function mailHeader(){
+        	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+        	$configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+        	$site_name 	= $configGet->get('site_name');
+        	$header = '<div class="mail-header" style="background: #00A9E0; padding: 20px 50px;  border: 2px solid #000; clear: both;">';
+        	$header .= '
+        		<a href="'.$serverUrl().'"><img src="'.$serverUrl().'/public/frontend/locumkit-template/img/logo.png" alt="'.$site_name.'" width="100px"></a>
+        		';	
+        	$header .= '</div>';
+        	return $header;
+        }
+        public function mailFooter(){
+        	/* Get admin record */	        
+        	        $configGet = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('Config');
+			$site_name 	= $configGet->get('site_name');
+			$site_phone     = $configGet->get('site_mobile');
+			$site_addr 	= $configGet->get('site_addr');
+			$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');			
+	        $footer = '<div class="mail-footer" style="background: #252525; color: #fff; padding: 15px 50px; margin-top: 0px;">
+	        	<em>'.$site_phone.'</em>&nbsp; | &nbsp;<em>'.$site_addr.'</em>
+	        	</div>';
+	        return 	 $footer;      	
+	        
+        }
+	}

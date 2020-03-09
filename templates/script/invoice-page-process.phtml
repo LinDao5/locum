@@ -1,0 +1,37 @@
+<?php
+/*
+ use GcFrontend\Controller\JobmailController as JobmailController;
+
+$jobmailController = new JobmailController();
+
+$jobmailController->invoiceMail();*/
+
+?>
+
+<?php
+    session_start();
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\Invoice\Model as InvoiceModel;
+    $invoice = new InvoiceModel();
+    use GcFrontend\Controller\JobmailController as JobmailController;
+    $jobmailController = new JobmailController();
+
+	use Gc\User\Finance\Model as FinanceModel;
+
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+        $uid=$_SESSION['user_id'];
+    }
+
+    $request = $this->getRequest();
+	$data = $request->getPost();
+//    var_dump($data);
+    if($request->isPost() && $data['sent_mail'] == 'sent')
+    {
+        return  array('show' => 'sent' , 'data' => $data);
+    }
+    if($request->isPost() && $data['preview_btn'] == 'preview')
+    {
+        return  array('show' => 'preview' , 'data' => $data);
+    }
+
+?>

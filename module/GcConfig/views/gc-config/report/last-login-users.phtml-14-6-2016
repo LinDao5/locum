@@ -1,0 +1,99 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+$userCollection = new Gc\User\Lastlogin\Collection();
+$userData = new Gc\User\Collection();
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($userCollection->getLastLoginUsers()));
+$paginator->setItemCountPerPage(20);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<form id="filter" action="/report" method="GET">
+    <input type="hidden"  name="type" value="last_login_user">
+    <input id="user_record" type="submit" value="export" style="  margin-top: 0px; float:right;  border: 1px solid #ccc;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px">
+</form>
+<?php 
+    if (isset($_GET['user_record']) && $_GET['user_record']) {
+       echo "<script>alert('No record were found.')</script>";
+    }
+?>
+<hr/>
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="10%">
+        <col width="10%">        
+        <col width="20%">
+        <col width="20%">
+        <col width="20%">
+        <col width="20%">
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('ID')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('User ID')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Last Login Date')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('IP Address')); ?></th>
+            
+        </tr>
+    </thead>
+    <tbody>
+        <?php  
+            foreach ($paginator as $lastloginusers): 
+            
+            $userPresonalData = $userData->getUserById($lastloginusers->getUid());
+            /*echo "<pre>";
+            print_r($userPresonalData);
+            echo "</pre>";*/
+        ?>
+            <tr>
+                <td><?php echo $this->escapeHtml($lastloginusers->getId()); ?></td>
+                <td><?php echo $this->escapeHtml($lastloginusers->getUid()); ?></td>
+                <?php ?>
+                <td><?php echo substr($lastloginusers->getLoginAt(), 0, 10); ?></td>
+                <?php foreach ($userPresonalData as $key => $value) {
+                    ?>
+                <td><?php echo $this->escapeHtml($value->getName()); ?></td>
+                <td><?php echo $this->escapeHtml($value->getEmail()); ?></td>
+                <?php } ?>
+                <td><?php echo $this->escapeHtml($lastloginusers->getIpAddress()); ?></td>
+                               
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/leave-user'));?>
+</div>
+
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+
+

@@ -1,0 +1,186 @@
+<?php 
+    date_default_timezone_set('Europe/London');
+	use Gc\Registry;
+	use Gc\User\Collection as UserCollection;
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	use GcFrontend\Controller\DbController as DbController;
+	use Gc\User\Feedback\Frontend\Collection as FeedbackQuestion;
+	$encypt = new Ecryption();
+	
+	use GcFrontend\Helper\FinanceHelper as FinanceHelper; 
+	$financeHelper = new FinanceHelper();
+	
+	
+	$feedbackQuestion = new FeedbackQuestion();
+	$userCollection = new UserCollection();
+	$serverUrl = Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	$dbConfig = new DbController();
+  	$adapter = $dbConfig->locumkitDbConfig();
+	$job_id = 0;
+    if (isset($_GET['j']) && $_GET['j'] != '') {
+      $job_id = $encypt->decryptIt($_GET['j']);
+    }else{
+    	echo "<script type='text/javascript'>alert('You are not valid user to feedback on this job.');window.location='".$serverUrl()."/404'</script>"; 
+    }
+   	$eid = 0;
+    if (isset($_GET['ue']) && $_GET['ue'] != '') {
+     $eid = $encypt->decryptIt($_GET['ue']);
+    }else{
+    	echo "<script type='text/javascript'>alert('You are not valid user to feedback on this job.');window.location='".$serverUrl()."/404'</script>"; 
+    }
+    $empDataObj = $userCollection->getUserById($eid);
+    /*echo "<pre>";
+    print_r($freDataObj);	
+    echo "</pre>";*/	
+    $empName = '';
+    $empEmail = '';
+    if (!empty($empDataObj)) {
+    	foreach ($empDataObj as $key => $empData) {
+	    	$empName = $empData->getFirstname() . ' ' . $empData->getLastname();
+    		$empEmail = $empData->getEmail();
+	    }
+    }
+	
+		// ------
+	  	$job_id = 0;
+    if (isset($_GET['j']) && $_GET['j'] != '') {
+        $job_id = $encypt->decryptIt($_GET['j']);
+    	$job_id = $encypt->decryptIt($_GET['j']);
+    	$sqlJob = "SELECT * from job_post WHERE job_id = '$job_id'";	
+        $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+        $job = $jobView->current();
+    	$jobTitle 	= $job['job_title'];
+    	$jobId 		= $job['job_id'];
+    	$jobRate 	= $job['job_rate'];
+    	$jobDesc 	= $job['job_post_desc'];
+    	$jobDate	= $job['job_date'];
+    }else{
+    	echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/404'</script>"; 
+    }
+	// ------
+	
+	
+?>
+
+<form method="post" id="feedback-form">
+	<input type="hidden" id="user_id" value="<?php echo $_SESSION['user_id']; ?>">
+	<input type="hidden" id="user_role" value="<?php echo $_SESSION['user_role_id']; ?>">
+	<input type="hidden" id="user_cat" value="<?php echo $_SESSION['user_profession_id']; ?>">
+	<input type="hidden" id="job_id" value="<?php echo $job_id; ?>">
+       <?php 
+		/* Fetch employer id */
+		$sqlFeedbackToUser="SELECT e_id FROM job_post WHERE  job_id ='$job_id'";
+
+		$feedbackToUser = $adapter->query($sqlFeedbackToUser, $adapter::QUERY_MODE_EXECUTE);
+		$feedbackToUserData = $feedbackToUser->current();
+		if (empty($feedbackToUserData)) {
+			echo "<script type='text/javascript'>alert('You are not valid user to feedback on this job.'); window.location='".$serverUrl()."/404';</script>"; 
+		}
+	?>
+	<input type="hidden" id="to_user_id" value="<?php echo $feedbackToUserData['e_id']; ?>">
+        
+	<div class="row">
+		<div class="col-md-6">
+			<input type="text" name="feedback_name" class="form-control margin-bottom feedback-name" placeholder="Full name" value="<?php echo $empName; ?>" readonly>
+			<span class="feedback-name-icon"><i class="fa fa-user" aria-hidden="true"></i></span>
+		</div>
+		<div class="col-md-6">
+			<input type="hidden" name="feedback_email" class="form-control margin-bottom feedback-email" placeholder="E-mail" value="<?php echo $empEmail; ?>" readonly>
+			<input type="text" name="feedback_jobdate" class="form-control margin-bottom feedback-email" placeholder="Job Date" value="<?php echo $jobDate; ?>" readonly>
+			<span class="feedback-email-icon"><i class="fa fa-at" aria-hidden="true"></i></span>
+		</div>
+		<div class="col-md-6">
+			<input type="text" name="feedback_Jobid" class="form-control margin-bottom feedback-name" placeholder="Job Id" value="<?php echo $jobId; ?>" readonly>
+			<span class="feedback-email-icon"><i class="fa fa-slack" aria-hidden="true"></i></span>
+		</div>
+		<div class="col-md-6">
+			<input type="text" name="feedback_Jobrate" class="form-control margin-bottom feedback-name" placeholder="Job Rate" value="<?php echo $financeHelper->setPriceFormate($jobRate); ?>" readonly>
+			<span class="feedback-email-icon"><i class="fa fa-gbp" aria-hidden="true"></i></span>
+		</div>
+	</div>
+	<div class="row">
+	<div class="col-md-12">	
+	<div class="feedback-page-info">
+        <h4>Star rating indicates</h4>
+        <ul><img src="<?php echo $serverUrl().'/public/frontend/locumkit-template/img' ?>/help.png" alt="feedback"></ul>
+        </div>
+	</div>	
+	</div>
+	
+	
+	<div class="row feedback-qus-panel">
+		<div class="col-md-12 ">
+			<h4>Feedback Questions</h4>
+		</div>
+		<?php 
+			$allFeedbackQusArray = $feedbackQuestion->getFreelancerQus( $_SESSION['user_profession_id'] ); 
+			$i=1;
+			foreach ($allFeedbackQusArray as $key => $feedbackQus) {							
+		?>
+			<div class="col-md-12 feedback-question-div">
+				<div class="feedback-question" id="qus-<?php echo $i ?>" onclick="showQus('q-<?php echo $i ?>')">
+					<a href="javascript:void(0);"  <?php echo $i == 1 ? 'class="active"' : ''; ?>><?php  echo $feedbackQus->getFdQusFre(); ?><span class="pull-right"><?php echo $i == 1 ? '<i class="fa fa-minus" aria-hidden="true"></i>' : '<i class="fa fa-plus" aria-hidden="true"></i>' ?></span></a>
+				</div>
+				<div id="q-<?php echo $i ?>" class="collapse" <?php echo $i==1 ? ' style="display:block;"' : '' ?>>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="col-md-4">Your Answer:</div>
+							<div class="col-md-8">
+								<div class="rating pull-left" id="note-rate-<?php echo $i ?>">
+								    <span><input type="radio" name="rating"  value="5"><label for="str5"></label></span>
+								    <span><input type="radio" name="rating"  value="4"><label for="str4"></label></span>
+								    <span><input type="radio" name="rating"  value="3"><label for="str3"></label></span>
+								    <span><input type="radio" name="rating"  value="2"><label for="str2"></label></span>
+								    <span><input type="radio" name="rating"  value="1"><label for="str1"></label></span>
+								    <input type="hidden" name="ratevalue[]" id="rate-val-<?php echo $i ?>" >
+								    <input type="hidden" name="fdqus[]" id="fd-qus-fre-<?php echo $i ?>" value="<?php echo $feedbackQus->getFdQusFre(); ?>">
+								    <input type="hidden" name="fdqusid[]" id="fd-qus-id-<?php echo $i ?>" value="<?php echo $feedbackQus->getFdQusId(); ?>">
+								</div>
+							</div>
+						</div>
+						<!--<div class="col-md-6">
+							<div class="col-md-2">Help ?</div>
+							<div class="col-md-10">
+								<img src="<?php //echo $serverUrl().'/public/frontend/locumkit-template/img' ?>/help.png" alt="feedback">
+							</div>			
+						</div>-->
+					</div>
+				</div>
+			</div>
+		<?php $i++; } ?>		
+	</div>	
+	<div class="row">
+		<div class="col-md-12 comment-box">
+		<textarea name="comment" placeholder="Please type your comment here..." id="feed_comment" style="display:none;"></textarea>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-4">
+			<h3>Total Rating summery</h3>
+		</div>
+		<div class="col-md-8 total-rating">
+			<div class="progress">
+                <div id="feedback-progress-bar" class="progress-bar" role="progressbar" aria-valuenow="0"
+                aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                </div>                            
+            </div>					
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12 term-cond">
+			<input type="checkbox" name="t_and_c" required="required" checked="checked"><label>I agree that the information provided is accurate and a true representative of my experience.</label>
+		</div>
+	</div>	
+	<div class="row">
+		<div class="col-md-12 submit-feedback">
+			<input type="hidden" name="total-rating" id="total-rates">
+			<a href="javascript:void" onclick="submitfeedback();" class="submit-feedback-btn">submit</a>
+			
+		</div>
+	</div>
+	
+</form>
+<h3 id="feedback-msg"></h3>
+<div class="lodader" style="display:none">
+	<img src="<?php echo $serverUrl().'/public/frontend/locumkit-template/img' ?>/loader.gif"><span>Please wait...</span>
+</div>

@@ -1,0 +1,277 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=1.3
+ *F
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+/** @var $this \Zend\View\Renderer\PhpRenderer */
+
+if (isset($_POST['setUserNameOrder'])) {
+    if (isset($_POST['setUserNameOrder']) && $_POST['setUserNameOrder'] == 1 ) {
+        $_SESSION['setUserNameOrder'] = 1;
+    }elseif(isset($_POST['setUserNameOrder']) && $_POST['setUserNameOrder'] == 2){
+        $_SESSION['setUserNameOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserFNameOrder'])||isset($_SESSION['setUserLNameOrder'])||isset($_SESSION['setUserEmailOrder'])){
+        unset($_SESSION['setUserFNameOrder']);
+        unset($_SESSION['setUserLNameOrder']);
+        unset($_SESSION['setUserEmailOrder']);
+    }
+}
+if(isset($_POST['setUserFNameOrder'])){
+    if (isset($_POST['setUserFNameOrder']) && $_POST['setUserFNameOrder'] == 1 ) {
+        $_SESSION['setUserFNameOrder'] = 1;
+    }elseif(isset($_POST['setUserFNameOrder']) && $_POST['setUserFNameOrder'] == 2){
+        $_SESSION['setUserFNameOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserNameOrder'])||isset($_SESSION['setUserLNameOrder'])||isset($_SESSION['setUserEmailOrder'])){
+        unset($_SESSION['setUserNameOrder']);
+        unset($_SESSION['setUserLNameOrder']);
+        unset($_SESSION['setUserEmailOrder']);
+    }
+}
+if(isset($_POST['setUserLNameOrder'])){
+    if (isset($_POST['setUserLNameOrder']) && $_POST['setUserLNameOrder'] == 1 ) {
+        $_SESSION['setUserLNameOrder'] = 1;
+    }elseif(isset($_POST['setUserLNameOrder']) && $_POST['setUserLNameOrder'] == 2){
+        $_SESSION['setUserLNameOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserNameOrder'])||isset($_SESSION['setUserFNameOrder'])||isset($_SESSION['setUserEmailOrder'])){
+        unset($_SESSION['setUserNameOrder']);
+        unset($_SESSION['setUserFNameOrder']);
+        unset($_SESSION['setUserEmailOrder']);
+    }
+}
+if(isset($_POST['setUserEmailOrder'])){
+    if (isset($_POST['setUserEmailOrder']) && $_POST['setUserEmailOrder'] == 1 ) {
+        $_SESSION['setUserEmailOrder'] = 1;
+    }elseif(isset($_POST['setUserEmailOrder']) && $_POST['setUserEmailOrder'] == 2){
+        $_SESSION['setUserEmailOrder'] = 2;
+    }
+    if (isset($_SESSION['setUserNameOrder'])||isset($_SESSION['setUserFNameOrder'])||isset($_SESSION['setUserLNameOrder'])){
+        unset($_SESSION['setUserNameOrder']);
+        unset($_SESSION['setUserFNameOrder']);
+        unset($_SESSION['setUserLNameOrder']);
+    }
+}
+
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+
+$paginatorFre = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->userFre));
+$paginatorFre->setItemCountPerPage(20);
+$paginatorFre->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+
+?>
+<?php
+if (isset($_GET['y']) && ($_GET['y'] == date("Y") || $_GET['y'] == date("Y")-1)) {
+    $y = $_GET['y'];
+}else{ $y = date("Y"); }
+
+if (isset($_GET['c']) && $_GET['c'] != '') {
+    $cat = $_GET['c'];
+}else{
+    $cat = 1;
+}
+?>
+<div id="tabs">
+    <!--  <div class="qus-tabs">
+        <ul>
+            <li class="<?php // if ($qus == 'fre') {echo "active";} ?>"><a href="<?php // echo $this->serverUrl() ?>/admin/config/user/finance?q=fre">Freelancer</a></li>
+            <li class="<?php // if ($qus == 'emp') {echo "active";} ?>"><a href="<?php // echo $this->serverUrl() ?>/admin/config/user/finance?q=emp">Employer</a></li>
+            <li class="<?php // if ($qus == 'adm') {echo "active";} ?>"><a href="<?php // echo $this->serverUrl() ?>/admin/config/user/finance?q=adm">Admin</a></li>
+        </ul>
+    </div>-->
+
+        <div class="qus-tabs financead" >
+            <?php $curry = date("Y") ; $preyear = $curry-1; ?>
+            <form action="">
+             <div class="form-group pull-right">
+             <div class="input-group pull-right">
+                <select name="y" onchange="this.form.submit();" class="form-control pull-right">
+                    <option value="<?php echo $curry ?>" <?php if ($y == $curry) {echo "selected";} ?>><a href="<?php echo $this->serverUrl() ?>/admin/config/user/finance?y=<?php echo $curry ?>&c=<?php echo $cat ;?>"><?php echo $curry ?></a></option>
+                    <option value="<?php echo $preyear ?>" <?php if ($y == $preyear) {echo "selected";} ?>><a href="<?php echo $this->serverUrl() ?>/admin/config/user/finance?y=<?php echo $preyear ?>&c=<?php echo $cat ;?>"><?php echo $preyear ?></a></option>
+                </select>
+                <input type="hidden" value="<?php echo $cat; ?>" name="c">
+                <label class="pull-right">SELECT FINANCIAL YEAR</label>
+             </div>
+             </div>
+            </form>
+           </div>
+    </div>
+
+    <div id="fre-tab">
+        <div class="cat-tabs">
+            <ul>
+                <?php foreach ($this->professions as $profession) { ?>
+                    <li class="<?php if ($cat == $profession->getId()) {echo "active";} ?>"><a href="<?php echo $this->serverUrl() ?>/admin/config/user/finance?y=<?php echo $y;?>&c=<?php echo $profession->getId()  ?>"><?php echo $profnm = $profession->getName() ?></a></li>
+                <?php } ?>
+            </ul>
+        </div>
+        <?php if(!empty($paginatorFre)): ?>
+            <table class="table clickable table-striped table-hover">
+                <colgroup>
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+                    <col width="20%">
+<col width="20%">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th class="text-center"><?php if(isset($_SESSION['setUserNameOrder']) && $_SESSION['setUserNameOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserNameOrder(10);"><?php echo $this->escapeHtml($this->translate('Login')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserNameOrder(2);"><?php echo $this->escapeHtml($this->translate('Login')); ?></a><?php } ?></th>
+
+                    <th class="text-center"><?php if(isset($_SESSION['setUserEmailOrder']) && $_SESSION['setUserEmailOrder'] == 2){ ?><a href="javascript:void(0);" onclick="changeUserEmailOrder(10);"><?php echo $this->escapeHtml($this->translate('Email')); ?></a><?php }else{?><a href="javascript:void(0);" onclick="changeUserEmailOrder(2);"><?php echo $this->escapeHtml($this->translate('Email')); ?></a><?php } ?></th>
+                    <th class="text-center">Financial Year</th>
+                    <th class="text-center">Profit&nbsp;and&nbsp;loss</th>
+                    <th class="text-center">Balance&nbsp;sheet</th>
+                    <th class="text-center">All&nbsp;Transactions</th>
+ <th class="text-center">Supplier&nbsp;List</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php
+                /*echo "<pre>";
+                print_r($this->users);
+                echo "</pre>";*/
+
+                foreach ($paginatorFre as $user):  
+
+$fYear =  $financeHelper->getMonthFinancialYear($user->getId(),$y) ;
+                $profitlossdata = $financeHelper->getFinanceprofitloss($user->getId(),$fYear);
+                $balancesheet = $financeHelper->getFinancebalancesheet($user->getId(),$fYear);
+                ?>
+                    <tr>
+                        <td class="text-center"><?php echo $this->escapeHtml($user->getLogin()); ?></td>
+                        <td class="text-center"><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                        <td class="text-center">                        
+                        <?php
+                        $m =  $financeHelper->getUserFinanceyearStartMonth($user->getId());
+                         echo date('M', mktime(0,0,0,$m, 1)) ; ?>-<?php echo date('M', mktime(0,0,0,$m+11, 1)) ; 
+                         $yer =   $financeHelper->getMonthFinancialYear($user->getId() , $y);
+                         echo  "(".$yer.")";
+                         
+                         ?>                        
+                        </td>
+                        <td class="text-center">
+                  <?php   if(!isset($profitlossdata['id']) && $profitlossdata['id'] == '') { ?>
+                             <a href="<?php echo $this->url('config/user/finance/profitloss', array('id' => $user->getId(),'year'=>$y)); ?>" class="btn btn-xs btn-info"> Create </a>
+                         <?php }else{ ?>
+                             <a href="<?php echo $this->url('config/user/finance/profitloss', array('id' => $user->getId(),'year'=>$y)); ?>" class="btn btn-xs btn-info">&nbsp View &nbsp</a>
+                         <?php  } ?>
+                        </td>
+                        
+                        <td class="text-center">
+               <?php   if(!isset($balancesheet['id']) && $balancesheet['id'] == '') { ?>
+                                <a href="<?php echo $this->url('config/user/finance/balancesheet', array('id' => $user->getId(),'year'=>$y)); ?>" class="btn btn-xs btn-info"> Create </a>
+                            <?php }else{ ?>
+                                <a href="<?php echo $this->url('config/user/finance/balancesheet', array('id' => $user->getId(),'year'=>$y)); ?>" class="btn btn-xs btn-info">&nbsp View &nbsp</a>
+                            <?php  } ?>
+                        </td>
+                        <td  class="text-center"><a href="<?php echo $this->url('config/user/finance/all-transactions', array('id' => $user->getId(),'year'=>$y)); ?>" class="btn btn-xs btn-info">All Transactions</a></td>
+<td  class="text-center"><a href="<?php echo $this->url('config/user/finance/supplier-list', array('id' => $user->getId(),'year'=>$y)); ?>" class="btn btn-xs btn-info">Supplier List</a></td>
+                    </tr>
+                <?php  endforeach; ?>
+                <?php if(count($paginatorFre)==0){ ?>
+                    <tr>
+                        <td colspan="6" align="center">No record found..!</td>
+                    </tr>
+                <?php }?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <?php echo $this->paginationControl($paginatorFre, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/finance?q=fre&c='.$cat));?>
+            </div>
+        <?php
+        else:
+            echo "<h3>No record found..!</h3>";
+        endif;
+        ?>
+    </div>
+
+
+
+    <script type="text/javascript">
+        Gc.initTableList();
+        function changeUserNameOrder(order){
+            $.ajax({
+                'url'   :'/admin/config/user',
+                'type'  :'POST',
+                'data'  :{'setUserNameOrder':order},
+                'success':function(result){ //alert('question'+result);
+                    //alert("Order change");
+                    location.reload();
+                }
+            });
+        }
+        function changeUserFNameOrder(order){
+            $.ajax({
+                'url'   :'/admin/config/user',
+                'type'  :'POST',
+                'data'  :{'setUserFNameOrder':order},
+                'success':function(result){ //alert('question'+result);
+                    //alert("Order change");
+                    location.reload();
+                }
+            });
+        }
+        function changeUserLNameOrder(order){
+            $.ajax({
+                'url'   :'/admin/config/user',
+                'type'  :'POST',
+                'data'  :{'setUserLNameOrder':order},
+                'success':function(result){ //alert('question'+result);
+                    //alert("Order change");
+                    location.reload();
+                }
+            });
+        }
+        function changeUserEmailOrder(order){
+            $.ajax({
+                'url'   :'/admin/config/user',
+                'type'  :'POST',
+                'data'  :{'setUserEmailOrder':order},
+                'success':function(result){ //alert('question'+result);
+                    //alert("Order change");
+                    location.reload();
+                }
+            });
+        }
+    </script>
+<style>
+div#fre-tab, div#emp-tab,.financead {
+  float: left;
+  width: 100%;
+}
+.financead {
+}
+.financead .form-group, .financead .input-group {
+  width: 100%;
+}
+.financead label {float: right;  font-size: 12px;  font-weight: bold;  letter-spacing: 1px;  padding: 8px 10px;}
+.financead  select {
+  width: 150px !important;
+}
+</style>

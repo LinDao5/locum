@@ -1,0 +1,96 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Gc\User\Finance\Income\Model as IncomeModel;
+	use Gc\User\Finance\Model as FinanceModel;
+	use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+	$financeHelper = new FinanceHelper();
+	
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''  && $_SESSION['user_role_id'] == 2){
+		$uid=$_SESSION['user_id'];
+    }
+	
+    $request = $this->getRequest();
+	$income_data = $request->getPost();
+    if($request->isPost() && $income_data['income_submit'] == 'income_submit')
+    {
+		$income_data = $request->getPost();
+		
+		$entryyear = date('Y', strtotime(str_replace('/', '-', $income_data['in_date']))) ;
+		
+		$income_array = array(		
+		'job_type' 	=> $income_data['in_job_type'] ,
+		'job_id' 	=> trim($income_data['in_jobno']) ,
+		'fre_id'	=> $uid ,
+		'emp_id' 	=>  $income_data['in_emp_id'],
+		'job_rate' 	=>  trim($income_data['in_rate']),
+		'job_date' 	=> 	$income_data['in_date'] ? date('Y-m-d',strtotime(str_replace('/', '-', $income_data['in_date'])))  : null,
+		'income_type' 	=> trim($income_data['in_category']) ,
+		'bank' 		=> 	$income_data['in_bank'] ,
+		'bank_date' 	=>  $income_data['in_bankdate'] ? date('Y-m-d', strtotime(str_replace('/', '-', $income_data['in_bankdate']))) : null ,
+		'store' 	=> 	trim($income_data['in_store']) ,
+		'location' 	=> 	trim($income_data['in_location']) ,
+		'supplier' 	=> 	trim($income_data['in_supplier']) ,
+		'status' 	=>  1,
+		'invoice_id' => 0 
+		);
+$check = $financeHelper->checkFinanceincome($income_array['job_id'],$income_array['fre_id'],$income_array['job_date'],$income_array['income_type'],$income_array['job_type']);				
+		 if(empty($check)){
+		$action = new IncomeModel();			
+		$trans_ation = new FinanceModel();			
+		$res = $action->save($income_array);				
+		if($res){			
+		$finance_trans = array(		
+			'trans_type_id' => $res ,
+			'trans_type' 	=> '1' 
+		);
+		$res1 =	$trans_ation->save($finance_trans);
+			if($res1){
+				$this->flashMessenger()->addSuccessMessage('Added successfully');		
+			}			  		 
+		} else{	
+			
+		}
+		
+		if($entryyear != date('Y')){
+    		$this->redirect()->toUrl('/finance-detail?year='.$entryyear);
+    		}else{
+    		$this->redirect()->toUrl('/finance-detail');
+    		}
+        	return TRUE;
+	 }else{
+            $this->flashMessenger()->addErrorMessage('There is already a record for this job');
+            $this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+        }
+	}
+
+//use for update
+
+if($request->isPost() && $income_data['income_submit'] == 'income_update' && $income_data['edit_id'] != '')
+{
+    $income_data = $request->getPost();
+
+
+    $income_array = array(
+        'id' 	    	=> $income_data['edit_id'] ,
+        'job_rate' 	=>  trim($income_data['in_rate']),
+        'job_date' 	=> 	$income_data['in_date'] ? date('Y-m-d',strtotime(str_replace('/', '-', $income_data['in_date'])))  : null,
+        'income_type' 	=> 	$income_data['in_category'] ,
+        'bank' 		=> 	$income_data['in_bank'] ,
+        'bank_date' 	=>  	$income_data['in_bankdate'] ? date('Y-m-d', strtotime(str_replace('/', '-', $income_data['in_bankdate']))) : null ,
+        'store' 	=> 	trim($income_data['in_store']) ,
+        'location' 	=> 	trim($income_data['in_location']) ,
+        'supplier' 	=> 	trim($income_data['in_supplier']) ,
+    );
+
+    $action = new IncomeModel();
+    $trans_ation = new FinanceModel();
+     $action->save($income_array);
+     $this->flashMessenger()->addSuccessMessage('Updated successfully');
+$this->redirect()->toUrl($_SERVER['HTTP_REFERER']);
+   // $this->redirect()->toUrl('/finance-detail');
+    return TRUE;
+
+}
+
+
+?>

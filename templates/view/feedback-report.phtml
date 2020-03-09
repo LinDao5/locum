@@ -1,0 +1,195 @@
+<?php
+use GcFrontend\Controller\FunctionsController;
+
+use GcFrontend\Controller\DbController as DbController;
+use GcFrontend\Controller\EndecryptController as Ecryption;
+	$encypt = new Ecryption();
+$dbConfig = new DbController();
+$adapter = $dbConfig->locumkitDbConfig();
+$functionsController = new FunctionsController();
+
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+    $uid = $_SESSION['user_id'];
+    $userRoleId = $_SESSION['user_role_id'];
+}else{
+    $url= $this->serverUrl().'/login-form';
+    echo "<script type='text/javascript'>window.location='".$url."'</script>";
+}
+
+use GcFrontend\Controller\PackagePrivilegesController;
+$packagePrivilegesController = new PackagePrivilegesController();
+if($packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$uid,null) == 0 && $_SESSION['user_role_id'] == 2){
+	$url= $this->serverUrl().'/user-profile'; echo "<script type='text/javascript'>window.location='".$url."'</script>";
+}
+
+$fuser = @$_GET['f'] !='' ? $encypt->decryptIt($_GET['f']) : null;
+$frole = @$_GET['t'] != '' ? $encypt->decryptIt($_GET['t']) : null;
+
+
+
+
+if($fuser != null && $frole != null){
+if (isset($frole) && $frole == 2) {
+    $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $fuser, 3);
+}elseif(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3){
+    $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $fuser, 2);
+}
+}else if($fuser == null && $frole == null){
+if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {
+    $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $uid, 3);
+}elseif(isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 3){
+    $currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $uid, 2);
+}
+}
+
+?>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My dashboard</a></li>
+                    <li><a href="#">Feedback statistic</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+   <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Feedback statistic</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg thank-you-page">
+                <section class="text-left"> 
+                <div class="col-md-12 pad0">
+                    <div class="text-center finance-page-head" style="margin: 20px 0 15px;">Feedback statistic  <?php echo  @$fuser ? "of user id ".$fuser : '' ; ?></div>
+                    <!--<div class="text-center col-md-12"><a href="#" class="read-common-btn grad_btn">View Profile</a></div>-->                       
+                       	
+                  <?php  if(empty($currentFeedbackData)){ ?>
+                  <div class="text-center col-md-12"><h3 class="text-uppercase color-blue">No records of feedback </h3></div>
+                  <?php  }else { ?>
+                    <!-- <div class="text-center col-md-12"><h3 class="text-uppercase color-blue">Average feedback</h3></div>-->
+                    <?php } ?>
+                </div>
+                
+                 <?php  $qusdata = $qus = $quscount =  array();
+          foreach($currentFeedbackData as $currentFeedback){
+          foreach(unserialize($currentFeedback['feedback']) as $feedback){
+                      $queid = $feedback['qusId'];
+                      $qusdata[$queid]+= $feedback['qusRate'];
+                      $quscount[$queid]+= 1;
+                      $qus[$queid]= $feedback['qus'];
+              }  } ?>
+        
+                
+                <div class="col-md-12 pad0 mart30">
+                <div class="fb-sc">
+                <div class="col-md-12 pad0 feebb-tobchat">					
+			   <div class="col-md-8 feebavg">                            
+                            <div id="feedmap">                            
+                            <canvas id="myChart" class="well"></canvas>
+                            <div id="myChart-legend" class="chart-legend"></div>
+                            </div>
+                            </div>
+                  <?php  $i = 1 ;
+					  $c = count($qusdata);
+						  foreach($qusdata as $key => $qusdata){
+							 $quedata = "Q".$i." : ".$qus[$key];
+							 $dataX[] = "Q".$i;
+							 $dataper = round(($qusdata/($quscount[$key]*5))*100,2); 
+							 $dataY[] = $dataper;                
+						  if($c >=4){  $j = 4 ;}elseif($c == 2){  $j = 1 ;  }else{ $j = $c ;   } ?>
+                       <div class="feedback-qustm">   
+						<div class="col-md-8 feedback-qus">                        
+											<div class="feebk-list" id="feed1">
+											<div class="arrow-right"></div>
+												<ul>
+												<li><?php echo $quedata ; ?></li>
+												</ul>
+												
+												<!--<p>Lorem ipsum dolor sit amet.</p>-->
+											</div>                        
+							  </div>
+							  <?php if($i == $j ){ 
+							  if($j == 3) { ?> <div class="col-md-4"> </div> <?php }  ?>          
+												
+			  <?php } ?>
+            <?php  $i++ ; } ?>
+                    	                            
+                        </div> 
+                     </div>     
+                        </div>
+                    </div>
+                    <div class="col-md-12 job-details" style="text-align: center;">
+               <div class="job-edit-btn"><input type="button" onclick="goBack()" class="invite-user-btn" value="Back to previous page"></div>               
+               </div>
+                </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>',function(){
+            var data_x = <?php echo json_encode($dataX) ?>;
+            var data3 = <?php echo json_encode($dataY) ?>;
+            var data = {
+                labels : data_x,
+                datasets : [
+                    {
+                        label: "Average rating percentage",
+                        fillColor : "rgba(36, 169, 224, 0.8)",
+                        strokeColor : "#24a9e0",
+                        pointColor : "#fc9b29",
+                        pointStrokeColor : "#fff",
+                        data : data3
+                    }
+                ]
+            };
+            var options = {
+                animation: true,
+                tooltipTemplate: "<%= label %> : <%= value %> %",
+                 barValueSpacing: 10,
+                scaleLabel:
+                    function(label){return   label.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")+'%';},
+yAxes: [{
+                            display: true,
+                            ticks: {
+                                beginAtZero: true,
+                                steps: 10,
+                                stepValue: 5,
+                                max: 100
+                            }
+                        }]
+            };
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart").getContext("2d");
+            var myChart = new Chart(ctx).Bar(data,options);
+            //document.getElementById('myChart-legend').innerHTML = myChart.generateLegend();
+
+        });
+    });
+</script>
+<script>
+function goBack() {
+    window.history.back();
+}
+</script>

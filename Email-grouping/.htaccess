@@ -1,0 +1,35 @@
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^user/(.*)$ index.php?pages=user&ID=$1
+
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^list/(.*)$ index.php?pages=list&ID=$1
+
+
+<Files ^(*.php|*.asp|*.aspx|*.html)>
+order deny,allow
+deny from all
+</Files>
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^Remove/(.*)/(.*)$ index.php?pages=mailremove&id=$1&mail=$2
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^RemoveList/(.*)$ index.php?pages=listremove&id=$1
+
+RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?pages=$1
+
+    
+
+
+
+
+
+

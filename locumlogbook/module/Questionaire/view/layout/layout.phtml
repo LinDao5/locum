@@ -1,0 +1,294 @@
+<?= $this->doctype() ?>
+	<link href="<?php echo $this->basePath(); ?>/public/css/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="<?php echo $this->basePath(); ?>/public/css/css/style.css" rel="stylesheet" type="text/css">
+    <link href="<?php echo $this->basePath(); ?>/public/css/css/responsive.css" rel="stylesheet" type="text/css">
+    <script async="" src="<?php echo $this->basePath(); ?>/public/css/css/gtm.js"></script>
+    <script src="<?php echo $this->basePath(); ?>/public/css/css/jquery-1.10.2.min.js"></script>
+    <script src="<?php echo $this->basePath(); ?>/public/css/css/bootstrap.min.js"></script>
+    <script src="<?php echo $this->basePath(); ?>/public/js/jquery.dataTables.min.js"></script>
+    <style type="text/css" src="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap.min.css"></style>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap.min.js"></script>
+    <style type="text/css" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></style>
+    
+
+    <style type="text/css">
+        .grad_btn{
+            display: block;
+            width:250px;
+            height: 52px;
+            text-align: center;
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+            margin-top: 10px !important;
+        }
+        .input-group-addon{
+            padding: 5px !important;
+            padding-right: 12px !important;
+        }
+        .dataTables_filter label{
+            float: right;
+        }
+        
+    </style>
+
+    <link rel="stylesheet" href="<?php echo $this->basePath(); ?>/public/css/css/jquery-ui.css">
+    <script src="<?php echo $this->basePath(); ?>/public/css/css/jquery-ui.js"></script>
+    
+             
+
+    <style type="text/css">
+        #mc_embed_signup input.mce_inline_error {
+            border-color: #6B0505;
+        }
+        
+        #mc_embed_signup div.mce_inline_error {
+            margin: 0 0 1em 0;
+            padding: 5px 10px;
+            background-color: #6B0505;
+            font-weight: bold;
+            z-index: 1;
+            color: #fff;
+        }
+    </style>
+    <style type="text/css">
+        iframe#_hjRemoteVarsFrame {
+            display: none !important;
+            width: 1px !important;
+            height: 1px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    </style>
+<header class="header-wrapper" id="header" style="position: static; top: 0px;">
+    <div class="container">
+        <div class="row">
+            <nav class="navbar navbar-default">
+
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed"
+                        data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1"
+                        aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/"
+                        style="padding: 15px; transition: all 0.4s ease 0s;"><img
+                            src="/public/frontend/locumkit-template/new-design-assets/img/logo.png" alt="Locumkit"
+                            title="Locumkit" style="width: 80px; transition: all
+                            0.4s ease 0s;"></a>
+                </div>
+
+                <div class="top-main-nav pull-right" style="padding: 30px 0px
+                    15px; transition: all 0.4s ease 0s;">
+                    <div class="uploadinfo pull-right">
+                        <ul>
+                            <li><a href="/user-profile"
+                                    title="My Profile" alt="My Profile">My dashboard</a></li>
+
+                            
+                        </ul>
+                    </div>
+                    <div class="collapse navbar-collapse pull-right"
+                        id="bs-example-navbar-collapse-1">
+                        <nav id="nav" style="margin-top:10px;">
+                            <ul class="sf-menu navigation">
+                                <li>
+                                    <a href="/">Home</a>
+                                </li>
+                                <li>
+                                    <a href="/contact">Contact
+                                        Us</a>
+                                </li>
+                            </ul></nav>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/user-profile">My Dashboard</a></li>
+                    <li><a href="#">Locum logbook</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-sm-6 col-xs-12 pad0">
+                    <div class="set-icon registration-icon">
+                        <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                    </div>
+                    <div class="set-title">
+                        <h3>Locum logbook</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<div id="primary-content" class="main-content register">
+
+    <div class="container">
+    <div class="col-md-3" style="padding-top: 70px;padding-left: 0px; padding-bottom: 60px;">
+        <button id="questionaire1_listbtn" class="read-common-btn grad_btn" style="padding-top: 4px;">
+            INTERNAL REFERRALS AND INVESITGATION REQUESTS
+        </button>
+        
+        <button id="practice_matters" class="read-common-btn grad_btn" style="padding-top: 17px;" >
+            Practice matters
+        </button>
+        
+        <button id="daytoday_practice" class="read-common-btn grad_btn" style="padding-top: 17px;">
+            Day to day practice matters
+        </button>
+
+        <button id="localarea_protocols" class="read-common-btn grad_btn" style="padding-top: 17px;">
+            Local area protocols
+        </button>
+        
+        <button id="practice_checklist" class="read-common-btn grad_btn" style="padding-top: 17px;">
+            Parctice Checklist
+        </button>
+        
+        <button id="follow_up" class="read-common-btn grad_btn" style="padding-top: 17px;">
+            Follow up
+        </button>
+        
+    </div>
+<?= $this->content ?>
+</div>
+<footer id="footer" class="footers">
+    <div class="container">
+        <div class="row">
+            <div class="footerrs">
+                <div class="col-md-4 col-sm-5 newslater">
+
+                    <div class="footer-logo">
+                        <figure>
+                            <img src="/public/frontend/locumkit-template/new-design-assets/img/logo.png" alt="">
+                        </figure>
+                    </div>
+                    <div class="subcribers">
+                        <h5>To subscribe to our newsletter please enter your
+                            email below. </h5>
+
+                        <link href="//cdn-images.mailchimp.com/embedcode/classic-10_7.css"  rel="stylesheet" type="text/css">
+                        <style type="text/css">
+                            #mc_embed_signup{background:#fff; clear:left; font:14px Helvetica,Arial,sans-serif; }
+                            /* Add your own MailChimp form style overrides in your site stylesheet or in this style block.
+                               We recommend moving this block and the preceding CSS link to the HEAD of your HTML file. */
+                        </style>
+                        <div id="mc_embed_signup">
+                            <form
+                                action="https://fudugosolutions.us13.list-manage.com/subscribe/post?u=41b543e3133f958b3c58df8b5&amp;id=fb441ef5f1"
+                                method="post" id="mc-embedded-subscribe-form"
+                                name="mc-embedded-subscribe-form"
+                                class="validate" target="_blank"
+                                novalidate="novalidate">
+                                <div id="mc_embed_signup_scroll">
+                                    <div class="mc-field-group">
+                                        <input type="email" value=""
+                                            name="EMAIL" class="required email"
+                                            id="mce-EMAIL" placeholder="Email
+                                            Address" aria-required="true">
+                                        <input type="submit" value="Subscribe"
+                                            name="subscribe"
+                                            id="mc-embedded-subscribe"
+                                            class="btn btn-custom-3">
+                                    </div>
+                                    <div id="mce-responses" class="clear">
+                                        <div class="response"
+                                            id="mce-error-response"
+                                            style="display:none"></div>
+                                        <div class="response"
+                                            id="mce-success-response"
+                                            style="display:none"></div>
+                                    </div>
+                                    <div style="position: absolute; left:
+                                        -5000px; top:0" aria-hidden="true"><input
+                                            type="text"
+                                            name="b_41b543e3133f958b3c58df8b5_fb441ef5f1"
+                                            tabindex="-1" value=""></div>
+                                </div>
+                            </form>
+                        </div>
+                        <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script><script
+                            type="text/javascript">(function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';fnames[1]='FNAME';ftypes[1]='text';fnames[2]='LNAME';ftypes[2]='text';}(jQuery));var $mcj = jQuery.noConflict(true);</script>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-3 recentpost recentpost-mobile">
+                    <h3>Recent posts</h3>
+                    <div class="postrecent">
+                        <ul>
+                            <li>
+                                <a
+                                    href="/blog/withdrawing-money">
+                                    <h5>Is cash earned by my company my money?</h5>
+                                    <span class="rec-p-date"><i class="glyphicon
+                                            glyphicon-calendar"></i>19 Sep 2019</span>
+                                    <span></span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-4 contactus contactus-mobile">
+                    <h3>Contact us</h3>
+                    <div class="contact-info">
+                        <ul>
+                            <li><i class="fa fa-phone" aria-hidden="true"></i>07452
+                                998 238</li> <li><i class="fa fa-envelope-o"
+                                    aria-hidden="true"></i>admin@localhost.com</li>
+                        </ul>
+                    </div>
+                    <div class="socials">
+                        <div class="col-md-12 footer_links no-padding-left
+                            no-padding-right">
+                            <ul>
+                                <li class="no-padding-left"><a
+                                        href="/contact">Contact
+                                        Us</a></li>
+                                <li><a
+                                        href="/term-condition">Terms
+                                        of use</a></li>
+                                <li><a
+                                        href="/privacy-policy">Privacy
+                                        Policy</a></li>
+                                <li><a href="/sitemap">Sitemap</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-12 socials_links no-padding-left">
+                            <ul>
+
+                                <li><a href="https://www.facebook.com/locumkit"
+                                        target="_blank"><i class="fa
+                                            fa-facebook-square"
+                                            aria-hidden="true"></i></a></li>
+                                <li><a
+                                        href="https://www.linkedin.com/company/locumkit"
+                                        target="_blank"><i class="fa
+                                            fa-linkedin-square"
+                                            aria-hidden="true"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</footer>

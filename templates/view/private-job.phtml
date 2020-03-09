@@ -1,0 +1,595 @@
+<?php
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+	$uid=$_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>"; 
+}
+?>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery-ui.multidatespicker.js'); ?>"></script>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="/private-job">Private Job</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>PRIVATE JOB INFORMATION </h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content register">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+            <section>
+            <div class="col-md-12"><?php echo $this->partial('flash-messages'); ?></div>
+            <?php
+                $return = $this->script('private-job-process');
+            ?>
+            </section>
+            <?php
+            use GcFrontend\Controller\DbController as DbController;
+      			use Zend\Serializer\Serializer;
+      			use Zend\Db\Sql\Sql;
+      			use Zend\Db\TableGateway\TableGateway;
+      			use Gc\User\Packageresource\Model;
+            use GcFrontend\Controller\PackagePrivilegesController;
+            $dbConfig = new DbController();
+            $packagePrivilegesController = new PackagePrivilegesController();
+            $adapter = $dbConfig->locumkitDbConfig();
+            $sql = new Sql($adapter);
+            $select = $sql->select();
+
+            /* Pagination */
+            $limit = 20;
+            $index = 0;
+            if (isset($_GET['page']) && $_GET['page'] != '') {              
+               $index = ($_GET['page']-1) * $limit;              
+            }
+
+      			$sqlString_data="SELECT * FROM freelancer_private_job WHERE f_id='$uid' ORDER BY priv_job_start_date DESC LIMIT $index, $limit";	
+            $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+      	    $resultset = $results_get->toArray();  //print_r($resultset);
+      			$resultset_count = $results_get->count();
+      			$arr="";
+      			if($resultset_count >0){
+      				foreach($resultset as $result){
+      					$start_date = $result['priv_job_start_date'];
+      					$date = str_replace('-', '/', $start_date);	
+      					$start_date_new = date('d/m/Y', strtotime($date));
+      					$arr.='<div class="user-job-list22"><div class="col-xs-3 col-sm-3 col-md-3"><input type="text" class="width-100 input-text margin-bottom" name="emp_name_'.$result['pv_id'].'" value="'.$result['emp_name'].'" required></div><div class="col-xs-2 col-sm-2 col-md-2"><input type="text" class="width-100 input-text margin-bottom" name="priv_job_title_'.$result['pv_id'].'" value="'.$result['priv_job_title'].'" required></div><div class="col-xs-2 col-sm-2 col-md-2"><input type="text" class="width-100 input-text margin-bottom" name="priv_job_rate_'.$result['pv_id'].'" value="'.$result['priv_job_rate'].'" required></div><div class="col-xs-2 col-sm-2 col-md-2"><input type="text" class="width-100 input-text margin-bottom" name="priv_job_location_'.$result['pv_id'].'" value="'.$result['priv_job_location'].'" required></div><div class="col-xs-2 col-sm-2 col-md-2"><input type="text" class="datepicker width-100 input-text margin-bottom" name="priv_job_start_date_'.$result['pv_id'].'" value="'.$start_date_new.'" required></div><div class="col-xs-1 col-sm-1 col-md-1"><span class="deleteclass small2 float-right" id="'.$result['pv_id'].'"><i class="fa fa-times" title="Remove" aria-hidden="true"></i></span></div><input type="hidden" name="job_id[]" value="'.$result['pv_id'].'"></div>';
+      				}
+      			}else{
+      				$arr.='<div class="user-job-list" align="center">No records found.</div>';
+      			}
+            /* If private job set from calander */
+            $set_p_date = '';
+            if (isset($_GET['p-date']) && $_GET['p-date'] != '') {
+                $get_date = $_GET['p-date'];
+                $set_p_date = date("d/m/Y", strtotime($get_date)); 
+            }
+
+            /* Block Date */
+
+            $currentdate = date('d/m/Y');
+            $sqlString_blockd="select ja.*,jp.* from job_action ja,job_post jp where ja.f_id='$uid' and jp.job_id=ja.job_id and jp.job_date > '$currentdate'";  
+            $results_blockarr = $adapter->query($sqlString_blockd, $adapter::QUERY_MODE_EXECUTE);
+            $result_blockarr = $results_blockarr->toArray();
+            $res_count=$results_blockarr->count();
+            $datesArray="";
+            $select1 = $sql->select();
+            $select1->from('user_work_calender');
+            $select1->where(array('uid'=>$uid));
+            $statement1 = $sql->prepareStatementForSqlObject($select1); 
+            $results1 = $statement1->execute();
+            $rows1 = $results1->getResource()->fetchAll(); 
+            $rows22 = $results1->count(); 
+            if(!empty($rows22) && $rows22>0){
+                  $newDatesArray = array();
+                  foreach ($rows1 as $key => $value) {
+                    $newDatesArray = unserialize($value['block_date']);
+                  }
+
+                  if (!empty($newDatesArray)) {
+                  foreach ($newDatesArray as $key => $value) {
+                  $newDate00[] = "'".date("Y-m-d", strtotime($value['date']))."'";  
+                  }
+                }
+                if (!empty($newDate00)) {
+                  $blockDateString = implode(',',$newDate00);
+                }else{
+                  $blockDateString = '';
+                } 
+            }
+
+            /* Book Dates */
+
+            /* Gell All Website job bookings */
+            $sqlGetAllBookings = "SELECT job_date,job_post_desc FROM job_post WHERE job_id IN ( SELECT job_id FROM job_action WHERE f_id ='$uid' AND action = 3) 
+            "; 
+
+            $getAllBooking = $adapter->query($sqlGetAllBookings, $adapter::QUERY_MODE_EXECUTE);
+            $getAllCurrentBookings = $getAllBooking->toArray();
+
+            if (!empty($getAllCurrentBookings)) {
+                foreach ($getAllCurrentBookings as $key => $allBooking) {
+                   $timestamp = strtotime(str_replace('/', '-', $allBooking['job_date']) );
+                  $bookDates[] = "'".date('Y-m-d', $timestamp)."'";
+                }
+            }
+
+            
+            $pCurrentDate = date("Y-m-d");
+            $sqlGetPBookings = "SELECT * from freelancer_private_job WHERE priv_job_start_date >= '$pCurrentDate' AND f_id = '$uid' ORDER BY priv_job_start_date ASC";
+            $getPBooking = $adapter->query($sqlGetPBookings, $adapter::QUERY_MODE_EXECUTE);
+            $getPCurrentBookings = $getPBooking->toArray();
+            if (!empty($getPCurrentBookings)) {
+                foreach($getPCurrentBookings as $pBooking){
+                  $pbookDates[] = "'".date('Y-m-d', strtotime($pBooking['priv_job_start_date']))."'";  
+                }
+            }
+
+            if (!empty($bookDates) || !empty($pbookDates)) {
+              $bookDateString = implode(',',$bookDates).','.implode(',',$pbookDates);
+            }else{
+              $bookDateString = '';
+            }
+
+			?>
+            <!-- Content Area Start -->
+            <div class="col-md-12 manage-private-job"> 
+            <?php
+              $is_user_pkg_allow_add_private = $packagePrivilegesController->getCurrentPackagePrivilegesResources('add_private_job',$uid,$adapter);
+            ?>
+            <?php if($is_user_pkg_allow_add_private == 1){ ?>
+              <div class="user-job-list"><div class="col-md-2 no-padding-left save-update-btn"><a href="javascript:void(0);" class="save-store-btn" id="add_job_edit" <?php if($resultset_count == 0){?>style="display:none;"<?php } ?>>Add New job</a></div></div> 
+            <?php } ?>
+
+
+            <form id="addjob" action="<?php echo $this->escapeHtml($this->document('private-job')->getUrl()); ?>" method="post" class="margin-top addjob-new" <?php if($resultset_count >0 && !$set_p_date){?>style="display:none;"<?php }else{?>style="display:block;"<?php }?>>
+            <input type="hidden" name="add_job" value="1">
+            <input type="hidden" name="uid" value="<?php echo $uid; ?>" id="uid">
+                <div class="col-md-12 margin-top no-padding-left"><h2>Add Private Job</h2></div>
+                <div class="col-md-12 no-padding-left"> 
+                <div class="job_block">
+                  <div class="job-details margin-bottom">
+                    <div class="width-full show_add_btn" id="show_add_button"><a href="javascript:void(0);" class="color-blue float-right" id="add_free_job"><i class="fa fa-plus" aria-hidden="true" title="Add Employer store"></i></a></div>
+                     <div class="col-md-3"><input type="text" name="emp_name[]" required placeholder="Contact name" class="input-text width-100 required-field_0"> </div> <!-- <div class="col-md-2 no-padding-left"  style="display:none;"><input type="text" name="emp_email[]" required placeholder="Enter employer email" class="input-text width-100 required-field_0"> </div> --> <div class="col-md-2"><input type="text" name="priv_job_title[]" required placeholder="Ref/Store name" class="input-text width-100 required-field_0"> </div><div class="col-md-2"><input type="text" name="priv_job_rate[]" required placeholder="Enter rate" class="input-text width-100 required-field_0"  id="numrate0"></div><div class="col-md-2"><input type="text" name="priv_job_location[]" required placeholder="Enter job location" class="input-text width-100 required-field_0"></div>
+
+
+                    <div class="col-md-2">
+                        <div id="date-dialog"></div>
+                        <input type="text" name="priv_job_start_date[]" required placeholder="Enter job start date" class="datepicker input-text width-100 required-field_0 readonly" value="<?php echo $set_p_date ?>" style="cursor: text;">
+                    </div>
+
+
+                      <div class="css_error2 required-field-no_0" style="clear:both;"></div>
+                    </div>
+                </div>
+                <div class="col-md-4 no-padding-left"><button class="save-store-btn save-prv-btn" name="add_job_bt">Save Job</button><a herf="javascript:void(0);" class="save-store-btn" id="cancel_private_job" <?php if($resultset_count == 0){?>style="display:block;"<?php } ?>>Cancel</a></div>
+                </div>
+            </form>
+            <div class="manage-private-job-scroll">
+				  <form class="mamage-private-jobform" id="mamageprivatejob" action="<?php echo $this->escapeHtml($this->document('private-job')->getUrl()); ?>" method="post">
+    				<div class="user-job-list heading-list">
+    				<div class="col-xs-3 col-sm-3 col-md-3"><p>Employer Name</p></div><div class="col-xs-2 col-sm-2 col-md-2"><p>Job Title</p></div><div class="col-xs-2 col-sm-2 col-md-2"><p>Job Rate</p></div><div class="col-xs-2 col-sm-2 col-md-2"><p>Job Location</p></div><div class="col-xs-2 col-sm-2 col-md-2"><p>Job Start Date</p></div><div class="col-xs-1 col-sm-1 col-md-1"><p style="text-align:right">Action</p></div>
+    				</div>
+    				<?php echo $arr;?>           
+
+    				<?php if($resultset_count >0 && $is_user_pkg_allow_add_private == 1 ){ ?><div class="col-md-2 no-padding-left save-update-btn"><button class="save-store-btn">Update</button></div><?php }?>
+				</form>
+			</div>
+            
+            </div> 
+            <!-- Pagination menu -->
+            <div class="profile-edit job-list-table private-job-pagination">
+              <div class="pagination col-md-12" style="display: grid; text-align: center;">    
+                <p class="clearfix"></p>
+                <ul class="paginator-div "> 
+                  <?php 
+                    $sqlString_data="SELECT * FROM freelancer_private_job WHERE f_id='$uid' ORDER BY priv_job_start_date DESC";  
+                    $results_get = $adapter->query($sqlString_data, $adapter::QUERY_MODE_EXECUTE);
+                    $resultset = $results_get->toArray();  //print_r($resultset);
+                    $toatlRecords = $results_get->count();
+                    $total_pages = ceil($toatlRecords / $limit); 
+                    if($total_pages > 1){
+                      for($i = 1 ; $i <= $total_pages ; $i++){ ?>
+                          <li <?php if(!isset($_GET['page']) && $i == 1) {?> class="active" <?php }elseif($_GET['page'] == $i){?>class="active"<?php } ?> style="margin-left: 0px;">
+                              <?php if(!isset($_GET['page']) && $i == 1) {?>
+                                <?php echo $i; ?>
+                              <?php }elseif($_GET['page'] == $i){?>
+                                <?php echo $i; ?>
+                              <?php }else{ ?>
+                                <a href="<?php echo $this->serverUrl() ?>/private-job?page=<?php echo $i; ?>" class="button float"><?php echo $i; ?></a>
+                              <?php } ?>
+                          </li>
+                      <?php  }} ?>
+                </ul>
+                <p></p>
+              </div>
+            </div>
+            <!-- End Pagination menu -->
+            <!-- Content Area End -->
+		</div>
+	</div>
+</div>
+</div>
+<?php
+//delete store
+if(isset($_POST['delete_pv']) && $_POST['delete_pv']==1){
+	$idst=$_POST['id'];
+	$sqlString_del="delete from freelancer_private_job where pv_id='".$idst."'";	
+    $results_del = $adapter->query($sqlString_del, $adapter::QUERY_MODE_EXECUTE);
+	//print_r($results_del);
+	//exit;
+}
+?>
+<style>
+    .ui-datepicker{
+      width: 28em !important;
+      margin: 0 auto 20px;
+      left: 765px !important;
+    }
+    td.ui-datepicker-unselectable.ui-state-disabled.ui-datepicker-unselectable.ui-state-disabled span {
+        padding: 1.2em ;
+    }
+</style>
+<?php 
+	$url = $_SERVER['HTTP_REFERER']; 
+	$tokens = explode('/', $url);
+	$token = $tokens[sizeof($tokens)-1];
+	if ($token == 'user-profile') {
+		//echo '<script type="text/javascript">$("#addjob").show(1000);</script>';
+	}
+?>
+<script type="text/javascript">
+$(document).ready(datePickerCaller);
+function datePickerCaller(){
+    $('.datepicker').each(function(){
+        $(this).datepicker({
+                minDate: 0,
+    		    changeMonth: true,
+                changeYear: true,
+                //showButtonPanel: true,
+                beforeShowDay: DisableSpecificDates,
+                dateFormat: "dd/mm/yy",
+    		    /*yearRange: '2017:2017',*/
+
+                onSelect: function(date) {
+var date_new = date.split('/');
+var MyDate = new Date(date.replace('/','-'));
+var MyDateString;
+
+
+MyDateString = date_new[2]+'-'+date_new[1].slice(-2) + '-' +date_new[0].slice(-2);
+
+console.log(disableddates);
+if ($.inArray(MyDateString, disableddates) > -1 ) {
+$(this).val('');
+}
+                }
+            
+    });
+
+    $('#date-dialog').attr('title', "Date Information");
+    var dlg = $('#date-dialog').dialog({
+        autoOpen: false,
+        draggable: false,
+        resizable: false,
+        width: 280
+    }); 
+
+
+    $("#block-dates table.ui-datepicker-calendar a").mouseover(function() {
+      dlg.dialog("open");
+    }).mousemove(function(event) {
+        dlg.dialog("option", "position", {
+          my: "left top",
+          at: "right bottom",
+          of: event,
+          offset: "20 20",
+          
+      });
+
+    }).mouseout(function() {
+        dlg.dialog("close");
+    });
+    
+    
+    
+
+    $("#block-dates td.available-date a").mouseover(function() {
+      $('#date-dialog').attr('title', "Date Information");
+      $('#date-dialog').html('<div id="loader-div-dialog"><div class="loader-dialog"></div></div>');
+      var hoverDate = $(this).text()+" "+$(".ui-datepicker-month",$(this).parents()).text()+" "+$(".ui-datepicker-year",$(this).parents()).text();
+      var uid = $("#uid").val();
+        $.ajax({
+          'url'   :'/ajax-request',
+          'type'  :'POST',
+          'data'  : {'info_about_date' : hoverDate, 'uid':uid},
+          'success':function(result){
+              $("#loader-div-dialog").hide(100);
+        <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+              $('#date-dialog').html("<p>This date is Available for work </p> <p><b>Minimum Rate :</b> "+result+"</p>");
+        <?php }else{?>
+          if(result==0){
+            $('#date-dialog').html("<p>This date is Available to post job.</p>");
+          }else{
+            $('#date-dialog').html(result);
+          }
+        <?php }?>
+                $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').css({"min-width":"120","min-height":"45","background":"#fff"});
+                $('div#date-dialog').css({"color":"#000"});
+                $('.ui-dialog-titlebar.ui-widget-header.ui-corner-all.ui-helper-clearfix').show();
+            }
+          });
+      
+    }).mousedown(function() {
+        $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').hide();
+    });
+
+    $("#block-dates td.booked-date a").mouseover(function() {
+      $('#date-dialog').html('<div id="loader-div-dialog"><div class="loader-dialog"></div></div>');
+      var hoverDate = $(this).text()+" "+$(".ui-datepicker-month",$(this).parents()).text()+" "+$(".ui-datepicker-year",$(this).parents()).text();
+      //alert(hoverDate);
+      var uid = $("#uid").val();
+        $.ajax({
+      'url'   :'/ajax-request',
+      'type'  :'POST',
+      'data'  : {'book_info_about_date' : hoverDate, 'uid':uid},
+      'success':function(result){
+        $("#loader-div-dialog").hide(100);
+    <?php if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id'] == 2) {?>
+      $('#date-dialog').html("<p>This date is Booked. Following is booking information</p><p>"+result+"</p>");
+    <?php }else{?>
+             if(result==0){
+            $('#date-dialog').html("<p>This date is Available to post job.</p>");
+          }else{
+            $('#date-dialog').html(result);
+          }
+    <?php }?>
+        
+          $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').css({"min-width":"120","min-height":"45","background":"#fff"});
+          $('div#date-dialog').css({"color":"#000"});
+          $('.ui-dialog-titlebar.ui-widget-header.ui-corner-all.ui-helper-clearfix').show();
+      }
+      });
+      
+    }).mousedown(function() {
+        $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').hide();
+    });
+
+    $("#block-dates  td.ui-datepicker-unselectable.ui-state-disabled").mouseover(function() {
+      return false;
+    });
+    $("#block-dates td.block-date a").mouseover(function() {
+      $('.ui-dialog-titlebar.ui-widget-header.ui-corner-all.ui-helper-clearfix').hide();
+      $('#date-dialog').html("You are not Available on this date. If you want to change status then click on this date.");
+      $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').css({"width":"280","height":"85","background":"red"});
+      $('div#date-dialog').css({"color":"#fff"});
+    }).mousedown(function() {
+        $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').hide();
+    			
+    	});
+    });
+}
+$("#add_job_edit").click(function(){
+	$(this).hide(); 
+	$("#addjob").show(1000);
+  $('#cancel_private_job').show();	
+});
+
+$("#cancel_private_job").click(function(){  
+  $("#addjob").hide();
+  $(this).hide();
+  $("#add_job_edit").show();  
+});
+
+var i = $(".job-details").size() + 1;
+var m = 0;
+$("#add_free_job").click(function () {
+		
+		if(i > 1)
+		{   
+			$('.job_block').append('<div class="job-details margin-bottom"><div class="col-md-3"><input type="text" name="emp_name[]" required placeholder="Contact name" class="input-text width-100 required-field_'+m+'"> </div><div class="col-md-2"><input type="text" name="priv_job_title[]" required placeholder="Ref/Store name" class="input-text width-100 required-field_'+m+'"> </div><div class="col-md-2"><input type="text" name="priv_job_rate[]" required placeholder="Enter rate" class="input-text width-100 required-field_'+m+'"></div><div class="col-md-2"><input type="text" name="priv_job_location[]" required placeholder="Enter job location" class="input-text width-100 required-field_'+m+'"></div><div class="col-md-2"><input type="text" name="priv_job_start_date[]" required placeholder="Enter job start date" class="datepicker input-text width-100 required-field_'+m+'"></div><span class="removeclass small2 float-right"><i class="fa fa-times" title="Remove" aria-hidden="true"></i></span><div class="css_error2 required-field-no_'+m+'" style="clear:both;"></div></div>');
+			i++;
+			m++;
+			datePickerCaller();
+		}
+		return false;
+});
+$("body").on("click",".removeclass", function(e){
+	//event.returnValue = false;  // mozilla giving error rest working in safari ,crome and IE
+	if( i > 1 ) { 
+			$(this).parent('.job-details').remove();i--;
+	}
+});
+$(".deleteclass").click(function () {
+	var id = $(this).attr('id');
+	//var del = confirm("Do you really want to delete private job?");
+        $('div#alert-confirm-modal #alert-message').html('Are you sure you want to delete this private job entry?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            var del_status = 1;
+            messageBoxClose();
+            $('div#loader-div').show();
+            $('#delete_box').show();
+            $('#delete_box').addClass('in');
+            $('#delete_box').css('display','block');
+            $.ajax({
+		'url'   :'/private-job',
+		'type'  :'POST',
+		'data'  : {id:id, delete_pv:del_status},
+		'success':function(result){ 
+			//alert("private job(s) deleted.");
+			$('div#loader-div').hide();
+			messageBoxOpen('Private job deleted.');       
+			$('.alert-modal .modal-footer button.btn.btn-default').attr('onclick',"window.location.reload()");								
+		}
+	     }); 
+        });
+	
+});
+
+
+
+
+    previousDateSpam();
+  previousDateBookHistory();
+  var disableddates = [<?php echo $blockDateString; ?>];
+  var bookdates = [<?php echo $bookDateString; ?>];
+  function DisableSpecificDates(date) {
+      var string = $.datepicker.formatDate('yy-mm-dd', date);
+      var today = $.datepicker.formatDate('yy-mm-dd', new Date());
+      if ($.inArray(string, disableddates) > -1 ) {
+        //$('.ui-state-disabled').addClass('blocked-date');
+        return [true,"block-date",""];
+      }else if($.inArray(string, bookdates) > -1 ){
+        return [true," ui-datepicker-unselectable ui-state-disabled booked-date",""];
+      }else if(string >= today){
+        return [true,"available-date",""];
+      }else{
+        return [true,"ui-datepicker-unselectable ui-state-disabled",""];  
+      }
+      
+  }
+
+     
+    
+  
+
+  /* Recall All functionality on next and prev action of calander */
+  function calenderAction() {
+    $('#date-dialog').attr('title', "Date Information");
+    var dlg = $('#date-dialog').dialog({
+        autoOpen: false,
+        draggable: false,
+        resizable: false,
+        width: 280
+    }); 
+
+    $("#block-dates table.ui-datepicker-calendar a").mouseover(function() {
+      dlg.dialog("open");
+    }).mousemove(function(event) {
+        dlg.dialog("option", "position", {
+          my: "left top",
+          at: "right bottom",
+          of: event,
+          offset: "20 20",
+          
+      });
+
+    }).mouseout(function() {
+        dlg.dialog("close");
+    });
+
+    $("#block-dates td.available-date a").mouseover(function() {
+      $('#date-dialog').attr('title', "Date Information");
+      $('#date-dialog').html('<div id="loader-div-dialog"><div class="loader-dialog"></div></div>');
+      var hoverDate = $(this).text()+" "+$(".ui-datepicker-month",$(this).parents()).text()+" "+$(".ui-datepicker-year",$(this).parents()).text();
+      var uid = $("#uid").val();
+        $.ajax({
+          'url'   :'/ajax-request',
+          'type'  :'POST',
+          'data'  : {'info_about_date' : hoverDate, 'uid':uid},
+          'success':function(result){
+              $("#loader-div-dialog").hide(100);
+              $('#date-dialog').html("<p>This date is Available for work </p> <p><b>Minimum Rate :</b> "+result+"</p>");
+                $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').css({"min-width":"120","min-height":"45","background":"#fff"});
+                $('div#date-dialog').css({"color":"#000"});
+                $('.ui-dialog-titlebar.ui-widget-header.ui-corner-all.ui-helper-clearfix').show();
+            }
+          });
+      
+    }).mousedown(function() {
+        $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').hide();
+    });
+
+    $("#block-dates td.booked-date a").mouseover(function() {
+      $('#date-dialog').html('<div id="loader-div-dialog"><div class="loader-dialog"></div></div>');
+      var hoverDate = $(this).text()+" "+$(".ui-datepicker-month",$(this).parents()).text()+" "+$(".ui-datepicker-year",$(this).parents()).text();
+      //alert(hoverDate);
+      var uid = $("#uid").val();
+        $.ajax({
+      'url'   :'/ajax-request',
+      'type'  :'POST',
+      'data'  : {'book_info_about_date' : hoverDate, 'uid':uid},
+      'success':function(result){
+        $("#loader-div-dialog").hide(100);
+        $('#date-dialog').html("<p>This date is Booked. Following is booking information</p><p>"+result+"</p>");
+          $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').css({"min-width":"120","min-height":"45","background":"#fff"});
+          $('div#date-dialog').css({"color":"#000"});
+          $('.ui-dialog-titlebar.ui-widget-header.ui-corner-all.ui-helper-clearfix').show();
+      }
+      });
+      
+    }).mousedown(function() {
+        $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').hide();
+    });
+
+    $("#block-dates td.block-date a").mouseover(function() {
+      $('.ui-dialog-titlebar.ui-widget-header.ui-corner-all.ui-helper-clearfix').hide();
+      $('#date-dialog').html("You are not Available on this date. If you want to change status then click on this date.");
+      $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').css({"width":"280","height":"85","background":"red"});
+      $('div#date-dialog').css({"color":"#fff"});
+    }).mousedown(function() {
+        $('.ui-dialog.ui-widget.ui-widget-content.ui-corner-all.ui-front').hide();
+    });  
+  }  
+  $("div#block-dates").click(function(){
+    previousDateSpam();
+    previousDateBookHistory();
+    calenderAction();
+  }); 
+
+  function showMinRate(){
+      $('#min_rate_date').show(1000);
+    }
+    function hideMinRate(){
+      $('#min_rate_date').hide(1000);
+    }
+    function previousDateSpam() {
+      $("td.ui-datepicker-unselectable.ui-state-disabled a").each( function() {
+            $(this).replaceWith(function(){
+              return $("<span class='ui-state-default'>" + $(this).html() + "</span>");
+            });
+        });
+      $("td.ui-datepicker-week-end.block-date a").each( function() {
+            $(this).replaceWith(function(){
+              return $("<span class='ui-state-default'>" + $(this).html() + "</span>");
+            });
+        });
+    }
+    function previousDateBookHistory() {
+      $("td.ui-datepicker-unselectable.ui-state-disabled.booked-date span").each( function() {
+            $(this).replaceWith(function(){
+              return $("<a href='#' class='ui-state-default'>" + $(this).html() + "</a>");
+            });
+        });
+    }
+
+    $("#numrate0").keyup(function() {
+        var in_rate = $("#numrate0").val();
+        if (isNaN(in_rate)){ $("#numrate0").val('');  }
+
+    });
+
+</script>

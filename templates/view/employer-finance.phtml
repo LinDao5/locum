@@ -1,0 +1,330 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+use GcFrontend\Controller\EndecryptController as Ecryption;
+$encypt = new Ecryption();
+
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 3){
+    $uid=$_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>";
+}
+
+
+$currency = $this->config()->get('site_currency');
+$financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+
+$getEmpFinanceCost = $financeHelper->getEmpFinanceCost($uid,$financialYear);
+$getEmpFinanceJob = $financeHelper->getEmpFinanceJob($uid,$financialYear);
+
+$empfinanceRecord = $financeHelper->EmpFinanceGetAllIncome($uid, null,$financialYear,null);
+$return = $this->script('manage-emp-finance-process');
+$m =  $financeHelper->getUserFinanceyearStartMonth($uid);
+$cm =  $financeHelper->getCreatedMonth($uid);
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="">Employer finance</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-gbp" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Employer finance</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="text-left">
+
+                    <div class="col-md-12 pad0">
+                        <div class="text-center finance-page-head">Finance overview</div>
+                    </div>
+                    <div class="col-md-12 pad0"><?php echo $this->partial('flash-messages'); ?></div>
+					<div class="cash_man_chart2 wholeborder">
+                        <form action="" class="add_item_form form-inline">	
+                    <?php include 'select-financial-year.phtml'; ?> 
+                    <!--<div class="col-md-12 pad0">
+                    <div class="financial-year-title col-xs-12 col-sm-8 col-md-7 bglightgrey">
+                    <h4 class="text-right">Please select your financial year (<?php echo date('M', mktime(0,0,0,$m, 1)) ; ?>-<?php echo date('M', mktime(0,0,0,$m+11, 1)) ; ?>)&nbsp;&nbsp;&nbsp;&nbsp;: </h4>
+                    </div>
+                    <div class="financial-year-select col-xs-12 col-sm-4 col-md-5 bglightgrey">
+                                   
+                        <div class="form-group">
+
+                         <select name="year" class="filter-selection" id="finance-year" onchange="this.form.submit()">
+                                <?php
+                                                    $registerYear = $financeHelper->getCreatedYear($uid);
+                                                    if($cm<$m){
+                                                    $registerYear =  $registerYear-1 ;
+                                                    }else{
+                                                    $registerYear =$registerYear ;
+                                                    }                                                   
+                                                    
+                                        for($i = $registerYear; $i <= date('Y'); $i++ ){
+                                          $t =  (date('m') >= $m) ? $i : $i-1     ?>
+                                          
+              <option value="<?php echo $i  ; ?>" <?php echo @$financialYear == $i ? 'selected' : '' ; ?>><?php echo $financeHelper->getoneplusyear($t); ?></option>
+                                    <?php } ?>
+                    </select>					  
+                          </div>
+                    </div>
+                    </div>-->
+               </form>	
+              
+              
+              <div class="col-md-12 pad0 marb20 canvas-scroll-wrapp">
+               <div class="col-md-6 cash_man_chart">
+			   <div class="col-md-6 row margin-top">
+				<h1 class="mar0 text-capitalize" id="register_head_blue">Cost Per Month</h1>
+			  </div>
+                <div class="mapdiv">
+				 <canvas id="myChart_emp" height="260" width="490" class="well"></canvas>
+				<div id="myChart-legend_emp" class="chart-legend"></div>				 
+				</div>		
+               </div>
+                <div class="col-md-6 cash_man_chart">
+				<div class="col-md-6 row margin-top">
+                 <h1 class="mar0 text-capitalize" id="register_head_blue">Jobs Per Month</h1>
+                  </div>
+                 <div class="mapdiv">
+				<canvas id="myChart2_emp" height="260" width="490"  class="well"></canvas>
+				<div id="myChart2-legend_emp" class="chart-legend"></div>
+				</div>
+                </div>
+              </div>
+                        <div class="col-md-12 cash_table cash_table-fiexd-scroll finance-scroller">
+                            <div class=""> 
+                                <table class="table table-striped income_sum_table table-fixed" id="example">
+                                    <thead>
+                                    <tr>
+                                    	<th class="col-md-1">Tran No</th>
+                                        <th class="col-md-1">Job ID</th>
+                                        <th class="col-md-2">Date</th>
+                                        <th class="col-md-1">Locum ID &nbsp;&nbsp;</th>
+                                        <th class="col-md-2">Rate</th>
+                                        <th class="col-md-1">Bonus</th>
+                                        <th class="col-md-1">Total</th>
+                                        <th class="col-md-1">Paid</th>                                        
+                                        <th class="col-md-1">Paid date</th>
+                                        <th class="col-md-1">Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    <?php   if (!empty($empfinanceRecord)) :
+                                        foreach($empfinanceRecord as $alltran){
+                                            $isPaid = $alltran['paid'];?>
+                                            <tr>
+						<td class="col-md-1" data-order="<?php echo $alltran['id']; ?>"> #<?php echo $alltran['id']; ?></td>
+                                                <td class="col-md-1"><?php echo ($alltran['job_id'] != 0)?$alltran['job_id']:'-'; ?></td>
+                                                <td class="col-md-2" data-order=<?php echo $alltran['job_date']; ?>"> <?php echo date_format(date_create($alltran['job_date']), 'd/m/y'); ?></td>
+                                                <td class="col-md-1"><?php echo ($alltran['fre_id'] == 0) ? '-' : $alltran['fre_id'] ; ?></td>
+                                                <td class="col-md-2"><?php echo $currency.$financeHelper->setPriceFormate($alltran['job_rate']); ?></td>
+                                                <td class="col-md-1"><?php echo @$alltran['bonus'] ? $currency.$financeHelper->setPriceFormate($alltran['bonus']) : 'N/A'; ?></td>
+                                                <td class="col-md-1"><?php echo $currency.$financeHelper->setPriceFormate($alltran['job_rate'] + $alltran['bonus']); ?></td>
+                                                <td class="col-md-1"><?php echo $isPaid == 1 ? '<i class="fa fa-check" aria-hidden="true"></i>' : '<a href="#" onclick="managebank('.$alltran['id'].')"> <i class="fa fa-close" aria-hidden="true"> </i></a>' ?></td>
+                                                <td class="col-md-1"><?php echo $alltran['paid_date'] != '' && $alltran['paid_date'] != '0000-00-00'  ? date('d/m/y',strtotime($alltran['paid_date'])) : 'N/A' ?></td>
+                                                <td class="col-md-1" align="center">
+                                                   
+	<a href="<?php echo $this->serverUrl().'/manage-emp-finance?e='.$encypt->encryptIt($alltran['id']) ;?>" class="btn btn-xs btn-info"><i class="fa fa-fw fa-edit" ></i></a> 
+	
+	<form role="form" action="<?php echo $this->escapeHtml($this->document('employer-finance')->getUrl()); ?>" method="post" style="margin-top: 1px;" id="delete-form<?php echo $alltran['id'] ; ?>">
+                                            <input type="hidden" value="<?php echo $encypt->encryptIt($alltran['id']) ; ?>" name="delincomeId">
+											<input type="hidden" value="in_data_delete" name="in_data_delete"/>
+                                            <button type="button" class="btn btn-xs btn-danger" name="in_data_delete" value="in_data_delete" onclick="confirm_delete_rec(<?php echo $alltran['id'] ?>)"><i class="fa fa-fw fa-close"></i></button>
+                                        </form>															
+													
+                                                </td>
+                                            </tr>
+                                        <?php   }
+                                    endif; ?>
+                                    </tbody>
+                                </table>
+                                <?php /*?><?php  if (empty($alltrans)) {  echo '<h4 class="no-finance-record">Data Not Found</h4>';  } ?><?php */?>
+                            </div>
+                        </div> 
+                        <div class="col-md-12 col-sm-12 add-new">
+                            <div class="profile-edit-btn">
+                                <a href="<?php echo $this->serverUrl().'/manage-emp-finance';?>" class="read-common-btn grad_btn pull-right">Add New</a>
+                            </div>
+                        </div>                      
+                    </div>
+					 
+
+                </section>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal content-->
+<div id="detail-description" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Expense Description</h4>
+            </div>
+            <div class="modal-body">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="manage-bank" class="modal fade financepopup" role="dialog">
+    <div class="modal-dialog">
+        <form action="" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Locumkit</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="col-md-12 pad0 financeform">
+                        <div class="form-group" id="bank_date">
+                            <div class="pull-left" style="display:none">
+                                <input name="in_bank" id="modal-in_bank" value="1" type="checkbox" checked >  Paid
+                            </div>
+                            <div class="input-group" id="fordisplay" style="display: block;">
+                                <p>Please enter the date the transaction hit the bank</p>
+                                <input type="hidden" name="in_bankid" id="in_bankid">
+                                <input type="text" class="form-control financein_bankdate" name="in_bankdate" id="in_bankdate" placeholder="dd/mm/yyyy" required>
+                                <button type="submit" class="btn btn-info" name="update-bank-btn" value="update-bank-btn" id="income-bank-btn" >Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+
+    function detailDescription(description) {
+        $('#detail-description .modal-body').html('<p>'+description+'</p>');
+        $('#detail-description').modal('show');
+    }
+    function managebank(id) {
+        //$('#fordisplay').hide();
+        $('#in_bankdate').val('');
+$('#modal-in_bank').attr('checked', false);
+        $('#in_bankid').val(id);
+        $('#manage-bank').modal('show');
+    }
+	
+	function confirm_delete_rec(id){
+   //     event.preventDefault();
+        $('div#alert-confirm-modal #alert-message').html('Are you sure you want to delete this transaction?');
+        $('div#alert-confirm-modal').addClass('in');
+        $('div#alert-confirm-modal').css('display','block');
+        $('div#alert-confirm-modal #confirm').click(function(){
+            $("#delete-form"+id).submit();
+            messageBoxClose();
+        });
+    }
+
+    $(document).ready(function() {
+        $('#example').DataTable( {
+            searching: false,
+            paging: false,
+            "bInfo": false,
+	    "order": [[ 2, "desc" ]],
+            columnDefs: [ { orderable: false, targets: [5,7,8,9] } ]
+        } );
+    } );
+
+</script>
+
+
+<script>
+
+    $(document).ready(function() {
+        $.getScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.js',function(){
+            var costmonth = <?php echo json_encode($getEmpFinanceCost[0]) ?>;
+            var cost = <?php echo json_encode($getEmpFinanceCost[1]) ?>;
+            var data = {
+                labels : costmonth,
+                datasets : [
+                    {
+                        label: "Expense",
+                        fillColor : "#A44442",
+                        strokeColor : "#A44442",
+                        pointColor : "rgba(220,220,220,1)",
+                        pointStrokeColor : "#fff",
+                        data : cost
+                    }
+                ]
+            };
+
+            var month = <?php echo json_encode($getEmpFinanceJob[0]) ?>;
+            var jobno = <?php echo json_encode($getEmpFinanceJob[1]) ?>;
+            var dataExpense = {
+                labels : month,
+                datasets : [
+                    {
+                        label: "No. of jobs",
+                        fillColor : "#85A04C",
+                        strokeColor : "#85A04C",
+                        pointColor : "rgba(220,220,220,1)",
+                        pointStrokeColor : "#fff",
+                        data : jobno
+                    }
+                ]
+            }
+            var options = {
+                animation: true,
+                tooltipTemplate: "<%= label %> : <?php echo $this->config()->get('site_currency') ?>  <%= value %>.00"
+            };
+            var options1 = {
+                animation: true,
+                tooltipTemplate: "<%= label %> : <%= value %>"
+            };
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart_emp');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart_emp").getContext("2d");
+            /*********************/
+            var myChart = new Chart(ctx).Bar(data,options);
+            document.getElementById('myChart-legend_emp').innerHTML = myChart.generateLegend();
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart2_emp');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart2_emp").getContext("2d");
+            /*********************/
+            var myChart2 = new Chart(ctx).Bar(dataExpense,options1);
+            document.getElementById('myChart2-legend_emp').innerHTML = myChart2.generateLegend();
+
+        });
+    });
+
+</script>

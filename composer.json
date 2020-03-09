@@ -1,0 +1,29 @@
+{
+    "name": "gotcms/gotcms",
+    "description": "GotCms is a CMS based on Zend Framework 2",
+    "license" : "LGPL-3.0",
+    "require": {
+        "php": ">=5.3.23",
+        "zendframework/zendframework": "2.4.7",
+        "rwoverdijk/assetmanager": "1.4.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.7.*",
+        "squizlabs/php_codesniffer": "1.4.*",
+        "satooshi/php-coveralls": "dev-master",
+        "gotcms/gotsniffs": "dev-master",
+        "packagist/yuicompressor-bin": "dev-master",
+        "mockery/mockery": "0.9.0"
+    },
+    "authors": [
+        {
+            "name": "Pierre RAMBAUD",
+            "email": "pierre.rambaud86@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config" : {
+        "bin-dir": "scripts"
+    }
+}

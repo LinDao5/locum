@@ -1,0 +1,397 @@
+<?php
+
+use Gc\User\Finance\Model as FinanceModel;
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+
+$financeHelper = new FinanceHelper();
+
+use GcFrontend\Controller\PackagePrivilegesController;
+
+$packagePrivilegesController = new PackagePrivilegesController();
+if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != '' && $_SESSION['user_role_id'] == 2 && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance', $_SESSION['user_id'], null) == 1) {
+    $uid = $_SESSION['user_id'];
+    $userRoleId = $_SESSION['user_role_id'];
+} else {
+    $url = $this->serverUrl() . '/login-form';
+    echo "<script type='text/javascript'>window.location='" . $url . "'</script>";
+}
+$currency = $this->config()->get('site_currency');
+$return = $this->script('finance_detail_process');
+$financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+$incomeRecord = $financeHelper->getAllIncome($uid, $financialYear, $filter, true);
+$m = $financeHelper->getUserFinanceyearStartMonth($uid);
+?>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+<style>
+    .red-class{   /* for send invoice button style*/
+        background-color: green !important;
+    }
+    .red-class:hover, .red-class:focus, .red-class:before, .red-class:after{
+        background-color: green !important;
+    }
+
+</style>
+
+<script language="javascript" type="text/javascript" >
+    $("#btnNext").on('click', function () {
+        event.preventDefault();
+        var chkArray = [];
+
+        $(".chk:checked").each(function () {
+            chkArray.push($(this).val());
+        });
+
+        var selected;
+        selected = chkArray.join(',') ;
+
+        // Check if there are selected checkboxes
+        if(selected.length > 0){
+            $("#myForm").submit();
+        }else{
+
+           document.getElementById('id01').style.display = 'block';
+
+        }
+    });
+</script>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl(); ?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl() . '/user-profile'; ?>">My Dashboard</a></li>
+                    <li><a href="/finance-detail">Finance</a></li>
+                    <li><a href="<?php echo $this->serverUrl(); ?>/freelancer-reports">REPORTS</a></li>
+                    <li><a href="#">Open invoices (debtor)</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-list-alt" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Open invoices (debtor)</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="primary-content" class="main-content about">
+    <div class="container">
+        <div class="row">
+            <div class="contents white-bg">
+                <section class="text-left">
+                    <div class="col-md-12 pad0">
+                        <div class="text-capitalize text-center finance-page-head">Open invoices (debtor)</div>
+                    </div>
+                    <?php include 'select-financial-year-invoice_i.phtml';  ?>
+                    <div class="cash_man_chart2 wholeborder">
+                        <form action="<?php echo $this->serverUrl(); ?>/send-invoice" method="post" id="myForm">
+
+                            <?php if (count($incomeRecord)) { ?>
+
+                                <div class="col-md-12 cash_table cash_manag_table mart30">
+                                    <?php echo $this->partial('flash-messages'); ?>
+                                    <div class="table-responsive table-responsive-scroll finance-scroller">
+
+                                        <table class="table" id="datatable">
+                                            <thead>
+                                            <tr>
+                                                <th class="no-sort">Date</th>
+                                                <th class="no-sort">Amount</th>
+                                                <th class="no-sort">Type</th>
+                                                <th class="no-sort">Job No</th>
+                                                <th class="no-sort">Category</th>
+                                                <th class="no-sort">Store</th>
+                                                <th width="100">0-30 days</th>
+                                                <th width="105">31-60 days</th>
+                                                <th width="105">61-90 days</th>
+                                                <th width="95">90 days +</th>
+                                                <th class="no-sort">Bank</th>
+                                                <th class="no-sort">Invoice</th>
+                                                <th class="no-sort">Action</th>
+
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+
+                                            <?php
+                                            $i0 = $i30 = $i60 = $i90 = 0;
+                                            if (!empty($incomeRecord)) :
+                                                foreach ($incomeRecord as $incomedata) {
+                                                    $jobId[] = $incomedata['job_id'];
+                                                    $grossCost = $incomedata['job_rate'];
+                                                    $isBank = $incomedata['bank'];
+                                                    $isInvoicRequired = $incomedata['invoice_notrequired'];
+                                                    $diffDayarray[] = $diffDay = $financeHelper->getdataDifference($incomedata['job_date'])
+                                                    ?>
+                                                    <tr>
+                                                        <td><?php echo date_format(date_create($incomedata['job_date']), 'd/m/Y'); ?></td>
+                                                        <td><?php echo $currency . $financeHelper->setPriceFormate($grossCost); ?></td>
+                                                        <td><?php echo $financeHelper->getJobtype($incomedata['job_type']); ?>
+                                                        </td>
+                                                        <td><?php echo $incomedata['job_id']; ?></td>
+                                                        <td><?php echo $financeHelper->getIncometype($incomedata['income_type']); ?></td>
+                                                        <td><?php echo @$incomedata['store'] ? $incomedata['store'] : 'N/A'; ?></td>
+                                                        <td><?php echo @$diffDay < 30 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<i class="fa fa-close" aria-hidden="true"></i>'; ?>
+                                                            <?php if ($diffDay < 30) ++$i0; ?></td>
+                                                        <td><?php echo @$diffDay >= 30 && $diffDay < 60 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<i class="fa fa-close" aria-hidden="true"></i>'; ?>
+                                                            <?php if ($diffDay >= 30 && $diffDay < 60) ++$i30; ?>
+                                                        </td>
+                                                        <td><?php echo @$diffDay >= 60 && $diffDay < 90 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<i class="fa fa-close" aria-hidden="true"></i>'; ?>
+                                                            <?php if ($diffDay >= 60 && $diffDay < 90) ++$i60; ?>
+                                                        </td>
+                                                        <td><?php echo @$diffDay >= 90 ? '<i class="fa fa-check" aria-hidden="true"></li>' : '<i class="fa fa-close" aria-hidden="true"></i>'; ?>
+                                                            <?php if ($diffDay >= 90) ++$i90; ?>
+                                                        </td>
+                                                        <td><?php echo $isBank == 1 ? 'Bank' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="managebankincome(' . $incomedata['id'] . ')"><i class="fa fa-close" aria-hidden="true"></li></a>' ?></td>
+                                                        <td><?php echo $isInvoicRequired == 0 ? '<a title="Manage Invoice" href="javascript:void(0);" onclick="manageInvoiceRequired(' . $incomedata['id'] . ',' . $incomedata['job_id'] . ',' . $isInvoicRequired . ')"><i class="fa fa-check" aria-hidden="true"></li></a>' : '<a title="Manage Bank Status" href="javascript:void(0);" onclick="manageInvoiceRequired(' . $incomedata['id'] . ',' . $incomedata['job_id'] . ',' . $isInvoicRequired . ')"><i class="fa fa-close" aria-hidden="true"></li></a>' ?></td>
+                                                        <td>
+
+                                                            <?php
+                                                            if ($isInvoicRequired == 0) {
+                                                                if ($incomedata['invoice_id'] == 0 || $incomedata['invoice_id'] == null) { ?>
+                                                                    <button  id="<?php echo $incomedata['id']; ?>"
+                                                                            onclick="sendInvoiceClick(<?php echo $incomedata['id']; ?>);"
+                                                                            type="button"
+                                                                            class="btn btn-block btn-sm btn-info">
+                                                                        &nbsp; Send Invoice &nbsp;
+                                                                    </button>
+                                                                    <input  id="<?php echo $incomedata['id']; ?>ch" class="hide chk " name="incomedata[]"  type="checkbox" value="<?php echo $incomedata['id']; ?>" />
+                                                                <?php } else { ?>
+                                                                    <button type="button"
+                                                                            class="btn btn-block btn-sm btn-info disabled">
+                                                                        Invoice Sent
+                                                                    </button>
+                                                                <?php }
+                                                            } else {
+                                                                echo "<span class='text-danger'>Not Required</span>";
+                                                            } ?>
+
+                                                        </td>
+
+                                                    </tr>
+                                                <?php } endif; ?>
+                                            <?php $countSet = array($i0, $i30, $i60, $i90); ?>
+                                            </tbody>
+                                        </table>
+
+                                    </div>
+                                </div>
+                                <div class="col-md-3"></div>
+                                <div class="col-md-6 cash_man_chart2">
+                                    <div class="form-group">
+                                        <select name="filter" class="form-control pull-right"
+                                                onchange="this.form.submit()">
+                                            <option value="month" <?php echo @$filter == 'month' ? 'selected' : ''; ?>>
+                                                Monthly
+                                            </option>
+                                            <option value="year" <?php echo @$filter == 'year' ? 'selected' : ''; ?>>
+                                                Yearly
+                                            </option>
+                                        </select>
+
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="col-md-3"></div>
+                                    <div class="col-md-6 padl0 open-inv-canvas">
+                                        <div class="mapdiv">
+                                            <canvas id="myChart" height="200" class="well"></canvas>
+                                            <div id="myChart-legend" class="chart-legend"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php } else { ?>
+                                <div class="alert alert-danger" style="float: left;width: 100%;margin-top: 5px;">No data
+                                    available for this period
+                                </div>
+                            <?php } ?>
+                        </form>
+                    </div>
+
+                </section>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="manage-invoice_required" class="modal fade financepopup" role="dialog">
+    <div class="modal-dialog">
+        <form action="" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Manage Invoices For Job Ref : <span id="Ijobno"></span></h4>
+                </div>
+                <div class="modal-body" style="text-align: center;">
+                    <div class="col-md-12 pad0 financeform">
+                        <div class="form-group" id="bank_date">
+                            <div class="pull-left">
+                                <input type="hidden" name="id_income" id="id_income">
+                                <p>Does this job require an invoice to be sent?</p>
+                                <input name="invoice-req-val" id="invoice-req-val-yes" value="0" type="radio" checked>
+                                Yes
+                                <input name="invoice-req-val" id="invoice-req-val-no" value="1" type="radio"> No
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-info pull-right" id="invoice-required" name="invoice-required"
+                            value="invoice-required">Submit
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!--next error dialog -->
+
+<div id="invoideError" class="alert-modal modal fade in" >
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- <button type="button" class="close close-alert" data-dismiss="modal" onClick="window.location.reload()">&times;</button> -->
+                <h4 class="modal-title">LocumKit</h4>
+            </div>
+            <div class="modal-body">
+                <h3 id="alert-message">Please select at least Send Invoice Button.</h3>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="close-alert btn btn-default">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+    function sendInvoiceClick(id) {
+
+        $("#" + id ).toggleClass("red-class");
+
+        if (!$("#" + id + "ch").is(":checked")){
+            $("#" + id + "ch").prop("checked", true);
+            $("#" + id).addClass("red-class")
+        }else {
+            $("#" + id + "ch").prop("checked", false);
+            $("#" + id).removeClass("red-class");
+        }
+    }
+
+    $("#btnNext").on('click', function () {
+        var chkArray = [];
+
+        $(".chk:checked").each(function () {
+            chkArray.push($(this).val());
+        });
+
+        var selected;
+        selected = chkArray.join(',') ;
+
+        // Check if there are selected checkboxes
+        if(selected.length > 0){
+            $("#myForm").submit();
+        }else{
+            // alert("Please select at least Send Invoice Button.");
+            $('div#invoideError').css('display','block');
+        }
+    });
+
+    $(".close-alert").click(function () {
+        $('div#invoideError').css('display','none');
+    });
+
+
+    function manageInvoiceRequired(id, jobno, status) {
+        if (status == '1') {
+            $('#invoice-req-val-no').attr('checked', true);
+        } else {
+            $('#invoice-req-val-yes').attr('checked', true);
+        }
+
+        $('#id_income').val(id);
+        $('#Ijobno').html(jobno);
+        $('#manage-invoice_required').modal('show');
+    }
+
+
+    $(document).ready(function () {
+        $.getScript('<?php echo $this->cdn('/frontend/locumkit-template/js/Chart.js'); ?>', function () {
+            var data_x = ["0-30 days", "	31-60 days", "61-90 days", "90 days +"];
+            var data1 = <?php echo json_encode($countSet); ?> ;
+            var data2 = <?php echo json_encode($countSet); ?> ;
+            var data = {
+                labels: data_x,
+                datasets: [
+                    {
+                        label: "Number of invoices outstanding",
+                        fillColor: "#4F81BD",
+                        strokeColor: "#4F81BD",
+                        pointColor: "#4F81BD",
+                        pointStrokeColor: "#fff",
+                        data: data1
+                    }
+                ]
+            };
+            var options = {
+                animation: true,
+                datasetFill: false,
+                pointDot: true
+            };
+
+
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart").getContext("2d");
+            /*********************/
+            var myChart = new Chart(ctx).Bar(data, options);
+            document.getElementById('myChart-legend').innerHTML = myChart.generateLegend();
+            //Get the context of the canvas element we want to select
+            var c = $('#myChart2');
+            var ct = c.get(0).getContext('2d');
+            var ctx = document.getElementById("myChart2").getContext("2d");
+            /*********************/
+            var myChart2 = new Chart(ctx).Line(data, options);
+            document.getElementById('myChart2-legend').innerHTML = myChart2.generateLegend();
+
+        });
+
+    });
+</script>
+
+<script type="text/javascript"
+        src="<?php echo $this->cdn('/frontend/locumkit-template/js/jquery.dataTables.min.js'); ?>"
+        charset="UTF-8"></script>
+<script>
+    $(document).ready(function () {
+        $('#datatable').DataTable({
+            searching: false,
+            paging: false,
+            "bInfo": false,
+            "ordering": true,
+            order: [],
+            columnDefs: [{
+                orderable: false,
+                targets: "no-sort"
+            }]
+        });
+    });
+</script>

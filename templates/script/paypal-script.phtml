@@ -1,0 +1,80 @@
+<?php
+	//print_r($_SESSION);
+	date_default_timezone_set('Europe/London');	
+	use GcFrontend\Controller\DbController as DbController;
+	use Zend\Db\Sql\Sql;
+	use GcFrontend\Controller\PackageUpgradeController as PackageUpgradeController;
+	use GcFrontend\Controller\JobmailController as MailController;
+
+	$dbConfig 			= new DbController();
+	$adapter 			= $dbConfig->locumkitDbConfig();
+	$mailController 	= new MailController();
+	$pkgUpgController 	= new PackageUpgradeController();
+
+	$sql 		= new Sql($adapter);
+	$update 	= $sql->update();
+	$select 	= $sql->select();
+	$id 		= $_SESSION['get_id'];
+	$msg 		= "";
+	$user_type 	= "";
+
+	if (isset($_GET['u']) && $_GET['u'] == 'f' ){
+		$user_type = "?u=f";
+	}
+	if (isset($_GET['membership']) && $_GET['membership'] == 1 ){
+		$user_type .= "&renew_membership=1";
+	}
+	$keyValues=array('payment_status'=>'1');
+	if (isset($_GET['t']) && $_GET['t'] == 'upgrade' ) {
+		$id 	= $_SESSION['last_payment_insert_id'];
+		$pkg_id = $_SESSION['last_pkg_details_info_id'];
+		$pkgUpgController->updatePaymentInfo($id,$adapter);
+		$pkgUpgController->updatePackageInfo($pkg_id,$adapter);
+		$msg	= "?package=upgrade";
+	}
+	if (isset($_GET['t']) && $_GET['t'] == 'change' ) {
+		$id 	= $_SESSION['last_payment_insert_id'];
+		$pkg_id = $_SESSION['last_pkg_details_info_id'];
+		$uid 	= isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
+		if ($uid) {
+			//Check if package is already active nad not expired & trun it to changed
+			$sql_pkg_check = "UPDATE user_package_details SET package_status = '4' WHERE user_id = '$uid' AND  package_status = '1' ";
+			$pkgCheck = $adapter->query($sql_pkg_check, $adapter::QUERY_MODE_EXECUTE);
+		}
+		$pkgUpgController->updatePaymentInfo($id,$adapter);
+		$pkgUpgController->updateChangePackageInfo($pkg_id,$adapter);
+		$msg 	= "?package=change";
+		$mailController->sendPackageRenewMail($uid,$_GET['amt'],$adapter) ;
+    }
+	$update = $sql->update();
+	$update->table('user_payment_info');
+	$update->set( $keyValues);
+	$update->where( array( 'uid' => $id ) );
+	$statement2  = $sql->prepareStatementForSqlObject( $update );
+	$results2    = $statement2->execute();
+    
+    // update user package detail table
+    if(isset($_SESSION['get_id'])){
+		$package_active_date=date('Y-m-d');
+		$time = strtotime(date('Y-m-d'));
+		$package_expire_date = date("Y-m-d", strtotime("+1 year", $time));
+				
+		$sqlString_update="update user_package_details set package_active_date = '$package_active_date', package_expire_date = '$package_expire_date', package_status=1 where user_id='$id' AND package_active_date = '$package_active_date'";	
+
+		$results_update = $adapter->query($sqlString_update, $adapter::QUERY_MODE_EXECUTE);		
+		if(!isset($_GET['t']) && $_GET['membership'] != 1) {
+		   $mailController->sendVerifyEmailtofreelancer($_SESSION['get_id'],$_GET['amt'],$adapter) ;
+		}else{
+		   $mailController->sendPackageRenewMail($_SESSION['get_id'],$_GET['amt'],$adapter) ;
+echo 'Renewed ';
+		}
+	
+		
+    }
+   
+	if(isset($msg) && $msg!=''){$this->redirect()->toUrl('/thank-you'.$msg);}
+	elseif(isset($user_type) && $user_type!=''){$this->redirect()->toUrl('/thank-you'.$user_type);}
+	else{$this->redirect()->toUrl('/thank-you'.$msg);}
+	return true;
+
+?>

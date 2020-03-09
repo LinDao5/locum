@@ -1,0 +1,120 @@
+<?php
+	$actual_link = "$_SERVER[REQUEST_URI]";
+	$_SESSION['action_url'] = $actual_link;
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$uid = $_SESSION['user_id'];
+		$urid = '';
+		if (isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']!='') {
+			$urid = $_SESSION['user_role_id'];
+		}
+		if ($urid == 3) {
+$adapter = new Zend\Db\Adapter\Adapter(array(
+'driver' => 'pdo_mysql',
+'username' => 'fudugoso_locum',
+'password' => 'locumkit123.*',
+'database' => 'fudugoso_locumkit',
+'hostname' => 'localhost'
+));
+			/* Job Id */
+			$cjid = '';
+			if (isset($_GET['j']) && $_GET['j'] != '') {
+				$cjid = $_GET['j'];
+			}else{
+				$this->redirect()->toUrl('/404');
+			}
+
+			/* Get Normal user id who apply for job */
+			$sqlFid = "SELECT f_id from job_action WHERE job_id = '$cjid' AND action = '2'";	
+	        $jobFidArray = $adapter->query($sqlFid, $adapter::QUERY_MODE_EXECUTE);
+	        $jobFids = $jobFidArray->toArray();
+	        ?>
+	        <div class="used-user-list">
+	        	<h4> Site user List </h4>
+	        	<?php if(!empty($jobFids)): ?>
+	        	<table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <col width="80%">
+                        <col width="20%">
+                    </colgroup>
+                    <tbody>
+				        <?php
+					        foreach ($jobFids as $key => $nUser) {
+					        	/* Get Normal user data */
+					        	$applyUid = $nUser['f_id'];
+								$sqlUserData = "SELECT id,lastname,firstname,email from user WHERE id = '$applyUid'";	
+						        $jobUserDataArray = $adapter->query($sqlUserData, $adapter::QUERY_MODE_EXECUTE);
+						        $jobUserDatas = $jobUserDataArray->toArray();
+					        	//print_r($jobUserDatas);
+					        	foreach ($jobUserDatas as $key => $userData) {
+					        		?>
+					        			<tr>
+					        				<th>
+						        				<p><b>Name</b> : <?php echo $userData['firstname']." ".$userData['lastname']; ?></p>
+						        				<p><b>User Id </b> : <?php echo $userData['id']; ?></p>
+					        				</th>
+					        				<td><a href="/freelancer-approval?j=<?php echo $cjid; ?>&f_id=<?php echo $userData['id']; ?>&utype=<?php echo 'n'; ?>">Accept</a></td>
+					        			</tr>
+					        		<?php
+					        	}
+					        }
+				        ?>
+				    </tbody>
+				</table>
+				<?php else : ?>
+					<h5>No freelancer applied for this job.</h5>
+				<?php endif; ?>
+	        </div>
+	        <div style="clear:both"></div>
+	        <?php 
+	        	/* Get Private user who apply for job */
+				$sqlPfid = "SELECT puid from private_user_job_action WHERE j_id = '$cjid' AND emp_id = '$uid' AND status = '2'";	
+		        $jobPfidArray = $adapter->query($sqlPfid, $adapter::QUERY_MODE_EXECUTE);
+		        $jobPfids = $jobPfidArray->toArray();
+
+	        ?>
+	        <div class="private-user-list">
+	        	<h4> Private user List </h4>
+	        	<?php if(!empty($jobPfids)): ?>
+	        	<table class="table clickable table-striped table-hover">
+                    <colgroup>
+                        <col width="80%">
+                        <col width="20%">
+                    </colgroup>
+                    <tbody>
+				        <?php
+							
+					        foreach ($jobPfids as $key => $pUser) {
+
+					        	/* Get Private user data */
+					        	$applyUid = $pUser['puid'];
+								$sqlUserData = "SELECT p_uid,p_name,p_email from private_user WHERE p_uid = '$applyUid'";	
+						        $jobUserDataArray = $adapter->query($sqlUserData, $adapter::QUERY_MODE_EXECUTE);
+						        $jobUserDatas = $jobUserDataArray->toArray();
+					        	//print_r($jobUserDatas);
+					        	foreach ($jobUserDatas as $key => $userData) {
+								     ?>
+					        			<tr>
+					        				<th><b>Name</b> : <?php echo $userData['p_name']; ?></th>
+					        				<!-- <p><b>User Id </b> : <?php echo $userData['id']; ?></p> -->
+					        				<td><a href="/freelancer-approval?j=<?php echo $cjid; ?>&f_id=<?php echo $userData['p_uid']; ?>&utype=<?php echo 'p'; ?>">Accept</a></td>
+					        			</tr>
+					        		<?php
+					        	}
+					        	
+					        }
+					    ?>
+					</tbody>
+				</table>
+				<?php else: ?>
+					<h5>No private user have applied for this job.</h5>
+				<?php endif; ?>
+			</div>
+			<div style="clear:both"></div>
+			<?php
+
+		}else{
+			$this->redirect()->toUrl('/404');
+		}
+	}else{
+		$this->redirect()->toUrl('/login-form');
+	}

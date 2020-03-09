@@ -1,0 +1,437 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User
+ * @author     Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license    GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link       http://www.got-cms.com
+ */
+
+namespace Gc\User;
+
+use Gc\Core\Object;
+use Gc\Db\AbstractTable;
+use Gc\Mail;
+use Gc\Registry;
+use Zend\Authentication\Adapter;
+use Zend\Authentication\Storage;
+use Zend\Authentication\AuthenticationService;
+use Zend\Db\Sql\Predicate\Expression;
+use Zend\Db\Sql\Select;
+use Zend\Db\Sql\Sql;
+use Zend\Validator\EmailAddress;
+
+/**
+ * Model of user
+ *
+ * @category   Gc
+ * @package    Library
+ * @subpackage User
+ */
+class Model extends AbstractTable
+{
+    /**
+     * Backend auth namespace for authenticationService
+     *
+     * @const string
+     */
+    const BACKEND_AUTH_NAMESPACE = 'Zend_Auth_Backend';
+
+    /**
+     * Table name
+     *
+     * @var string
+     */
+    protected $name = 'user';
+
+    /**
+     * Authenticate user
+     *
+     * @param string $login Login
+     * @param string $password Password
+     *
+     * @return boolean
+     */
+    public function authenticate($login, $password)
+    {
+        $authAdapter = new Adapter\DbTable\CredentialTreatmentAdapter($this->getAdapter());
+        $authAdapter->setTableName($this->name);
+        $authAdapter->setIdentityColumn('login');
+        $authAdapter->setCredentialColumn('password');
+        $authAdapter->setCredentialTreatment('? AND active = TRUE');
+
+        $authAdapter->setIdentity($login);
+        $authAdapter->setCredential(sha1($password));
+
+        $auth = new AuthenticationService(new Storage\Session(self::BACKEND_AUTH_NAMESPACE));
+        $result = $auth->authenticate($authAdapter);
+
+        $this->events()->trigger(__CLASS__, 'before.auth', $this);
+        if ($result->isValid()) {
+            $data = $authAdapter->getResultRowObject(null, 'password');
+            $this->setData((array)$data);
+            $this->setOrigData();
+            $auth->getStorage()->write($this);
+            $this->events()->trigger(__CLASS__, 'after.auth', $this);
+
+            return true;
+        }
+
+        $this->events()->trigger(__CLASS__, 'after.auth.failed', $this, array('login' => $login));
+        return false;
+    }
+
+    /**
+     * Set User email
+     *
+     * @param string $userEmail Email address
+     *
+     * @return boolean
+     */
+    public function setEmail($userEmail)
+    {
+        $userEmail = trim($userEmail);
+        $validator = new EmailAddress();
+        if ($validator->isValid($userEmail)) {
+            $userId = $this->getId();
+            $select = $this->select(
+                function (Select $select) use ($userEmail, $userId) {
+                    $select->where->equalTo('email', $userEmail);
+
+                    if ($userId !== null) {
+                        $select->where->notEqualTo('id', $userId);
+                    }
+                }
+            );
+
+            $row = $this->fetchRow($select);
+            if (empty($row)) {
+                $this->setData('email', $userEmail);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Set user password
+     *
+     * @param string $userPassword User password
+     * @param boolean $encrypt Encrypt or not the password
+     *
+     * @return void
+     */
+    public function setPassword($userPassword, $encrypt = true)
+    {
+        $this->setData('password', ($encrypt ? sha1(trim($userPassword)) : trim($userPassword)));
+    }
+
+
+    /**
+     * Save user
+     *
+     * @return integer
+     */
+    public function save()
+    {
+        $this->events()->trigger(__CLASS__, 'before.save', $this);
+        $arraySave = array(
+            'firstname' => $this->getFirstname(),
+            'lastname' => $this->getLastname(),
+            'email' => $this->getEmail(),
+            'login' => $this->getLogin(),
+            'updated_at' => new Expression('NOW()'),
+            'user_acl_role_id' => $this->getUserAclRoleId(),
+            'user_acl_profession_id' => $this->getUserAclProfessionId(),
+            'user_acl_package_id' => $this->getUserAclPackageId(),
+            'retrieve_password_key' => $this->getRetrievePasswordKey(),
+            'retrieve_updated_at' => $this->getRetrieveUpdatedAt(),
+            'is_free' => $this->getIsFree() != '' ? $this->getIsFree() : 0,
+            'view' => $this->getView(),
+        );
+
+        $password = $this->getPassword();
+        if (!empty($password)) {
+            $arraySave['password'] = $password;
+        }
+
+        if ($this->getDriverName() == 'pdo_pgsql') {
+            $arraySave['active'] = $this->getActive();
+        } else {
+            $arraySave['active'] = $this->getActive();
+        }
+
+        try {
+            $id = $this->getId();
+            if (empty($id)) {
+                $arraySave['created_at'] = new Expression('NOW()');
+                $this->insert($arraySave);
+                $this->setId($this->getLastInsertId());
+            } else {
+                $this->update($arraySave, array('id' => $this->getId()));
+            }
+
+            $this->events()->trigger(__CLASS__, 'after.save', $this);
+
+            return $this->getId();
+        } catch (\Exception $e) {
+            $this->events()->trigger(__CLASS__, 'after.save.failed', $this);
+            throw new \Gc\Exception($e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Delete user
+     *
+     * @return boolean
+     */
+    public function delete()
+    {
+        $this->events()->trigger(__CLASS__, 'before.delete', $this);
+        $id = $this->getId();
+        if (!empty($id)) {
+            try {
+                parent::delete(array('id' => $id));
+            } catch (\Exception $e) {
+                throw new \Gc\Exception($e->getMessage(), $e->getCode(), $e);
+            }
+
+            $this->events()->trigger(__CLASS__, 'after.delete', $this);
+            unset($this);
+
+            return true;
+        }
+
+        $this->events()->trigger(__CLASS__, 'after.delete.failed', $this);
+
+        return false;
+    }
+
+
+    public function deleteGuestUser($id)
+    {
+        $this->events()->trigger(__CLASS__, 'before.delete', $this);
+
+        if (!empty($id)) {
+            try {
+                parent::delete(array('id' => $id));
+            } catch (\Exception $e) {
+                throw new \Gc\Exception($e->getMessage(), $e->getCode(), $e);
+            }
+
+            $this->events()->trigger(__CLASS__, 'after.delete', $this);
+            unset($this);
+
+            return true;
+        }
+
+        $this->events()->trigger(__CLASS__, 'after.delete.failed', $this);
+
+        return false;
+    }
+
+    /**
+     * Initiliaze from array
+     *
+     * @param array $array Data
+     *
+     * @return \Gc\User\Model
+     */
+    public static function fromArray(array $array)
+    {
+        $userTable = new Model();
+        $userTable->setData($array);
+        $userTable->unsetData('password');
+        $userTable->setOrigData();
+
+        return $userTable;
+    }
+
+    /**
+     * Initiliaze from id
+     *
+     * @param integer $userId User id
+     *
+     * @return \Gc\User\Model
+     */
+    public static function fromId($userId)
+    {
+        $userTable = new Model();
+        $row       = $userTable->fetchRow($userTable->select(array('id' => (int) $userId)));
+
+        $userTable->events()->trigger(__CLASS__, 'before.load', $userTable);
+        if (!empty($row)) {
+            $userTable->setData((array) $row);
+            $userTable->unsetData('password');
+            $userTable->setOrigData();
+            $userTable->events()->trigger(__CLASS__, 'after.load', $userTable);
+            return $userTable;
+        } else {
+            $userTable->events()->trigger(__CLASS__, 'after.load.failed', $userTable);
+            return false;
+        }
+
+    }
+
+
+    public  function fromId_i($userId)
+    {
+        $userTable = new Model();
+        $select = "SELECT * FROM `user` LEFT JOIN user_extra_info ON `user`.id = user_extra_info.uid WHERE  user.id = '$userId'";
+        $row = $this->fetchRow($select);
+//        echo '<pre>';
+//        print_r($row);
+//        echo '</pre>';
+
+        $userTable->events()->trigger(__CLASS__, 'before.load', $userTable);
+        if (!empty($row)){
+            $userTable->setData((array) $row);
+            $userTable->unsetData('password');
+            $userTable->setOrigData();
+            $userTable->events()->trigger(__CLASS__, 'after.load', $userTable);
+            return $userTable;
+        }else{
+            $userTable->events()->trigger(__CLASS__, 'after.load.failed', $userTable);
+            return false;
+        }
+    }
+
+    /**
+     * Get User Role
+     *
+     * @param boolean $forceReload Force reload
+     *
+     * @return \Gc\User\Role\Model
+     */
+    public function getRole($forceReload = false)
+    {
+        $role = $this->getData('role');
+        if (empty($role) or !empty($forceReload)) {
+            $role = Role\Model::fromId($this->getUserAclRoleId());
+            $this->setData('role', $role);
+        }
+
+        return $this->getData('role');
+    }
+
+    /**
+     * Get User Role
+     *
+     * @param boolean $forceReload Force reload
+     *
+     * @return \Gc\User\Role\Model
+     */
+    public function getAcl($forceReload = false)
+    {
+        $role = $this->getData('acl');
+        if (empty($role) or !empty($forceReload)) {
+            $this->setData('acl', new Acl($this));
+        }
+
+        return $this->getData('acl');
+    }
+
+    /**
+     * Send new password
+     *
+     * @param string $email Email address
+     *
+     * @return boolean
+     */
+    public function sendForgotPasswordEmail($email)
+    {
+        $row = $this->fetchRow($this->select(array('email' => $email)));
+        if (!empty($row)) {
+            $user = self::fromArray((array)$row);
+            $passwordKey = sha1(uniqid());
+            $user->setRetrievePasswordKey($passwordKey);
+            $user->setRetrieveUpdatedAt(new Expression('NOW()'));
+            $user->save();
+
+            $serviceManager = Registry::get('Application')->getServiceManager();
+            $message = $serviceManager->get('MvcTranslator')
+                ->translate(
+                    'To reset your password follow this link but be careful ' .
+                    'you only have one hour before the link expires:'
+                );
+
+            $message .= '<br>';
+            $message .= Registry::get('Application')->getMvcEvent()->getRouter()->assemble(
+                array(
+                    'id' => $user->getId(),
+                    'key' => $passwordKey,
+                ),
+                array(
+                    'force_canonical' => true,
+                    'name' => 'config/user/forgot-password-key'
+                )
+            );
+
+            $mail = new Mail(
+                'utf-8',
+                $message,
+                $serviceManager->get('CoreConfig')->getValue('mail_from'),
+                $user->getEmail()
+            );
+            $mail->send();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Return user name
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->getFirstname() . ' ' . $this->getLastname();
+    }
+
+
+    public function checkEmailexist($emailId, $id)
+    {
+        $userTable = new Model();
+        $row = $userTable->fetchRow($userTable->select(
+            function (Select $select) use ($emailId, $id) {
+                $select->where->equalTo('email', $emailId);
+                $select->where->notEqualTo('id', $id);
+            }
+        ));
+        $userTable->events()->trigger(__CLASS__, 'before.load', $userTable);
+        if (!empty($row)) {
+            $userTable->setData((array)$row);
+            $userTable->unsetData('password');
+            $userTable->setOrigData();
+            $userTable->events()->trigger(__CLASS__, 'after.load', $userTable);
+            return $userTable;
+        } else {
+            $userTable->events()->trigger(__CLASS__, 'after.load.failed', $userTable);
+            return false;
+        }
+    }
+
+
+
+}

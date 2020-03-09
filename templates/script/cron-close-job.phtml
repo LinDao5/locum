@@ -1,0 +1,69 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	use Zend\Db\Sql\Sql;
+	use Gc\Registry;
+	use GcFrontend\Controller\DbController as DbController;
+	use GcFrontend\Controller\JobmailController as MailController;
+	use GcFrontend\Controller\EndecryptController as Ecryption;
+	use Gc\User\Job\Model as JobModel;
+	$encypt 		= new Ecryption();
+	$mailController = new MailController();
+	$dbConfig 		= new DbController();
+	$adapter 		= $dbConfig->locumkitDbConfig();	
+	$currentDate 	= strtotime(date("Y-m-d"));
+	$serverUrl 		= Registry::get('Application')->getServiceManager()->get('ViewHelperManager')->get('ServerUrl');
+	$currentDate  	= date("d-m-Y");
+	$nextDayDate  	= date('d/m/Y', strtotime($currentDate .' -1 day'));
+	$jobModel       = new jobModel();
+
+	/* Get job close reminder dates information */
+	$sqlCloseJob 	= "SELECT * from job_post WHERE  (job_status='1' OR job_status='3') AND DATE(STR_TO_DATE(job_date, '%d/%m/%Y')) = DATE(NOW())";
+	$closeJobData 	= $adapter->query($sqlCloseJob, $adapter::QUERY_MODE_EXECUTE);
+	$closeJob 		= $closeJobData->toArray();
+
+	echo 'Current UK time : '.$currentTime = date('G.i'); 
+	echo '<br/>';
+	echo 'Notification time : '.$notificationTime = 11.30; 
+	echo '<br/>';echo '<br/>';
+    
+    if(!empty($closeJob)){
+        foreach ($closeJob as $key => $value) {
+            $jobDate =  strtotime(str_replace("/","-",$value['job_date']));
+            $jobDateNew = explode('/', $value['job_date']); 
+            $d = mktime(11, 30, 0, $jobDateNew[1], $jobDateNew[0], $jobDateNew[2]);
+            $newJobDate = strtotime(date('d-m-Y H:i', $d));
+echo date('d-m-Y H:i', $d).'===='.date('d-m-Y H:i');
+echo '<br/>';
+echo $newJobDate .'<'. strtotime(date('d-m-Y H:i'));
+            if ($newJobDate < strtotime(date('d-m-Y H:i'))) {
+                $jobId  = $value['job_id'];
+                $jobEid = $value['e_id'];
+                $viewJobLink = '<a href="'.$serverUrl().'/single-job?view='.$jobId.'" style="padding: 8px 30px; font-size: 16px; font-weight: 700; background: #00A9E0; color: #fff;text-decoration: none;">View Job</a>';
+                if($currentTime >= $notificationTime ) {
+                    $mailController->sendCloseJobNotification($jobId,$jobEid,$viewJobLink,$adapter);
+                    /* Update job status to close a job */
+                    $sqlRunCloseJob = "UPDATE job_post SET job_status='2' WHERE job_id = '$jobId' AND (job_status='1' OR job_status='3')"; 
+                    $runCloseJobData = $adapter->query($sqlRunCloseJob, $adapter::QUERY_MODE_EXECUTE);
+                }
+
+            }
+        	
+        }        
+    }
+
+    //Completed job if accepted and date is past
+    $today_date = date('Y-m-d');
+    $sqlCompleteJob 	= "SELECT * from job_post WHERE job_status = '4' AND STR_TO_DATE(job_date, '%d/%m/%Y') < '$today_date' ORDER BY job_id DESC";
+	$completeJobData 	= $adapter->query($sqlCompleteJob, $adapter::QUERY_MODE_EXECUTE);
+	$completeJob 		= $completeJobData->toArray();
+	if (!empty($completeJob)) {
+		foreach ($completeJob as $key => $job_info) {
+			$job_id = $job_info['job_id'];
+			$jobModel->jobStatusUpdate($job_id,5);
+		}
+	}
+	echo "<pre>";
+	print_r($completeJob);
+	echo "</pre>";
+    
+    

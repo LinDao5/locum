@@ -1,0 +1,149 @@
+<?php
+/**
+ * This source file is part of GotCms.
+ *
+ * GotCms is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GotCms is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with GotCms. If not, see <http://www.gnu.org/licenses/lgpl-3.0.html>.
+ *
+ * PHP Version >=5.3
+ *
+ * @category    Gc
+ * @package     Config
+ * @subpackage  Design
+ * @author      Pierre Rambaud (GoT) <pierre.rambaud86@gmail.com>
+ * @license     GNU/LGPL http://www.gnu.org/licenses/lgpl-3.0.html
+ * @link        http://www.got-cms.com
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+$userCollection = new Gc\User\Collection();
+$userProfessional = new Gc\User\Professional\Collection();
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($userCollection->getActiveNewUsers()));
+$paginator->setItemCountPerPage(20);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+?>
+<form id="filter" action="/report" method="GET">
+    <div class="row">
+        <div class="col-md-3">
+            <input type="text"  name="startdate" id="datepicker1" placeholder='Enter start date'>
+        </div>
+        <div class="col-md-3">
+            <input type="text"  name="enddate" id="datepicker2" placeholder='Enter end date'>
+        </div>
+        <div class="col-md-2">
+            <input type="hidden"  name="type" value="New_User">
+            <input id="user_record" type="submit" value="export" style="  margin-top: 0px; float:right;  border: 1px solid #ccc;  padding: 5px 10px;  text-decoration: none;  background: #ccc;  color: #000000;  font-size: 16px">
+        </div>
+    </div>
+</form>
+<?php 
+    if (isset($_GET['user_record']) && $_GET['user_record']) {
+       echo "<script>alert('No record were found.')</script>";
+    }
+?>
+<hr/>
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="8%">
+        <col width="10%">
+        <col width="15%">
+        <col width="15%">
+        <col width="15%">
+        <col width="15%">
+        <col width="10%">
+        <col width="10%">
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('User ID')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Sign up Date')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('First Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Last Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Email')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('User Type')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Status')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php           
+            
+            foreach ($paginator as $user): ?>
+            <tr>
+                <td><?php echo $this->escapeHtml($user->getId()); ?></td>
+                <td><?php echo $this->escapeHtml(date('d/m/Y', strtotime($user->getCreatedAt()))); ?></td>
+                <td><?php echo $this->escapeHtml($user->getFirstname()); ?></td>
+                <td><?php echo $this->escapeHtml($user->getLastname()); ?></td>
+                <td><?php echo $this->escapeHtml($user->getEmail()); ?></td>
+                <?php 
+                    if ($user->getUserAclProfessionId() != '') {
+                        $profInfo = $userProfessional->getProfessionalById($user->getUserAclProfessionId());
+                        foreach ($profInfo as $key => $profInfo) {
+                            $profName = $profInfo->getName();
+                        }
+                    }
+                ?>
+                <td><?php echo $this->escapeHtml($profName); ?></td>
+                <?php 
+                    if($user->getUserAclRoleId() == 2){
+                        $userType = 'Freelancer';
+                    }elseif ($user->getUserAclRoleId() == 3) {
+                        $userType = 'Employer';
+                    } 
+                ?>
+                <td><?php echo $this->escapeHtml($userType); ?></td>
+                <td><?php 
+                        if ($user->getActive() == 1) {
+                            echo '<span style="color:green;">'.$this->escapeHtml('Active').'</span>';    
+                        }elseif ($user->getActive() == 2){
+                            echo '<span style="color:red;">'.$this->escapeHtml('Block').'</span>';
+                        }else{
+                            echo '<span style="color:orange;">'.$this->escapeHtml('Guset User').'</span>';
+                        }
+                        
+                ?></td>
+                
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/report/new-user-report'));?>
+</div>
+
+ 
+<script type="text/javascript">
+    Gc.initTableList();
+</script>
+<script>
+    $(function() {
+        $( "#datepicker1" ).datepicker({dateFormat: "yy-mm-dd"});
+        $( "#datepicker2" ).datepicker({dateFormat: "yy-mm-dd"});
+    });
+</script>
+<style type="text/css">
+    input[type="text"] {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+    }
+    form#filter {
+        background: #f0f0f0;
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid;
+    }
+</style>
+
+
+

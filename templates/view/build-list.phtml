@@ -1,0 +1,155 @@
+<?php
+$adapter = new Zend\Db\Adapter\Adapter(array(
+'driver' => 'pdo_mysql',
+'username' => 'fudugoso_locum',
+'password' => 'locumkit123.*',
+'database' => 'fudugoso_locumkit',
+'hostname' => 'localhost'
+));
+    use Gc\User\Job\Model as JobModel;
+    use Zend\Db\Sql\Sql;
+    use Zend\Db\TableGateway\TableGateway;
+    $jobModel       = new JobModel();
+    if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && isset($_SESSION['user_role_id']) && $_SESSION['user_role_id']==3){
+        $uid=$_SESSION['user_id'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."'</script>"; 
+    }
+    $job_id = 0;
+    if (isset($_GET['j']) && $_GET['j'] != '') {
+        $job_id = $_GET['j'];
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+    }
+    if ($job_id) {
+        $sqlString_get="SELECT * FROM job_post WHERE job_id = '$job_id' AND e_id='$uid'";
+        $result = $adapter->query($sqlString_get, $adapter::QUERY_MODE_EXECUTE);
+        //print_r($results0);
+        $getJobObj = $result->current();            
+        $getJob = (array)$result->current();            
+    }else{
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+    }
+    
+    if(empty($getJobObj)){
+        echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/job-listing'</script>"; 
+    }
+    if (isset($_GET['action']) && $_GET['action'] == 'disable') {
+        $jobModel->jobStatusUpdate($getJob['job_id'],1);
+    }elseif (isset($_GET['action']) && $_GET['action'] == 'enable') {
+        $jobModel->jobStatusUpdate($getJob['job_id'],3);
+    }
+?>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/job-listing">List Page</a></li>
+					<li><a href="javascript:void(0)">Build List</a></li>
+                </ul>
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Freelancer List</h3>
+                </div>
+            </div>
+            
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+    <div class="container">
+        <div class="row">
+            <div class="contents gray-gradient">
+                <div class="welcome-heading">
+                    <h1><span><?php echo $getJob['job_title']; ?></span></h1>
+                    <hr class="shadow-line">
+                </div>
+                <div style="clear: both"></div>
+                <?php
+                    $statusUrl = 0;
+                    $status = 0;
+                    if ($getJob['job_status'] == 3) {
+                        $statusUrl = $this->serverUrl().'/single-job?view='.$getJob['job_id'].'&action=disable';
+                        $status = 'Enable';
+                    }elseif($getJob['job_status'] == 1){
+                        $statusUrl = $this->serverUrl().'/single-job?view='.$getJob['job_id'].'&action=enable';
+                        $status = 'Disable';
+                    }
+
+                ?>
+                <div class="job-view">
+                    <div class="general-info">
+                        <h4>General Information</h4>
+                        <table class="table clickable table-striped table-hover">
+                            <colgroup>
+                                <col width="30%">
+                                <col width="60%">
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th>Title</th>
+                                    <td><?php echo $getJob['job_title']; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Rate</th>
+                                    <td>$<?php echo $getJob['job_rate']; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Job Date</th>
+                                    <td><?php echo $getJob['job_date']; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Job Status</th>
+                                    <td><?php
+                                            switch ($getJob['job_status']) {
+                                                case 1:
+                                                     echo "<span style='color:green'>Enable</span>";
+                                                    break;
+                                                case 2:
+                                                    echo "Close";
+                                                    break;
+                                                case 3:
+                                                    echo "<span style='color:red'>Disable</span>";
+                                                    break;
+                                                case 4:
+                                                    echo "Accepted";
+                                                    break;
+                                                case 5:
+                                                    echo "Done";
+                                                    break;
+                                                case 6:
+                                                    echo "Freeze";
+                                                    break;
+                                                default:                                                    
+                                                    break;
+                                            }        
+                                            ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Job Description</th>
+                                    <td><?php echo $getJob['job_post_desc']; ?></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="apply-freelancer-list">
+                	<?php $this->script('build-list'); ?>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

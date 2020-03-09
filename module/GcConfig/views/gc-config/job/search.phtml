@@ -1,0 +1,165 @@
+<?php
+/**
+ *Design and develop by SURAJ WASNIK (suraj.wasnik0126@gmail.com) at FUDUGO SOLUTIONS PVT. LTD.
+ */
+ /** @var $this \Zend\View\Renderer\PhpRenderer */
+$paginator = new \Zend\Paginator\Paginator(new \Zend\Paginator\Adapter\ArrayAdapter($this->jobData));
+$paginator->setItemCountPerPage(100);
+$paginator->setCurrentPageNumber(empty($_GET['page']) ? 1 : (int)$_GET['page']);
+use Gc\User\Professional\Collection as ProfessionalCollection;
+use Gc\User\Collection as UserCollection;
+$categoryCollection = new ProfessionalCollection();
+$categories = $categoryCollection->getProfessionals();
+$userCollection = new UserCollection();
+$users = $userCollection->getUsers();
+if (isset($_GET['jobId'])) {
+    $jobId = $_GET['jobId'];
+}
+if (isset($_GET['catId'])) {
+    $catId = $_GET['catId'];
+}
+if (isset($_GET['uId'])) {
+    $userId = $_GET['uId'];
+}
+?>
+<div class="row filter-job">
+    <form method="get" action="/admin/config/user/job/search">
+        <div class="col-md-3">
+            <select name="jobId">
+                <option value="">Select job id</option>
+                <?php foreach ($this->jobs as $key => $value) { ?>
+                    <option <?php if($value->getJobId() == $jobId){ echo "Selected"; } ?> value="<?php echo $value->getJobId() ?>"><?php echo $value->getJobId() ?></option>
+                <?php } ?>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="catId">
+                <option value="">Select job category</option>
+                <?php foreach ($categories as $key => $value) { ?>
+                    <option <?php if($value->getId() == $catId){ echo "Selected"; } ?> value="<?php echo $value->getId(); ?>"><?php echo $value->getName(); ?></option>
+                <?php } ?>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="uId">
+                <option value="">Select Employer Email</option>
+                <?php 
+                    foreach ($users as $key => $value) { 
+                        if ($value->getUserAclRoleId() == 3) {
+                ?>
+                    <option <?php if($value->getId() == $userId){ echo "Selected"; } ?> value="<?php echo $value->getId()?>"><?php echo $value->getEmail()?></option>
+                <?php } } ?>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="submit" value="Search">
+        </div>
+    </form> 
+</div>
+
+<br/>
+<?php if(!empty($this->jobData)){ ?>
+<table class="table clickable table-striped table-hover">
+    <colgroup>
+        <col width="5%">
+        <col width="15%">
+        <col width="15%">
+        <col width="10%">
+        <col width="15%">
+        <col width="20%">
+        <col width="10%">
+        <col width="10%">
+    </colgroup>
+    <thead>
+        <tr>
+            <th><?php echo $this->escapeHtml($this->translate('Id')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Title')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Category')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Rate')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Employer Name')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Employer Email')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Status')); ?></th>
+            <th><?php echo $this->escapeHtml($this->translate('Action')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+       <?php
+            
+            foreach ($paginator as $job): ?>
+                <tr>
+                    <td><?php echo $this->escapeHtml($job['job_id']); ?></td>
+                    <td><?php echo $this->escapeHtml($job['job_title']); ?></td>
+                    <?php 
+                        $catName = '';
+                        foreach ($categories as $key => $value) {
+                            if ($value->getId() == $job['cat_id']) {
+                                $catName = $value->getName();
+                            }
+                        }
+                    ?>
+                    <td><?php echo $this->escapeHtml($catName); ?></td>
+                    <td>$<?php echo $this->escapeHtml($job['job_rate']); ?></td>
+                    <?php 
+                        $eName = '';
+                        $eEmail = '';
+                        foreach ($users as $key => $value) {
+                            if ($value->getId() == $job['e_id']) {
+                                $eName = $value->getName();
+                                $eEmail = $value->getEmail();
+                            }
+                        }
+                    ?>
+                    <td><?php echo $this->escapeHtml($eName); ?></td>
+                    <td><?php echo $this->escapeHtml($eEmail); ?></td>
+                    <td><?php 
+                            switch ($job['job_status']) {
+                                case 1:
+                                    echo '<sapn style="color: green;   font-weight: 700;">Open</span>'; 
+                                    break;
+                                case 2:
+                                    echo '<sapn style="color: red;   font-weight: 700;">Close</span>'; 
+                                    break;
+                                case 3:
+                                    echo '<sapn style="color: red;   font-weight: 700;">Disable</span>'; 
+                                    break;
+                                case 4:
+                                    echo '<sapn style="color: green;   font-weight: 700;">Accepted</span>'; 
+                                    break;
+                                case 5:
+                                    echo '<sapn style="color: #00A9E0;   font-weight: 700;">Completed</span>'; 
+                                    break;
+                                case 6:
+                                    echo '<sapn style="color: #F0AD4E;   font-weight: 700;">Freeze</span>'; 
+                                    break;
+                                case 8:
+                                    echo '<sapn style="color: #ff8200;   font-weight: 700;">Cancel</span>'; 
+                                    break;
+
+                            }
+                        ?></td>
+                    <td>
+                        <a href="<?php echo $this->url('config/user/job/view', array('id' => $job['job_id'])); ?>" class="edit-line" alt="View" style="font-size: 18px;color: #00A9E0;display: block;  float: left;margin-right: 8px;">
+                           <i class="glyphicon glyphicon-eye-open"></i>
+                        </a>
+                        &nbsp;
+                        <a href="<?php echo $this->url('config/user/job/delete', array('id' => $job['job_id'])); ?>" class="delete-line" style="display: block;  float: left;">
+                            <img src="<?php echo $this->cdnBackend('backend/images/icones/delete.png'); ?>" alt="<?php echo $this->escapeHtml($this->translate('Delete')); ?>">
+                        </a>
+                    </td>
+                </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<?php 
+}else{
+    echo "<div class='no-record'>";
+    echo "<h3>Offss..! No record were found.</h3>";
+    echo "</div>";
+}
+?>
+<div class="pagination">
+     <?php echo $this->paginationControl($paginator, 'sliding', 'paginator', array('path' => $this->serverUrl().'/admin/config/user/job/search?jobId='.$_GET['jobId'].'&catId='.$_GET['catId'].'&uId='.$_GET['uId'])); ?>
+</div>
+<script type="text/javascript">
+    Gc.initTableList();
+</script>

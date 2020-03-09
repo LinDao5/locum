@@ -1,0 +1,27 @@
+<?php 
+  use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+
+  $financeHelper = new FinanceHelper();
+  $uid = $_SESSION['user_id'];
+  $financialYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+  $overallincome = $financeHelper->getIncomeByuser($uid, $financialYear);
+  $overallexpence = $financeHelper->getExpenceByuser($uid ,  $financialYear);
+  $currency = $this->config()->get('site_currency');
+?>
+<div class="col-md-12 in_ex_pr_box emply-finance">
+  <div class=""> <!--in_ex_pr_inbox-->
+    <div class="col-sm-4 col-md-4 text-center">
+    <h1 class="mar0" id="register_head_blue">Income</h1>
+    <h2 class="mar0"><?php echo $currency.$financeHelper->setPriceFormate($overallincome['job_rate']); ?></h2>
+    </div>
+    <div class="col-sm-4 col-md-4 text-center">
+    <h1 class="mar0" id="register_head_blue">Expenses</h1>
+    <h2 class="mar0"><?php echo $currency.$financeHelper->setPriceFormate($overallexpence['cost']); ?></h2>
+    </div>
+    <div class="col-sm-4 col-md-4 text-center">
+    <h1 class="mar0" id="register_head_blue">Profit</h1>
+    <h2 class="mar0"><?php $profit = $overallincome['job_rate'] - $overallexpence['cost'];
+  echo $currency.$financeHelper->setPriceFormate($profit); ?></h2>
+    </div>  
+  </div>
+</div>

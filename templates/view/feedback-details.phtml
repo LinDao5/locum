@@ -1,0 +1,240 @@
+<?php
+    date_default_timezone_set('Europe/London');
+	if(isset($_SESSION['user_id']) && $_SESSION['user_id']!=''){
+		$uid = $_SESSION['user_id'];
+		$userRoleId = $_SESSION['user_role_id'];
+	}else{  
+		$url= $this->serverUrl().'/login-form';echo "<script type='text/javascript'>window.location='".$url."'</script>";
+	}
+	use GcFrontend\Controller\DbController as DbController;
+	use Gc\User\Role\Model;
+	use GcFrontend\Controller\FunctionsController;
+	use Gc\User\Collection as UserCollection;
+
+	$currency = $this->config()->get('site_currency');
+    use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+    $financeHelper = new FinanceHelper();
+	 
+	$dbConfig 	= new DbController();
+    $adapter 	= $dbConfig->locumkitDbConfig();
+	$functionsController = new FunctionsController();
+	$dbConfig 	= new DbController();
+	$userCollection = new UserCollection();	
+
+	use GcFrontend\Controller\PackagePrivilegesController;
+	$packagePrivilegesController = new PackagePrivilegesController();
+	if($packagePrivilegesController->getCurrentPackagePrivilegesResources('feedback',$uid,null) == 0 && $_SESSION['user_role_id'] == 2){
+		$url= $this->serverUrl().'/user-profile'; echo "<script type='text/javascript'>window.location='".$url."'</script>";
+	}
+	
+	
+?>
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>          
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/user-profile">My Dashbord</a></li>
+                    <li><a href="javascript:void(0)">FEEDBACK</a></li>
+                </ul>
+             </div>
+        </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-star-empty" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>FEEDBACK INFORMATION</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+<div id="primary-content" class="main-content profiles">
+    <div class="container">
+        <div class="row">
+            <div class="contents gray-gradient">
+            	<div class="welcome-heading">
+            		<?php
+	                	$userId = $uid;
+						$userInfo = $userCollection->getUserById($userId);	
+						if ($userRoleId == 2) {
+							$currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $userId, 3);
+							$userType = 'Employer(s)';
+						}elseif($userRoleId == 3){
+							$currentFeedbackData =  $functionsController->getFeedbackByUserId($adapter, $userId, 2);
+							$userType = 'Locum(s)';
+						}
+						
+						$totalFeedback = count($currentFeedbackData);
+						$perRating = $functionsController->getOverallRating($currentFeedbackData) > 0 ? ceil(($functionsController->getOverallRating($currentFeedbackData)/100)*5) : 0 ;
+						$perRating_new = $functionsController->getOverallRating($currentFeedbackData) ;
+						$perRating_star = round(($functionsController->getOverallRating($currentFeedbackData)/100)*5,1) ; 
+						
+
+						?>
+
+						<h1 class="h1pad">								
+							<?php if($totalFeedback > 0): ?>
+								<div id="stars-rating" class="user-rating">
+									<?php 
+										/*$totalStar = 5;
+										$ratingStar = $perRating;
+										$currentStar = 1;
+										while($totalStar > 0){ 
+											if($ratingStar >= $currentStar){
+												$starClass = 'fa-star';
+											}else{                                                 
+												$starClass = 'fa-star-o'; 
+											}
+									?>
+									<i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+									<?php $totalStar--; $currentStar++; } */ ?> 
+				<div class="div-title"><span> Average Rating </span></div>
+				<div class="div1"><div class="star-ratings-sprite"><span style="width:<?php echo $perRating_new ?>%" class="star-ratings-sprite-rating"></span> <?php echo $perRating_new ?></div></div>
+				<div class="div2"><?php echo $totalFeedback > 0 ? '('.$perRating_star.') Rated by '.$totalFeedback.' '.$userType: '<span> No feedback.</span>'; ?> </span>   </div>       
+								</div> 
+							<?php else: ?>
+								<span>No feedback.</span>
+							<?php endif; ?>
+						</h1>
+            		<hr class="shadow-line">
+            	</div>
+            	<div class="feedback-details-content">
+            		<?php echo $this->content; ?>
+            	</div>
+                <div class="feedback-details">                	
+                	<div class="panel-group" id="accordion">
+                		<?php 	                  
+		                    $i = 0;
+		                   	foreach ($currentFeedbackData as $key => $value) {
+		                   	
+		                   		if ($userRoleId == 2) {
+		                   			$feedback_uid = $value['emp_id'];
+		                   		}elseif ($userRoleId == 3) {
+		                   			$feedback_uid = $value['fre_id'];
+		                   		}			                   	   
+			                   	$feedbackUserData = $functionsController->getFeedbackUserInfo($adapter, $userId);
+								
+								
+								//--------
+		                        if($userRoleId == 3){
+		                            $feedbackby = $userCollection->getUserById($value['fre_id']);
+		                            $feedbyName = 'Freelancer';
+		                        }elseif($userRoleId == 2){
+		                            $feedbackby = $userCollection->getUserById($value['emp_id']);
+		                            $feedbyName = 'Employer';
+		                        }
+                       
+                      
+	                    		if($feedbackby){
+	                                $feedbakby_nm = ucfirst($feedbackby[0]->getFirstname()).' '.$feedbackby[0]->getLastname();                               
+	                    		}else{ 
+	                                $deleteduser = "SELECT * from user_leavers_table WHERE uid = ".$value['fre_id']."";
+	                                $deleteduserView = $adapter->query($deleteduser, $adapter::QUERY_MODE_EXECUTE);
+	                                $user = $deleteduserView ->current();  
+	                                if($user) {
+	                                $feedbakby_nm = ucfirst($user['user_name']);
+	                                }                                   
+	                     		}
+
+                                $sqlJob = "SELECT * from job_post WHERE job_id = ".$value['j_id']."";
+                                $jobView = $adapter->query($sqlJob, $adapter::QUERY_MODE_EXECUTE);
+                                $job = $jobView->current();
+                                $jobTitle 	= $job['job_title'];
+                                $jobId 		= $job['job_id'];
+                                $jobRate 	= $job['job_rate'];
+                                $jobDate 	= $job['job_date'];
+
+								//--------											
+					 		?>
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h4 class="panel-title">
+										<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-<?php echo $i; ?>">
+											<ul>
+												<li>
+													<h6><i class="fa fa-user" aria-hidden="true"></i> <?php // echo $feedbackUserData['firstname'].' '.$feedbackUserData['lastname'] ?><?php echo $feedbakby_nm; ?></h6>
+												</li>
+			                                    <li>
+			                                      <div id="stars-rating" class="user-rating">
+			                                          <?php 
+			                                              $totalStar = 5;
+			                                              $ratingStar = $value['rating'];
+			                                              $currentStar = 1;
+			                                              while($totalStar > 0){ 
+			                                                  if($ratingStar >= $currentStar){
+			                                                    $starClass = 'fa-star';
+			                                                }else{                                                 
+			                                                    $starClass = 'fa-star-o'; 
+			                                                }
+			                                          ?>
+			                                              <i class="fa <?php echo $starClass; ?>" aria-hidden="true"></i>
+			                                          <?php $totalStar--; $currentStar++; } ?>                
+			                                      </div> 
+			                                    </li>
+			                                    
+			                                </ul>
+										</a>
+									</h4>
+								</div>
+								<div id="collapse-<?php echo $i; ?>" class="panel-collapse collapse <?php echo $i==0 ?'in':'' ?>">
+									<div class="panel-body">
+										<div class="feedback-qus-ans-details col-md-8">
+											<?php 
+												$feedbackDetailsArray = unserialize($value['feedback']);
+												$qusCount = 1;
+                    							foreach ($feedbackDetailsArray as $qusId => $feedbackRate) {
+											?>
+												<div class="feedback-qus-ans">
+							                        <p class="qus"><span>Qus. <?php echo $qusCount++; ?>)</span><?php echo $feedbackRate['qus'] ?></p>
+							                        <div class="user-rating">                            
+							                            <?php 
+							                                $totalStar = 5;
+							                                $ratingStar = $feedbackRate['qusRate'];
+							                                $currentStar = 1;
+							                                while($totalStar > 0){ 
+							                                    if($ratingStar >= $currentStar){
+							                                        $starClass = 'glyphicon-star';
+							                                    }else{                                                 
+							                                        $starClass = 'glyphicon-star-empty'; 
+							                                    }
+							                            ?>
+							                                <span class="glyphicon <?php echo $starClass; ?>"></span>
+							                            <?php $totalStar--; $currentStar++; } ?>     
+							                        </div>
+							                    </div>
+						                	<?php } ?>
+										</div>
+										
+									  	<div class="feedback-detail-info col-md-4">
+                                                <h4>Details</h4>
+                                                <table width="100%">
+                                                    <tr><td></td><td></td></tr>
+                                                    <tr><td>Job Ref</td><td><?php echo $jobId ?></td></tr>
+                                                    <tr><td>Job Date</td><td><?php echo $jobDate ?></td></tr>
+                                                    <tr><td>Rate</td><td><?php echo $currency.$financeHelper->setPriceFormate($jobRate); ?></td></tr>
+                                                    <!--<tr><td><?php // echo $feedbyName ; ?></td><td><?php //echo $feedbakby_nm ?></td></tr>-->
+                                                    <tr><td>Feedback left on </td><td><?php echo date_format(date_create($value['created_date']), 'd/m/Y'); ?></td></tr>                                                        
+                                                    <tr><td></td><td></td></tr>
+                                                </table>
+                                        </div>
+										
+										<!--<div class="feedback-comment">
+											<h6>Feedback Comment</h6>
+											<div class="feedback-qus-ans"><?php echo $value['comments'] ?></div>
+										</div>-->										
+									</div>
+								</div>
+							</div>
+						<?php $i++; } ?>
+					</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

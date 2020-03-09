@@ -1,0 +1,126 @@
+<?php
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$blogs = $financeHelper->getpostblog() ;
+
+ $blogcategory =  $financeHelper->getblogcategory();
+foreach($blogcategory as  $blogcat){
+$bcat['id'] = $blogcat['name'] ;
+}
+
+$view = @$_GET['blog'] ? $_GET['blog'] : '';
+
+?>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+         <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="javascript:void(0);">Blog</a></li>
+                </ul>
+                
+             </div>
+         </div>
+     </div>
+     <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon" style="   padding: 3px 16px 0px;">
+                    <i class="fa fa-rss" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3>Blog</h3>
+                </div>
+            </div>
+        </div>
+     </div>
+</section>
+
+<?php if($view != ''){ ?>
+
+
+<?php 
+
+$blogdate = $financeHelper->getpostblog($view) ;
+$blogdate = $blogdate[0]; ?>
+<div class="subpage" id="main-wrapper">
+    <div class="container">
+        <div class="row">
+            
+            <div class="9u skel-cell-mainContent">
+               
+                    <article class="first post-content">                    
+                        <div class="col-md-12 margin-top">
+                          
+                      <div class="post-feature-img margin-top"><img src="<?php echo $this->serverUrl().'/'.$blogdate['image_path'] ; ?>" alt="<?php echo $blogdate['title'] ?>" width="200px">
+                                </div>
+                              
+                            <h2 class="title"><?php echo $blogdate['title'] ?></h2>                            
+                            <p class="sub">
+                                <a href=""><i class="fa fa-rss" aria-hidden="true"></i><?php //echo $bcat['1'] ;?> Recent Posts </a> &nbsp; <i class="glyphicon glyphicon-calendar" aria-hidden="true"></i>                                                                 
+                                         <?php echo $this->escapeHtml(date('d/m/Y', strtotime($blogdate['create_at']))); ?>
+                                <?php if(isset($blogdate['pdf_path'])) { ?>
+                                    <a href="<?php echo $this->serverUrl().'/'.$blogdate['pdf_path'] ; ?>">to PDF</a>
+                                <?php } ?>
+                            </p>
+                            <div class="hr dotted clearfix">&nbsp;</div>
+                            <?php echo $blogdate['description'] ?>
+                            <p class="clearfix">
+                                <a href="<?php echo $this->serverUrl().'/blog' ; ?>" class="button float">&lt;&lt; Back to Blog</a>
+                                <!--<a href="#comment_form" class="button float right">Discuss this post</a>-->
+                            </p>
+                        </div>
+                    </article>
+                <div class="hr clearfix">&nbsp;</div>
+
+                <div class="hr clearfix">&nbsp;</div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ <?php }else { ?>
+
+
+<div class="subpage" id="main-wrapper">
+    <div class="container">
+        <div class="row">
+            <div class="9u skel-cell-mainContent">
+                <?php  foreach($blogs as $blog): ?>                
+                        <article class="first post-content">                        
+                            
+                            <div class="col-md-3 f-img margin-top">                            
+                            <img src="<?php echo $this->serverUrl().'/'.$blog['image_path'] ; ?>" alt="<?php echo $blog['title'] ?>" width="100%" height="180px">
+                            </div>                           
+                            
+                            <div class="col-md-9">
+
+                                <h2 class="title"><a href="<?php echo $this->serverUrl().'/blog/'.$blog['slug'] ; ?>"> <?php echo $blog['title'] ?> </a></h2>
+                                
+                                <p class="sub"><a href="">Recent Posts 
+                                <i class="fa fa-rss" aria-hidden="true"></i> <?php $blog['title']; ?></a> &nbsp;
+                                <i class="glyphicon glyphicon-calendar" aria-hidden="true"></i> <?php echo $this->escapeHtml(date('d/m/Y', strtotime($blog['create_at']))); ?>
+                                    <?php if(isset($blog['pdf_path'])) { ?>
+                                        <a href="<?php echo $this->serverUrl().'/'.$blog['pdf_path'] ; ?>">to PDF</a>
+                                    <?php } ?>
+                                </p>
+                                
+                                <?php echo substr($this->translate($blog['description']), 0,500)."..." ; ?>
+
+                                <p class="clearfix"><a href="<?php echo $this->serverUrl().'/blog/'.$blog['slug'] ; ?>" class="button right">Read More...</a></p>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+ <?php } ?>
+
+
+

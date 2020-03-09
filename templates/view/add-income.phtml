@@ -1,0 +1,461 @@
+<?php
+    date_default_timezone_set('Europe/London');
+use GcFrontend\Controller\EndecryptController as Ecryption;
+use GcFrontend\Helper\FinanceHelper as FinanceHelper;
+$financeHelper = new FinanceHelper();
+$encypt = new Ecryption();
+use GcFrontend\Controller\PackagePrivilegesController;
+$packagePrivilegesController    = new PackagePrivilegesController();
+if(isset($_SESSION['user_id']) && $_SESSION['user_id']!='' && $_SESSION['user_role_id'] == 2  && $packagePrivilegesController->getCurrentPackagePrivilegesResources('finance',$_SESSION['user_id'],null) == 1){
+    $uid=$_SESSION['user_id'];
+}else{
+    echo "<script type='text/javascript'>window.location='".$this->serverUrl()."/login-form'</script>";
+}
+$edit_id = null;
+if (isset($_GET['e']) && $_GET['e'] != '') {
+    $edit_id = $encypt->decryptIt($_GET['e']);
+    $incomeedit =  $financeHelper->getOnlyFinanceincome($edit_id);
+}
+$regdate = date_format(date_create($financeHelper->getCreatedDate($uid)), 'd/m/Y') ;
+?>
+
+<section id="breadcrum" class="breadcrum">
+    <div class="breadcrum-sitemap">
+        <div class="container">
+            <div class="row">
+                <ul>
+                    <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                    <li><a href="<?php echo $this->serverUrl().'/user-profile';?>">My Dashboard</a></li>
+                    <li><a href="<?php echo $this->serverUrl();?>/finance-detail">Finance</a></li>
+                    <li><a href="#"><?php echo $edit_id != null ? 'Edit' : 'New'; ?> Income</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="breadcrum-title">
+        <div class="container">
+            <div class="row">
+                <div class="set-icon registration-icon">
+                    <i class="glyphicon glyphicon-edit" aria-hidden="true"></i>
+                </div>
+                <div class="set-title">
+                    <h3><?php echo $edit_id != null ? 'Edit' : 'New'; ?> income</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div id="primary-content" class="main-content register">
+<div class="container">
+    <div class="row">
+        <div class="contents white-bg">
+            <?php $return = $this->script('add-income-process'); ?>
+
+            <section class="add_item text-left pb30">
+                <div class="col-md-12 pad0">
+                    <div class=" text-center finance-page-head"><?php echo $edit_id != null ? 'Edit' : 'New'; ?> income</div>
+                </div>
+
+                <div class="col-md-12 pad0"><?php echo $this->partial('flash-messages'); ?></div>
+
+
+<?php if($edit_id != null && !empty($incomeedit)){ ?>
+
+    <div class="col-md-12 pad0">
+        <form role="form" id='income_form' action="<?php echo $this->escapeHtml($this->document('add-income')->getUrl()); ?>" method="post" class="add_item_form form-inline">
+
+            <div class="col-md-12">
+                <input type="hidden"  value="<?php echo $incomeedit['emp_id'] ? $incomeedit['emp_id'] : '' ;?>" name="in_emp_id" id="in_emp_id" />
+                <input type="hidden" value="<?php echo $incomeedit['id'] ? $incomeedit['id'] : '' ;?>" name="edit_id" id="edit_id" />
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Job Type </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7">
+                        <select  class="form-control" disabled>
+                            <option value="">Select</option>
+                            <option value="1" <?php echo $incomeedit['job_type'] == '1' ? 'selected' : '' ;?>>Website</option>
+                            <option value="2" <?php echo $incomeedit['job_type'] == '2' ? 'selected' : '' ;?>>Private</option>
+                        	<option value="3" <?php echo $incomeedit['job_type'] == '3' ? 'selected' : '' ;?>>Other</option>
+						</select>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Job No </label></div>
+                    <div class="col-md-7"><input type="number" class="form-control" value="<?php echo $incomeedit['job_id'] ? $incomeedit['job_id'] : '' ;?>"  placeholder="Job No" disabled></div>
+                </div>
+                <div id="error_div" class="has-error"></div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Date </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <!--<div class="col-md-7"><input type="text" class="form-control" name="in_date" id="in_date" placeholder="Date" required></div>-->
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control readonly" size="16" type="text" value="<?php echo $incomeedit['job_date'] ? date('d/m/Y',strtotime($incomeedit['job_date'])) : '' ;?>" name="in_date" id="in_date" placeholder="Date" required autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Income </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-addon"><?php echo $this->config()->get('site_currency') ?></span>
+                            <input name="in_rate" id="in_rate" value="<?php echo $incomeedit['job_rate'] ? $incomeedit['job_rate'] : '' ;?>" type="text" class="form-control" required autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Please Enter Store Name</label></div>
+                    <div class="col-md-7"> <input type="text" class="form-control" name="in_store" id="in_store" value="<?php echo $incomeedit['store'] ? $incomeedit['store'] : '' ;?>" placeholder="Store"></div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Category </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7"><select name="in_category" id="in_category" class="form-control" required>
+                            <option value="">Select</option>
+                            <option value="1" <?php echo $incomeedit['income_type'] == '1' ? 'selected' : '' ;?>>Income</option>
+                            <option value="2" <?php echo $incomeedit['income_type'] == '2' ? 'selected' : '' ;?>>Bonus</option>
+                            <option value="3" <?php echo $incomeedit['income_type'] == '3' ? 'selected' : '' ;?>>Other</option>
+                        </select></div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Location</label></div>
+                    <div class="col-md-7"><input type="text" class="form-control" name="in_location" id="in_location" value="<?php echo $incomeedit['location'] ? $incomeedit['location'] : '' ;?>" placeholder="Location"></div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Supplier</label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i>   </div>
+                    <div class="col-md-7"> <input type="text" class="form-control" name="in_supplier"  id="in_supplier" value="<?php echo $incomeedit['supplier'] ? $incomeedit['supplier'] : '' ;?>" placeholder="Supplier" required></div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-7"><div class="checkbox">
+                            <label><input name="in_bank" id="in_bank" value='1' <?php echo $incomeedit['bank'] == '1' ? 'checked' : '' ;?>  type="checkbox">Please click if income is already banked.</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 new_bank_date no_field"  <?php echo $incomeedit['bank'] == '1' ? 'style="display:block"' : 'style="display:none"' ;?>  id="bank_date" >
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Bank Date </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control readonly" size="16" type="text" name="in_bankdate" id="in_bankdate" value="<?php echo $incomeedit['bank_date'] ? date('d/m/Y',strtotime($incomeedit['bank_date'])) : '' ;?>" placeholder="Bank Date" <?php echo $incomeedit['bank'] == '1' ? 'required' : '' ;?> autocomplete="off"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group text-center">
+                    <button type="submit" id="income_update" name="income_submit" value="income_update" class="read-common-btn grad_btn">Update</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+
+
+<?php }elseif($edit_id != null && empty($incomeedit)){ ?> <?php }else { ?>
+
+
+
+
+    <div class="col-md-12 pad0">
+        <form role="form" id='income_form' action="<?php echo $this->escapeHtml($this->document('add-income')->getUrl()); ?>" method="post" class="add_item_form form-inline">
+
+            <div class="col-md-12">
+                <input type="hidden" name="in_emp_id" id="in_emp_id" />
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Job Type </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7">
+                        <select name="in_job_type" id="in_job_type" class="form-control" required>
+                            <option value="">Please select job type</option>
+                            <option value="1">Website</option>
+                            <option value="2">Private</option>
+			    <option value="3">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Job No.</label></div>
+                    <div class="col-md-7"><input type="number" class="form-control" name="in_jobno" id="in_jobno" placeholder="Please enter job no."></div>
+                </div>
+                <div id="error_div" class="has-error"></div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Date </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <!--<div class="col-md-7"><input type="text" class="form-control" name="in_date" id="in_date" placeholder="Date" required></div>-->
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+			<input class="form-control readonly" size="16" type="text" value="" name="in_date" id="in_date" placeholder="dd/mm/yyyy" required maxlength="10" autocomplete="off">
+                        </div>
+                        <input type="hidden" id="dtp_input2" value="" /><br/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 no_field">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Income</label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-addon"><?php echo $this->config()->get('site_currency') ?></span>
+                            <input name="in_rate" id="in_rate"  type="text" class="form-control" required placeholder="Please enter amount">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Store</label></div>
+                    <div class="col-md-7"> <input type="text" class="form-control" name="in_store" id="in_store" placeholder="Please enter store name"></div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Category </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7"><select name="in_category" id="in_category" class="form-control" required>
+                            <option value="">Please select category</option>
+                            <option value="1">Income</option>
+                            <option value="2">Bonus</option>
+                            <option value="3">Other</option>
+                        </select></div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Location</label></div>
+                    <div class="col-md-7"><input type="text" class="form-control" name="in_location" id="in_location" placeholder="Please enter location of booking" ></div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Supplier</label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i>   </div>
+                    <div class="col-md-7"> <input type="text" class="form-control" name="in_supplier"  id="in_supplier" placeholder="Please enter employer/supplier name" required></div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-7"><div class="checkbox">
+                            <label><input name="in_bank" id="in_bank" value='1' type="checkbox">Please click if income is already banked.</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12 new_bank_date no_field" style="display:none" id="bank_date" >
+                <div class="form-group">
+                    <div class="col-md-4"><label for="exampleInputPassword1">Bank Date </label><i class="fa fa-asterisk required-stars" aria-hidden="true" ></i></div>
+                    <div class="col-md-7">
+                        <div class="input-group date form_date" data-date="" data-date-format="dd MM yyyy" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <input class="form-control readonly" size="16" type="text" value="" name="in_bankdate" id="in_bankdate" placeholder="Bank Date" maxlength="10" autocomplete="off">
+                        </div>
+                        <input type="hidden" id="dtp_input2" value="" /><br/>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-12">
+                <div class="form-group text-center">
+                    <button type="submit" id="income_submit" name="income_submit" value="income_submit" class="read-common-btn grad_btn">Submit</button>
+                    <button type="button"  id="income_submit_loding"  class="read-common-btn grad_bt" style="display: none" disabled>Loading...</button>
+                    <!--<button type="button" class="read-common-btn grad_btn">Review</button>-->
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+
+
+
+
+
+
+
+
+
+<?php } ?>
+
+
+
+            </section>
+
+
+        </div>
+    </div>
+</div>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script>
+
+    $("#income_form").submit(function(){
+      $('#income_submit').hide();
+      $('#income_submit_loding').show();
+
+    });
+    $("#in_jobno").keyup(function() {
+        var in_jobno = $("#in_jobno").val();
+        if (!isNaN(in_jobno) && in_jobno != '' && in_jobno.toString().indexOf('.') == -1){ }else{
+            $("#in_jobno").val('');
+        }
+    });
+
+    $("#in_rate").keyup(function() {
+        var in_rate = $("#in_rate").val();
+        if (isNaN(in_rate)){ $("#in_rate").val('');  }
+
+    });
+
+
+    $("#in_bank").click(function(){
+        var job_type = $('#in_bank:checked').val();
+        if(job_type == '1'){
+         $("input#in_bankdate").prop('required', true);
+            $('#bank_date').show(1000);
+        }else{
+            $('#bank_date').hide(1000);
+            $('#in_bankdate').val('');
+             $("input#in_bankdate").prop('required', false);
+        }
+    });
+
+    $("#in_jobno").blur(function() {
+        get_incomedata();
+    });
+
+    $("#in_job_type").change(function() {
+        get_incomedata();
+    });
+
+    function get_incomedata (){
+        var jobno = $("#in_jobno").val();
+        var jobtype = $("#in_job_type").val();
+        if(jobno != '' && jobtype != ''){
+            $.ajax({
+                'url'   :'/ajax-request',
+                'type'  :'POST',
+                'data'  : {'job_no' : jobno, 'job_type':jobtype , 'in_data_view' : '1' },
+                'success':function(result){
+                    if(result != ''){
+                        var r_data = JSON.parse(result);
+                        console.log(r_data);
+                        $("#in_rate").val(r_data['rate']);
+                        $("#in_store").val(r_data['store_nm']);
+                        $("#in_location").val(r_data['location']);
+                        $("#in_supplier").val(r_data['supplier']);
+                        $("#in_date").val(r_data['job_date']);
+                        $("#in_emp_id").val(r_data['emp_id']);
+                        $("#in_category").val('1');
+                        $("#error_div").html('');
+                    }
+                    else{
+                        $("#in_rate").val('');
+                        $("#in_store").val('');
+                        $("#in_location").val('');
+                        $("#in_supplier").val('');
+                        $("#in_category").val('');
+                        $("#in_emp_id").val('');
+                        $("#in_date").val('');
+                        $("#error_div").html('');
+                    }
+                }
+            });
+        }
+    }
+</script>
+
+<!--default date picker-->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<script type="text/javascript">
+      
+    $("#income_form").submit(function(){
+        $("#income_submit , #income_update").button('loading');
+    });
+
+
+    $(document).ready(function() {
+        $('input#in_bankdate').datepicker({
+            maxDate: '0',
+            dateFormat: 'dd/mm/yy'
+        });
+    });
+    $(document).ready(function() {
+        $('input#in_date').datepicker({
+            maxDate: '0',
+            //minDate: '<?php echo $regdate ; ?>',
+            dateFormat: 'dd/mm/yy'
+        });
+    });
+    
+    
+    $('input#in_date ,input#in_bankdate').keydown(function (e) {
+		var key = e.charCode || e.keyCode || 0;
+		$goc = $(this);
+
+		// Auto-format- do not expose the mask as the user begins to type
+		if (key !== 8 && key !== 9) {
+			if ($goc.val().length === 2) {
+				$goc.val($goc.val() + '/');
+			}
+			if ($goc.val().length === 5) {
+				$goc.val($goc.val() + '/');
+			}
+		}
+
+		// Allow numeric (and tab, backspace, delete) keys only
+		return (key == 8 || 
+				key == 9 ||
+				key == 46 ||
+				(key >= 48 && key <= 57) ||
+				(key >= 96 && key <= 105));	
+	})   
+</script>
+

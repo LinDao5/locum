@@ -1,0 +1,14 @@
+The steps to run the script are as follows :
+
+
+1. Unzip the file in your local server or live server folder.
+
+* If you are using wamp as a local server then unzip the code at C:\wamp\www.
+
+* If you are using the live server then unzip the code at /var/www.
+
+2. Put this folder in your local server and put credentials like UserName, Password, Signature and mode in Configuration.php which you will find in project root folder
+
+Now run this page to live the script:
+
+http:/ec2-18-163-113-25.ap-east-1.compute.amazonaws.com/php-paypal-credit-card/DirectPayment/index.php

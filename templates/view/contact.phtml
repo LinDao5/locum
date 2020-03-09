@@ -1,0 +1,104 @@
+<!-- Page Title -->
+
+<script src='https://www.google.com/recaptcha/api.js' async defer ></script>
+
+<section class="innerhead smallhead">
+    <div class="container-fluid">
+        <div class="container">
+            <div class="row">  
+                <div class="col-md-12 col-sm-12 col-xs-12 bannercont animate text-center" data-anim-type="zoomIn" data-anim-delay="800">
+                    <!--<h1>Work the way you want. <br> Find opportunities around you.</h1>-->
+                    <div class="center">
+                        <h1>Contact Us</h1>
+                    </div>
+                    <div class="breadcrum-sitemap">
+                        <ul>          
+                            <li><a href="<?php echo $this->serverUrl();?>">Home</a></li>
+                            <li><a href="javascript:void(0);">contact us</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- .Page Title -->
+
+<section class="contform innerlayout">
+    <div class="container">        
+        <div class="row">            
+            <div class="col-md-12 col-sm-12 col-xs-12 inbox">
+                <div class="col-md-7 col-sm-7 col-xs-12 formlft animate" data-anim-type="fadeInLeft" data-anim-delay="800">
+                    <?php
+                        $return = $this->script('contact-us');
+//                        $number_1 = mt_rand(1, 9);
+//                        $number_2 = mt_rand(1, 9);
+//                        $answer = substr(sha1($number_1+$number_2),5,10);
+                    ?>
+                    <?php if(!empty($return['error_message'])): ?>
+                        <div class="note">
+                             <div class="alert alert-danger"><span><?php echo $this->escapeHtml($return['error_message']); ?><span></div>
+                        </div>
+                    <?php else: ?>
+                        <div class="note">
+                           <?php echo $this->partial('flash-messages'); ?>
+                        </div>
+                    <?php endif; ?>
+                    <form action="<?php echo $this->escapeHtml($this->document('contact')->getUrl()); ?>" method="post">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="<?php echo $this->escapeHtml(!empty($return['name']) ? $return['name'] : ''); ?>" required="required">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="<?php echo $this->escapeHtml(!empty($return['email']) ? $return['email'] : ''); ?>" required="required" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$">
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea class="form-control" id="message" name="message" required><?php echo $this->escapeHtml(!empty($return['message']) ? $return['message'] : ''); ?></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <?php echo $this->escapeHtml($this->path);?>
+                            <!--captcha -->
+                            <label class="g-recaptcha" data-sitekey="6LdyD90UAAAAAMLciX2iyxe1qxu5xNCVhZoiXRQJ">  </label>
+                        </div>
+
+                        <input  type="submit" name="contact_submitted" value="Submit" class="btn btn-default btn-1 lkbtn"/>
+                    </form>
+                </div> 
+                <div class="col-md-5 col-sm-5 col-xs-12 formrgt animate" data-anim-type="fadeInRight" data-anim-delay="800">
+                    <h3>Contact Information</h3>
+                    <ul class="conticons">
+                         <?php if($this->config()->get('site_addr') != '' ) {?>
+                            <li>
+                                <a href="javacsript:void(0)" >
+                                <i class="fa fa-map-marker" aria-hidden="true"></i> <?php echo $this->config()->get('site_addr') ?></a>
+                            </li>
+                        <?php } ?>
+                        <li><a href="tel:<?php echo $this->config()->get('site_mobile') ?>"><i class="fa fa-phone" aria-hidden="true"></i><?php echo $this->config()->get('site_mobile') ?></a></li>
+                        <li><a href="mailto:<?php echo $this->config()->get('site_email') ?>"><i class="fa fa-envelope" aria-hidden="true"></i><?php echo $this->config()->get('site_email') ?></a></li>
+                    </ul>
+                    <h3>Social Media</h3>       
+                    <ul class="list-inline socialicon">
+                        <?php if($this->config()->get('fb')){ ?>
+                            <li><a href="<?php echo $this->config()->get('fb') ?>" target="_blank"><i class="fa fa-facebook-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>                        
+                        <?php if($this->config()->get('gp')){ ?>
+                            <li><a href="<?php echo $this->config()->get('gp') ?>" target="_blank"><i class="fa fa-google-plus-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('li')){ ?>
+                            <li><a href="<?php echo $this->config()->get('li') ?>" target="_blank"><i class="fa fa-linkedin-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('tw')){ ?>
+                            <li><a href="<?php echo $this->config()->get('tw') ?>" target="_blank"><i class="fa fa-twitter-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                        <?php if($this->config()->get('pi')){ ?>
+                            <li><a href="<?php echo $this->config()->get('pi') ?>" target="_blank"><i class="fa fa-pinterest-square" aria-hidden="true"></i></a></li>
+                        <?php } ?>
+                    </ul>
+                </div> 
+            </div>       
+        </div>
+    </div>
+</section>
